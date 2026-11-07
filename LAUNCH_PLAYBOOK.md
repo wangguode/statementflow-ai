@@ -4,9 +4,24 @@
 
 ---
 
-## 第一步：15 分钟开通全球美元收款（无需海外公司，个人直收）
+## 第一步：15 分钟开通全球美元收款（只有中国内地银行卡即可收款！）
 
-海外独立开发者首选 **Lemon Squeezy**（现已被 Stripe 收购，作为 **Merchant of Record (MoR)** 全球官方代理商，自动替您向欧盟、英国、美国各州计算并代缴增值税/消费税，支持国内个人身份认证与银行卡/PayPal/Wise 提现）：
+> **核心解答：我只有中国的银行卡，可以收海外用户的美金吗？**
+> **完全可以！** 海外独立开发者普遍采用 **Lemon Squeezy（官方全球税务代理商 MoR）+ 国内银行卡直连 / Payoneer（派安盈）** 的组合。您的海外客户在网页上用 Visa / MasterCard / Apple Pay 付美元，平台自动替您处理欧美增值税，最终资金直接结汇成人民币打入您的**中国内地储蓄卡（招行、中行、工行、建行等一类卡均可）**，全程**不需要**注册海外公司，也**不需要**办理海外银行卡。
+
+### A. 绑定中国内地银行卡提现的两种方式（任选其一）
+
+1. **方式一：Lemon Squeezy 直接电汇至中国内地储蓄卡（最简路径）**
+   - 在 [Lemon Squeezy](https://www.lemonsqueezy.com/) 后台进入 **Settings → Payouts**。
+   - 国家选择 **China**，打款方式选择 **Bank Transfer (SWIFT)**。
+   - 填入您的姓名拼音（如 `GUO WANG`）、中国内地储蓄卡号（推荐**招商银行**或**中国银行**借记卡）以及该行的 **SWIFT Code**（如招商银行总行为 `CMBCCNBS`，中国银行可查具体分行 SWIFT）。
+   - 每月达到提现门槛后，美金将直接汇入您的国内银行卡，在手机银行 App 内点击“结汇”即可转为人民币。
+2. **方式二：Lemon Squeezy + Payoneer 派安盈 → 国内储蓄卡/支付宝（手续费最低、入账最快，强烈推荐）**
+   - 用中国大陆身份证 + 国内储蓄卡免费注册 [Payoneer（派安盈）](https://www.payoneer.com/zh/)（全中文界面，10 分钟审核通过）。
+   - 在 Payoneer 后台点击「收款 → Global Payment Service」，即可免费获得一个专属的**美国银行美元收款账号（Routing Number + Account Number）**。
+   - 将这个美国账号填入 Lemon Squeezy 的 **Payouts** 中（享受美国本土 ACH 0 手续费入账）；收到美金后，在 Payoneer 后台一键点击「提现至国内银行卡」，1 个工作日内直接以人民币入账您的中国内地银行卡！
+
+### B. 在 Lemon Squeezy 创建订阅商品并获取密钥
 
 1. 注册并登录 [Lemon Squeezy](https://www.lemonsqueezy.com/)，创建一个 Store（例如 `StatementFlow Studio`）。
 2. 在 **Products** 中创建两个按月订阅（Subscription）商品：

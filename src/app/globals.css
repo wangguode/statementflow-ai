@@ -1,0 +1,258 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+  --font-sans: "Stack Sans Text", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-heading: "Stack Sans Headline", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  --color-ring: var(--accent);
+  --color-input: var(--surface);
+  --color-border: var(--surface);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-ink);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted);
+  --color-muted: var(--surface);
+  --color-secondary-foreground: var(--ink);
+  --color-secondary: var(--surface);
+  --color-primary-foreground: var(--accent-ink);
+  --color-primary: var(--accent);
+  --color-popover-foreground: var(--ink);
+  --color-popover: var(--bg);
+  --color-card-foreground: var(--ink);
+  --color-card: var(--surface);
+}
+
+:root {
+  /* Type system dealt by tasteskill v2 (Stack Sans Headline / Stack Sans Text) + Apple SF Pro fallback */
+  --font-display: "Stack Sans Headline", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  --font-text: "Stack Sans Text", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+
+  /* Strict 5-step type scale */
+  --step-small: 0.875rem;
+  --step-body: 1rem;
+  --step-lead: clamp(1.25rem, 1.15rem + 0.5vw, 1.5rem);
+  --step-head: clamp(2.125rem, 1.45rem + 3vw, 3.85rem);
+  --step-display: clamp(2.75rem, 1.4rem + 6.2vw, 6.75rem);
+
+  /* Layout grid & outer frame margins */
+  --margin: clamp(1.125rem, 2.4vw, 2.25rem);
+  --gutter: clamp(0.875rem, 1.5vw, 1.5rem);
+
+  /* Colour Chapters: Apple Flagship Titanium, Obsidian Studio & Archival Stone */
+  --bg: #f5f5f7;
+  --surface: #e8e8ed;
+  --ink: #111215;
+  --muted: #494b52;
+  --accent: #0066cc;
+  --accent-ink: #ffffff;
+  --destructive: #c92a2a;
+
+  /* Chapter fields & high-contrast assigned inks */
+  --field-1: #f5f5f7;
+  --field-1-ink: #111215;
+  --field-2: #0a0b0e;
+  --field-2-ink: #f5f5f7;
+  --field-3: #e4e3df;
+  --field-3-ink: #141413;
+  --field-4: #ffffff;
+  --field-4-ink: #111215;
+  --field-5: #151921;
+  --field-5-ink: #f5f5f7;
+
+  /* Motion tokens */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
+  --t-press: 140ms;
+  --t-hover: 180ms;
+  --t-ui: 240ms;
+  --t-reveal: 800ms;
+  --stagger-line: 90ms;
+  --stagger-item: 70ms;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-text);
+    font-size: 16px;
+    scroll-behavior: smooth;
+    background-color: var(--bg);
+    color: var(--ink);
+  }
+  body {
+    font-family: var(--font-text);
+    font-size: var(--step-body);
+    line-height: 1.52;
+    font-kerning: normal;
+    text-rendering: optimizeLegibility;
+    background-color: var(--bg);
+    color: var(--ink);
+    margin: 0;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-kerning: normal;
+    text-wrap: balance;
+    hyphens: none;
+    margin: 0;
+  }
+  p {
+    max-width: 58ch;
+    text-wrap: pretty;
+    margin: 0;
+  }
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+.sf-wrap {
+  padding-inline: var(--margin);
+  max-width: 1760px;
+  margin-inline: auto;
+}
+
+.sf-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: var(--gutter);
+}
+
+.sf-display {
+  font-family: var(--font-display);
+  font-size: var(--step-display);
+  font-weight: 600;
+  line-height: 0.94;
+  letter-spacing: -0.032em;
+}
+
+.sf-head {
+  font-family: var(--font-display);
+  font-size: var(--step-head);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.024em;
+}
+
+.sf-lead {
+  font-size: var(--step-lead);
+  line-height: 1.38;
+  max-width: 44ch;
+}
+
+.sf-body {
+  font-size: var(--step-body);
+  line-height: 1.52;
+}
+
+.sf-small {
+  font-size: var(--step-small);
+  line-height: 1.45;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Archival imagery unified treatment */
+.sf-archival-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) contrast(1.06);
+  transition: transform 900ms var(--ease-soft);
+}
+
+/* Interactive software interface fragment [data-ui] */
+[data-ui] {
+  font-variant-numeric: tabular-nums;
+}
+
+[data-ui] .ui-surface {
+  background-color: #161922;
+  color: #f5f5f7;
+  border-radius: 12px;
+}
+
+[data-ui] .ui-tile {
+  background-color: #1f2430;
+  color: #f5f5f7;
+  border-radius: 10px;
+}
+
+[data-ui] .ui-input {
+  background-color: #11131a;
+  color: #f5f5f7;
+  border: 1px solid #2d3343;
+  border-radius: 8px;
+}
+
+[data-ui] .ui-table th,
+[data-ui] .ui-table td {
+  border-bottom: 1px solid #262b38;
+}
+
+/* Choreographed load & scroll motion layer */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-load] {
+    opacity: 0;
+    transform: translateY(18px);
+    animation: sf-load-rise 780ms var(--ease-expo) forwards;
+    animation-delay: var(--d, 80ms);
+  }
+  .js [data-reveal] {
+    opacity: 0;
+    transform: translateY(24px);
+    transition:
+      opacity 720ms var(--ease-expo),
+      transform 860ms var(--ease-expo);
+    transition-delay: var(--delay, 0ms);
+  }
+  .js [data-reveal].is-in {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sf-load-rise {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.sf-btn {
+  transition:
+    transform var(--t-press) var(--ease-out),
+    background-color var(--t-hover) ease,
+    color var(--t-hover) ease;
+}
+
+.sf-btn:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

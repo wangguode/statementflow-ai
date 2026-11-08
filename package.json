@@ -1,8 +1,8 @@
 {
-  "name": "ai-website-clone-template",
-  "version": "0.6.1",
+  "name": "statementflow-ai",
+  "version": "1.0.0",
   "private": true,
-  "description": "Clone any website into a clean, modern Next.js codebase using AI coding agents",
+  "description": "StatementFlow AI - B2B PDF Bank Statement & Invoice to Verified Excel Micro-SaaS",
   "author": "JCodesMore",
   "license": "MIT",
   "repository": {

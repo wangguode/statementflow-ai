@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
 import { PSEO_BANK_ENTRIES } from "@/lib/pseo-banks";
 
+export const dynamic = "force-static";
+
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||

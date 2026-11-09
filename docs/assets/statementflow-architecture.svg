@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 660" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#090D16"/>
+      <stop offset="50%" stop-color="#0F172A"/>
+      <stop offset="100%" stop-color="#0B132B"/>
+    </linearGradient>
+    <linearGradient id="accentEmerald" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#06B6D4"/>
+    </linearGradient>
+    <linearGradient id="accentBlue" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+    <linearGradient id="accentAmber" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#EF4444"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="660" rx="18" fill="url(#bgGrad)"/>
+  <rect x="16" y="16" width="1168" height="628" rx="14" fill="none" stroke="#1E293B" stroke-width="1.5"/>
+
+  <!-- Header -->
+  <text x="600" y="54" text-anchor="middle" fill="#F8FAFC" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="800">StatementFlow AI 全栈系统架构图 — 跨境银行对账单与税票 AI 解析及复式平账核验平台</text>
+  <text x="600" y="80" text-anchor="middle" fill="#94A3B8" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="500">Dual-Mode AI &amp; Heuristic Extraction · Deterministic Double-Entry Reconciliation ($0.01 Precision) · Formula-Safe Excel Export</text>
+
+  <!-- Layer 1: Document Ingestion & Workbench UI -->
+  <g filter="url(#shadow)">
+    <rect x="40" y="105" width="1120" height="140" rx="12" fill="#1E293B" fill-opacity="0.7" stroke="#334155" stroke-width="1.5"/>
+    <rect x="40" y="105" width="8" height="140" rx="4" fill="url(#accentBlue)"/>
+    <text x="66" y="132" fill="#60A5FA" font-family="system-ui, sans-serif" font-size="15" font-weight="700">01 多源财务单据接入与交互工作台 (Next.js App Router + Financial Studio UI)</text>
+
+    <rect x="66" y="146" width="340" height="84" rx="8" fill="#0F172A" stroke="#3B82F6" stroke-width="1.2"/>
+    <text x="84" y="170" fill="#F8FAFC" font-family="system-ui, sans-serif" font-size="14" font-weight="700">📄 跨境多币种单据接入 (PDF / CSV / TXT)</text>
+    <text x="84" y="192" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• JPMorgan Chase 美金商业对账单</text>
+    <text x="84" y="210" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• Stripe / Vercel SaaS 税票 &amp; Amazon UK VAT 发票</text>
+
+    <rect x="430" y="146" width="340" height="84" rx="8" fill="#0F172A" stroke="#06B6D4" stroke-width="1.2"/>
+    <text x="448" y="170" fill="#F8FAFC" font-family="system-ui, sans-serif" font-size="14" font-weight="700">⚙️ 动态 AI 引擎配置舱 (AI Engine Modal)</text>
+    <text x="448" y="192" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• 支持零 Key 确定性启发式解析模式 (Keyless Mode)</text>
+    <text x="448" y="210" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• 一键切换 OpenAI / DeepSeek / 通义千问 / 本地 Ollama</text>
+
+    <rect x="794" y="146" width="346" height="84" rx="8" fill="#0F172A" stroke="#8B5CF6" stroke-width="1.2"/>
+    <text x="812" y="170" fill="#F8FAFC" font-family="system-ui, sans-serif" font-size="14" font-weight="700">📊 实时对账工作台与差异高亮视图</text>
+    <text x="812" y="192" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• 逐行展示日期、摘要、分类、借贷方向与余额</text>
+    <text x="812" y="210" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• 自动标红 $0.01 级账目不平与异常流水项</text>
+  </g>
+
+  <!-- Connector Arrows -->
+  <path d="M236 245 L236 275 M600 245 L600 275 M967 245 L967 275" stroke="#475569" stroke-width="2" stroke-dasharray="4 4"/>
+
+  <!-- Layer 2: Dual-Mode Extraction & AI Call Safety -->
+  <g filter="url(#shadow)">
+    <rect x="40" y="275" width="1120" height="165" rx="12" fill="#1E293B" fill-opacity="0.7" stroke="#334155" stroke-width="1.5"/>
+    <rect x="40" y="275" width="8" height="165" rx="4" fill="url(#accentEmerald)"/>
+    <text x="66" y="303" fill="#34D399" font-family="system-ui, sans-serif" font-size="15" font-weight="700">02 双模结构化提取与 AI 调用安全护栏层 (Dual-Mode Extraction &amp; AI Call Safety Baseline)</text>
+
+    <rect x="66" y="318" width="340" height="104" rx="8" fill="#0F172A" stroke="#10B981" stroke-width="1.2"/>
+    <text x="84" y="342" fill="#6EE7B7" font-family="system-ui, sans-serif" font-size="13" font-weight="700">① AI 调用安全基线 (src/lib/ai-extractor.ts)</text>
+    <text x="84" y="364" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 严格超时控制 (AbortSignal.timeout) 防挂死</text>
+    <text x="84" y="384" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 429/5xx 指数退避重试 + SSRF 端点白名单校验</text>
+    <text x="84" y="404" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 日志密钥脱敏 + 异常自动降级至本地启发式引擎</text>
+
+    <rect x="430" y="318" width="340" height="104" rx="8" fill="#0F172A" stroke="#14B8A6" stroke-width="1.2"/>
+    <text x="448" y="342" fill="#5EEAD4" font-family="system-ui, sans-serif" font-size="13" font-weight="700">② 确定性启发式引擎 (src/lib/heuristic-parser.ts)</text>
+    <text x="448" y="364" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 零外部 API 依赖的正则流水线与表头语义识别</text>
+    <text x="448" y="384" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 相邻行余额差分推导借贷方向 (Debit / Credit)</text>
+    <text x="448" y="404" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 多币种符号 ($ / £ / € / ¥) 与税额自动分离</text>
+
+    <rect x="794" y="318" width="346" height="104" rx="8" fill="#0F172A" stroke="#F59E0B" stroke-width="1.2"/>
+    <text x="812" y="342" fill="#FCD34D" font-family="system-ui, sans-serif" font-size="13" font-weight="700">③ 复式记账确定性平账引擎 (computeReconciliation)</text>
+    <text x="812" y="364" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 绝不依赖 LLM 做加减法算术（杜绝大模型算术幻觉）</text>
+    <text x="812" y="384" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 恒等式校验：期初余额 + 总贷方 - 总借方 = 期末余额</text>
+    <text x="812" y="404" fill="#CBD5E1" font-family="system-ui, sans-serif" font-size="12">• 精确到 $0.01 美分级的差额告警与审计追踪</text>
+  </g>
+
+  <!-- Connector Arrows -->
+  <path d="M350 440 L350 470 M850 440 L850 470" stroke="#475569" stroke-width="2" stroke-dasharray="4 4"/>
+
+  <!-- Layer 3: Safe Export & Overseas Monetization -->
+  <g filter="url(#shadow)">
+    <rect x="40" y="470" width="1120" height="145" rx="12" fill="#1E293B" fill-opacity="0.7" stroke="#334155" stroke-width="1.5"/>
+    <rect x="40" y="470" width="8" height="145" rx="4" fill="url(#accentAmber)"/>
+    <text x="66" y="497" fill="#FBBF24" font-family="system-ui, sans-serif" font-size="15" font-weight="700">03 防公式注入安全导出与海外合规收单层 (Formula-Safe Export &amp; Overseas SaaS Monetization)</text>
+
+    <rect x="66" y="512" width="515" height="86" rx="8" fill="#0F172A" stroke="#F59E0B" stroke-width="1.2"/>
+    <text x="86" y="536" fill="#FDE68A" font-family="system-ui, sans-serif" font-size="14" font-weight="700">🛡️ 防 CSV/Excel 公式注入导出器 (src/lib/export-utils.ts)</text>
+    <text x="86" y="558" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• 自动转义以 =、+、-、@ 开头的恶意单元格载荷，阻断财务终端宏命令执行漏洞</text>
+    <text x="86" y="578" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• 一键导出多工作表 SpreadsheetML (.xls)、UTF-8 BOM (.csv) 与结构化审计 (.json)</text>
+
+    <rect x="615" y="512" width="525" height="86" rx="8" fill="#0F172A" stroke="#EC4899" stroke-width="1.2"/>
+    <text x="635" y="536" fill="#F472B6" font-family="system-ui, sans-serif" font-size="14" font-weight="700">💳 海外自助订阅收单闭环 (Lemon Squeezy MoR + Stripe Webhook)</text>
+    <text x="635" y="558" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• 集成 Lemon Squeezy 全球税务代理 (MoR) 与 Stripe Checkout 订阅流</text>
+    <text x="635" y="578" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="12">• 基于 crypto.timingSafeEqual 的抗时序攻击 HMAC-SHA256 Webhook 签名验真</text>
+  </g>
+</svg>

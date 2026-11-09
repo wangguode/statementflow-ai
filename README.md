@@ -31,36 +31,13 @@
 ## 2. 全栈系统架构图（双模提取引擎 + 确定性复式平账核验）
 
 <p align="center">
-  <img src="./docs/assets/statementflow-architecture.svg" alt="StatementFlow AI Full-Stack Architecture" width="100%" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/architecture-dark.svg">
+    <img alt="StatementFlow AI Full-Stack Architecture" src="./docs/assets/architecture-light.svg" width="100%">
+  </picture>
 </p>
 
-### 核心数据流与 AI 调用安全护栏流水线
-
-```mermaid
-flowchart TB
-    subgraph StudioUI["01 前端交互工作台 (Next.js App Router + Financial Reconciliation Studio)"]
-        Upload["多源跨境财务单据接入\n(PDF / CSV / TXT · JPMorgan / Stripe / Amazon VAT)"]
-        EngineModal["AI 引擎动态配置舱\n(支持零 Key 离线模式 / OpenAI / DeepSeek / 通义千问 / Ollama)"]
-        AuditView["逐行借贷明细与 $0.01 差额高亮工作台"]
-    end
-
-    subgraph ExtractionLayer["02 双模结构化提取与 AI 调用安全基线 (Dual-Mode Extraction & AI Call Safety)"]
-        SafetyGuard["AI 调用安全网关 (src/lib/ai-extractor.ts)\nAbortSignal 超时控制 · 429/5xx 指数退避 · SSRF 校验 · 日志密钥脱敏"]
-        HeuristicEngine["确定性启发式解析器 (src/lib/heuristic-parser.ts)\n零外部依赖正则流水线 · 相邻余额差分推导 Debit/Credit"]
-        SchemaValidator["强类型结构化 Schema 校验器 (src/lib/schema.ts)"]
-    end
-
-    subgraph AccountingKernel["03 确定性复式平账与防注入导出层 (Deterministic Reconciliation & Safe Export)"]
-        Reconcile["确定性复式记账平账核验 (computeReconciliation)\n恒等式：Opening Balance + Total Credits - Total Debits = Closing Balance"]
-        FormulaGuard["防公式注入净化器 (src/lib/export-utils.ts)\n自动转义 = / + / - / @ 恶意单元格载荷"]
-        MultiExport["多格式财务导出\n多工作表 Excel (.xls) · UTF-8 BOM (.csv) · 审计 (.json)"]
-    end
-
-    Upload & EngineModal --> SafetyGuard
-    SafetyGuard -- "上游异常/无Key自动降级" --> HeuristicEngine
-    SafetyGuard & HeuristicEngine --> SchemaValidator --> Reconcile
-    Reconcile --> AuditView & FormulaGuard --> MultiExport
-```
+> 架构遵循 AgentScope 2.0 工业级全景架构范式，涵盖左侧扫描 OCR/多源单据接入协议与审计工作台、顶部 JSON Schema 校验与财务基础设施、中上部跨境多币种企业财税场景胶囊与品牌核心、中央双模提取引擎与确定性复式平账状态机、右侧平账证明与导出工具链，以及底部运行时可观测体系。支持随 GitHub 主题自动在明亮/暗色模式间切换。
 
 ---
 

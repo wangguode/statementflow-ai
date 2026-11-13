@@ -1,34 +1,33 @@
 <div align="center">
 
-# 📊 StatementFlow AI // 跨境银行对账单与税票 AI 解析及复式平账核验平台
-### (B2B PDF Bank Statement & Tax Invoice to Verified Excel Micro-SaaS)
+# 📊 StatementFlow AI // Deterministic Financial Statement Parser & Double-Entry Audit Engine
+### B2B PDF Bank Statement & Tax Invoice to Verified Excel Micro-SaaS ($0.01 Cent-Perfect Reconciliation)
 
 [![Live Demo](https://img.shields.io/badge/Live_Demo-Cloudflare_Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://statementflow-ai.153557421.workers.dev)
-[![Zhihu](https://img.shields.io/badge/知乎-@王果ai_(1.2w+_关注)-0084FF?style=flat-square&logo=zhihu&logoColor=white)](https://www.zhihu.com/people/wang-guo-ha-53)
 [![Next.js](https://img.shields.io/badge/Stack-Next.js_+_TypeScript-000000?style=flat-square&logo=next.js&logoColor=white)](https://github.com/wangguode/statementflow-ai)
 [![Reconciliation](https://img.shields.io/badge/Reconciliation-$0.01_Deterministic-10B981?style=flat-square)](https://statementflow-ai.153557421.workers.dev)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](https://github.com/wangguode/statementflow-ai)
+[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](./LICENSE)
 
-[🌐 在线使用 (Live Demo)](https://statementflow-ai.153557421.workers.dev) · [📖 知乎专栏 (@王果ai)](https://www.zhihu.com/people/wang-guo-ha-53) · [🧠 AI Agent 与语音工程知识库](https://github.com/wangguode/ai-agent-voice) · [🧩 知枢智能体 (Zhishu Agent)](https://github.com/wangguode/zhishu-agent)
+**🇺🇸 English** | [🇨🇳 简体中文](./README.zh-CN.md) · [🌐 Live Demo](https://statementflow-ai.153557421.workers.dev) · [📖 Architecture Deep-Dive (DEV.to)](https://dev.to/wangguode/the-001-deterministic-ledger-why-you-should-never-let-llms-do-financial-math-f7i) · [🧩 Zhishu Agent](https://github.com/wangguode/zhishu-agent)
 
 </div>
 
 ---
 
-## 1. 为什么做这个项目？（核心痛点破局）
+## 1. Why StatementFlow AI?
 
-跨境电商、出海 SaaS 团队与国际财务人员每月需要处理大量来自海外银行（如摩根大通 JPMorgan Chase）、支付网关（Stripe）与海外电商平台（Amazon Business UK/EU）的非结构化 PDF/CSV/TXT 账单与 VAT 增值税发票。
+Finance teams, cross-border SaaS operators, and accountants process thousands of unstructured bank statements (JPMorgan Chase, Stripe, Barclays) and VAT invoices every month.
 
-直接把财务账单丢给通用大模型存在**三大致命隐患**：
-1. **大模型算术幻觉（LLM Arithmetic Hallucination）**：LLM 擅长语义提取，但极易在多行金额累加时算错几美分，导致会计入账无法平账。
-2. **公式注入安全漏洞（CSV/Excel Formula Injection）**：交易摘要中若包含 `=CMD|...` 或 `+`、`-`、`@` 前缀，导入财务软件或 Excel 时会触发高危宏命令执行。
-3. **API 挂死与密钥泄露风险**：缺少超时熔断、退避重试与确定性降级策略，上游模型一旦限流（`429`）就会导致业务中断。
+Feeding raw financial documents directly into a generic LLM wrapper causes **three fatal production failures**:
+1. **LLM Arithmetic Hallucination**: LLMs excel at semantic extraction, but frequently drift by a few cents when summing multi-page transaction ledgers—breaking month-end book closure.
+2. **Spreadsheet Formula Injection (CSV/Excel CVE)**: Malicious or unvetted transaction memos beginning with `=CMD|...`, `+`, `-`, or `@` execute arbitrary formulas or macros when opened in Microsoft Excel.
+3. **API Stalls & Key Exposure**: Lack of timeouts, exponential backoff, and deterministic fallback leaves pipelines broken on upstream `429` rate limits.
 
-**StatementFlow AI** 采用 **“AI 语义提取 + TypeScript 确定性复式记账平账引擎”** 的混合架构，彻底解决上述工程痛点。
+**StatementFlow AI** enforces a strict **hybrid boundary**: *AI for semantic extraction, TypeScript deterministic state machines for cent-perfect double-entry reconciliation.*
 
 ---
 
-## 2. 全栈系统架构图（双模提取引擎 + 确定性复式平账核验）
+## 2. Full-Stack System Architecture
 
 <p align="center">
   <picture>
@@ -37,51 +36,49 @@
   </picture>
 </p>
 
-> 架构遵循 AgentScope 2.0 工业级全景架构范式，涵盖左侧扫描 OCR/多源单据接入协议与审计工作台、顶部 JSON Schema 校验与财务基础设施、中上部跨境多币种企业财税场景胶囊与品牌核心、中央双模提取引擎与确定性复式平账状态机、右侧平账证明与导出工具链，以及底部运行时可观测体系。支持随 GitHub 主题自动在明亮/暗色模式间切换。
+---
+
+## 3. Core Engineering & AI Safety Baseline
+
+- **Dual-Mode Extraction Engine** (`src/lib/ai-extractor.ts` & `src/lib/heuristic-parser.ts`):
+  - **Zero-Key Deterministic Mode**: No API key required. Built-in regex profiles and adjacent-row running balance differential algorithms parse major bank formats locally in milliseconds.
+  - **Production LLM Routing**: Seamlessly switch between OpenAI, DeepSeek, Qwen, or local `Ollama` with `AbortSignal.timeout`, `429`/`5xx` exponential backoff, SSRF URL validation, and deterministic fallback.
+- **Cent-Perfect Double-Entry Reconciliation** (`computeReconciliation` in `src/lib/schema.ts`):
+  - **Never lets an LLM do math**. Enforces integer-cent arithmetic on `Opening Balance + Total Credits - Total Debits == Closing Balance` with `$0.01` discrepancy pinpointing.
+- **Formula-Injection Safe Exports** (`src/lib/export-utils.ts`):
+  - Neutralizes `=`, `+`, `-`, `@` prefixes before generating multi-sheet SpreadsheetML `.xls` or UTF-8 BOM `.csv` exports.
+- **Commercial Checkout & Timing-Safe Webhooks** (`src/app/api/checkout/route.ts` & `src/app/api/webhook/route.ts`):
+  - Integrated Lemon Squeezy (Merchant of Record) + Stripe Checkout with `crypto.timingSafeEqual` HMAC-SHA256 webhook verification.
 
 ---
 
-## 3. 核心工程能力与 AI 安全基线 (Core Architecture & Safety Baseline)
+## 4. Quick Start & Regression Evaluation
 
-- **双模结构化提取引擎**（`src/lib/ai-extractor.ts` & `src/lib/heuristic-parser.ts`）：
-  - **开箱即用零 Key 模式**：无需配置任何 API Key，内置确定性正则与相邻行余额差分算法即可秒级解析国际主流银行账单。
-  - **生产级大模型接入**：支持在界面内动态切换 OpenAI、DeepSeek、阿里云百炼（通义千问 `Qwen`）或本地 `Ollama`，内置严格超时控制（`AbortSignal.timeout`）、`429`/`5xx` 指数退避重试、SSRF 地址校验与失败自动降级。
-- **分币不差的确定性复式平账引擎**（`computeReconciliation` in `src/lib/schema.ts`）：
-  - **绝不依赖 LLM 做加减法**。所有汇总金额均由 TypeScript 确定性计算，严格校验会计恒等式：`期初余额 (Opening Balance) + 总贷方 (Total Credits) - 总借方 (Total Debits) = 期末余额 (Closing Balance)`，精确到 `$0.01` 美分级差额告警。
-- **防公式注入安全导出**（`src/lib/export-utils.ts`）：
-  - 在生成多工作表 SpreadsheetML `.xls` 或 UTF-8 BOM `.csv` 前，自动对 `=`、`+`、`-`、`@` 前缀进行安全转义，阻断电子表格公式注入攻击。
-- **海外合规商业化闭环**（`src/app/api/checkout/route.ts` & `src/app/api/webhook/route.ts`）：
-  - 内置 **Lemon Squeezy**（Merchant of Record 全球税务代缴）与 **Stripe Checkout** 双通道，并使用 `crypto.timingSafeEqual` 实现抗时序攻击的 HMAC-SHA256 Webhook 签名验真。
-
----
-
-## 4. 快速启动与评测回归 (Quick Start & Evaluation)
-
-### 本地零配置启动
+### Run Locally (Zero Configuration)
 
 ```bash
 npm install
 npm run dev
 ```
 
-浏览器打开 `http://localhost:3000`，系统默认内置 **3 份经过核验的国际标准财务单据样本**，点开即可一键体验完整平账与 Excel 导出流：
-1. **摩根大通商业支票账户对账单** (*JPMorgan Chase Commercial Checking Statement*, `USD`)
-2. **Vercel / Stripe 企业级 SaaS 税票** (*Stripe Enterprise Tax Invoice*, `USD`)
-3. **亚马逊英国站企业采购增值税发票** (*Amazon Business UK VAT Receipt*, `GBP`)
+Open `http://localhost:3000`. Built-in verified financial statement fixtures let you test the entire reconciliation and Excel export pipeline immediately:
+1. **JPMorgan Chase Commercial Checking Statement** (`USD`)
+2. **Stripe / Vercel Enterprise SaaS Tax Invoice** (`USD`)
+3. **Amazon Business UK VAT Receipt** (`GBP`)
 
-### 运行 12 项 AI 安全、平账精度与防注入回归测试集
+### Run the 12-Case Safety, Reconciliation & Injection Test Suite
 
 ```bash
-# 类型检查、Lint 与生产构建校验
+# Type check, lint, and production build verification
 npm run check
 
-# 运行 12 项自动化评测回归套件 (AI 降级、$0.01 平账校验、公式注入拦截)
+# Run the 12-case automated evaluation suite (fallback, $0.01 balancing, formula injection)
 node scripts/eval-extractor.mjs
 ```
 
 ---
 
-## 5. 开源合规声明 (Upstream Attribution & License)
+## 5. Attribution & License
 
-- **基础模板致谢**：前端工程脚手架参考 [`JCodesMore/ai-website-cloner-template`](https://github.com/JCodesMore/ai-website-cloner-template)（Commit `ee3f5a2`，**MIT License**）。
-- **开源协议**：本项目遵循 **MIT License**。
+- **UI Scaffold Attribution**: Frontend scaffold adapted from [`JCodesMore/ai-website-cloner-template`](https://github.com/JCodesMore/ai-website-cloner-template) (Commit `ee3f5a2`, **MIT License**).
+- **License**: **MIT License**.

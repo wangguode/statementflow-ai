@@ -21,9 +21,10 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
-import { SAMPLE_PRESETS } from "@/lib/samples";
+import { SAMPLE_PRESETS, findSampleById } from "@/lib/samples";
 import { PSEO_BANK_ENTRIES, findPseoBankBySlug } from "@/lib/pseo-banks";
 import { computeReconciliation } from "@/lib/schema";
+import { extractWithAISafety } from "@/lib/ai-extractor";
 import {
   buildCsvContent,
   buildExcelWorkbookXml,
@@ -474,18 +475,38 @@ export function StatementWorkbench() {
       });
       clearTimeout(timer);
 
-      if (!res.ok) {
+      let result: ExtractionResult;
+      if (res.status === 404) {
+        // 静态边缘托管（Cloudflare Workers Static Assets）无服务端 API 时，自动切换为浏览器端本地引擎执行
+        const sample =
+          inputMode === "sample" ? findSampleById(selectedSampleId) : undefined;
+        const textToParse = sample ? sample.rawPreviewText : customRawText;
+        const nameToParse = sample
+          ? sample.fileName
+          : uploadedFileName || "statement.txt";
+        result = await extractWithAISafety(
+          textToParse,
+          nameToParse,
+          aiConfig.provider === "openai_compatible"
+            ? {
+                apiKey: aiConfig.apiKey,
+                baseUrl: aiConfig.baseUrl,
+                model: aiConfig.model,
+              }
+            : undefined
+        );
+      } else if (!res.ok) {
         const errData = (await res.json().catch(() => ({}))) as {
           error?: string;
         };
         throw new Error(errData.error || `Extraction failed (${res.status})`);
+      } else {
+        const data = (await res.json()) as {
+          result?: ExtractionResult;
+          rawPreviewText?: string;
+        } & ExtractionResult;
+        result = data.result ?? data;
       }
-
-      const data = (await res.json()) as {
-        result?: ExtractionResult;
-        rawPreviewText?: string;
-      } & ExtractionResult;
-      const result = data.result ?? data;
       setExtraction(result);
 
       if (billing.plan === "free") {

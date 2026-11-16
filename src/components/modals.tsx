@@ -277,6 +277,12 @@ export function CheckoutModal({
       clearTimeout(timer);
 
       if (!res.ok) {
+        if (res.status === 404) {
+          // 静态边缘托管无服务端 API 路由时，自动降级为前端沙盒体验闭环
+          onSuccessActivate(plan, email);
+          onClose();
+          return;
+        }
         throw new Error("Failed to create checkout session");
       }
 

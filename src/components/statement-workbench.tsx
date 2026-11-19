@@ -178,7 +178,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "How does global tax compliance work for Pro and Firm subscriptions?",
-    a: "StatementFlow supports both Lemon Squeezy (acting as Merchant of Record to handle EU VAT, UK VAT, and US state sales tax automatically) and Stripe Checkout with webhook signature verification.",
+    a: "StatementFlow supports both Creem.io (acting as Merchant of Record to handle EU VAT, UK VAT, and US state sales tax automatically) and Stripe Checkout with webhook signature verification.",
   },
 ];
 
@@ -279,8 +279,8 @@ export function StatementWorkbench() {
       return DEFAULT_BILLING;
     }
   });
-  const [gateway, setGateway] = useState<"lemonsqueezy" | "stripe">(
-    "lemonsqueezy"
+  const [gateway, setGateway] = useState<"creem" | "stripe">(
+    "creem"
   );
 
   // 弹窗与交互反馈状态
@@ -1502,8 +1502,8 @@ export function StatementWorkbench() {
               <div>
                 <h2 className="sf-head text-[#111215]">Plans that scale.</h2>
                 <p className="mt-3 text-base text-[#494b52]">
-                  Start immediately in Keyless Demo Mode. Upgrade via Lemon
-                  Squeezy Merchant of Record or Stripe Checkout when your
+                  Start immediately in Keyless Demo Mode. Upgrade via Creem.io
+                  Merchant of Record or Stripe Checkout when your
                   monthly statement volume grows.
                 </p>
               </div>
@@ -1511,14 +1511,14 @@ export function StatementWorkbench() {
               <div className="inline-flex flex-wrap items-center gap-2 rounded-xl bg-[#f5f5f7] p-1.5">
                 <button
                   type="button"
-                  onClick={() => setGateway("lemonsqueezy")}
+                  onClick={() => setGateway("creem")}
                   className={`sf-btn min-h-11 rounded-lg px-4 py-2 text-sm font-semibold ${
-                    gateway === "lemonsqueezy"
+                    gateway === "creem"
                       ? "bg-[#0066cc] text-white"
                       : "text-[#111215]"
                   }`}
                 >
-                  Lemon Squeezy (Global Tax MoR)
+                  Creem.io (Global Tax MoR)
                 </button>
                 <button
                   type="button"
@@ -1803,7 +1803,7 @@ export function StatementWorkbench() {
                       onClick={() => setCheckoutPlan("pro")}
                       className="inline-flex min-h-8 items-center hover:text-white"
                     >
-                      Lemon Squeezy MoR
+                      Creem.io MoR
                     </button>
                   </li>
                   <li>

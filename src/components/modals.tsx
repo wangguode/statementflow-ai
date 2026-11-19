@@ -237,7 +237,7 @@ export function AISettingsModal({
 interface CheckoutModalProps {
   open: boolean;
   plan: Exclude<PlanTier, "free">;
-  gateway: "lemonsqueezy" | "stripe";
+  gateway: "creem" | "stripe";
   onClose: () => void;
   onSuccessActivate: (plan: Exclude<PlanTier, "free">, email: string) => void;
 }
@@ -318,8 +318,8 @@ export function CheckoutModal({
           <div>
             <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#e8e8ed] px-2.5 py-1 text-sm font-medium text-[#111215]">
               <CreditCard className="size-4 text-[#0066cc]" />
-              {gateway === "lemonsqueezy"
-                ? "Lemon Squeezy MoR"
+              {gateway === "creem"
+                ? "Creem.io MoR"
                 : "Stripe Checkout"}
             </span>
             <h2

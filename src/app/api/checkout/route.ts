@@ -19,7 +19,7 @@ const PLAN_METADATA: Record<
 };
 
 /**
- * 海外 SaaS 收款结账接口：优先调用已配置的 Lemon Squeezy (MoR) 或 Stripe Checkout；
+ * 海外 SaaS 收款结账接口：优先调用已配置的 Creem.io (MoR) 或 Stripe Checkout；
  * 若尚未填入商户密钥，自动返回本地沙盒结账会话，方便测试完整付费解锁闭环。
  */
 export async function POST(req: NextRequest) {
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as {
       plan?: string;
       email?: string;
-      gateway?: "lemonsqueezy" | "stripe";
+      gateway?: "creem" | "stripe";
     };
 
     const plan: CheckoutPlan = body.plan === "business" ? "business" : "pro";
@@ -35,49 +35,41 @@ export async function POST(req: NextRequest) {
     const meta = PLAN_METADATA[plan];
     const origin = req.headers.get("origin") || "http://localhost:3000";
 
-    // 1. Lemon Squeezy (推荐个人出海免海外公司 MoR 方案)
-    const lsApiKey = process.env.LEMONSQUEEZY_API_KEY?.trim();
-    const lsStoreId = process.env.LEMONSQUEEZY_STORE_ID?.trim();
-    const lsVariantId =
+    // 1. Creem.io (推荐个人出海免海外公司 MoR 方案，直接支持国内支付宝/银行卡结算)
+    const creemApiKey = process.env.CREEM_API_KEY?.trim();
+    const creemProductId =
       plan === "business"
-        ? process.env.LEMONSQUEEZY_VARIANT_BUSINESS?.trim()
-        : process.env.LEMONSQUEEZY_VARIANT_PRO?.trim();
+        ? process.env.CREEM_PRODUCT_ID_BUSINESS?.trim() ||
+          process.env.CREEM_PRODUCT_ID_PRO?.trim()
+        : process.env.CREEM_PRODUCT_ID_PRO?.trim();
 
-    if (lsApiKey && lsStoreId && lsVariantId && body.gateway !== "stripe") {
-      const lsRes = await fetch("https://api.lemonsqueezy.com/v1/checkouts", {
+    if (creemApiKey && creemProductId && body.gateway !== "stripe") {
+      const creemPayload: Record<string, unknown> = {
+        product_id: creemProductId,
+        success_url: `${origin}/?checkout=success&plan=${plan}`,
+        request_id: `sf_${plan}_${Date.now()}`,
+        metadata: { plan },
+      };
+      if (customerEmail) {
+        creemPayload.customer = { email: customerEmail };
+      }
+
+      const creemRes = await fetch("https://api.creem.io/v1/checkouts", {
         method: "POST",
         headers: {
-          Accept: "application/vnd.api+json",
-          "Content-Type": "application/vnd.api+json",
-          Authorization: `Bearer ${lsApiKey}`,
+          "x-api-key": creemApiKey,
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          data: {
-            type: "checkouts",
-            attributes: {
-              checkout_data: customerEmail ? { email: customerEmail } : {},
-              product_options: {
-                redirect_url: `${origin}/?checkout=success&plan=${plan}`,
-              },
-            },
-            relationships: {
-              store: { data: { type: "stores", id: lsStoreId } },
-              variant: { data: { type: "variants", id: lsVariantId } },
-            },
-          },
-        }),
+        body: JSON.stringify(creemPayload),
       });
 
-      if (lsRes.ok) {
-        const lsData = (await lsRes.json()) as {
-          data?: { attributes?: { url?: string } };
-        };
-        const checkoutUrl = lsData.data?.attributes?.url;
-        if (checkoutUrl) {
+      if (creemRes.ok) {
+        const creemData = (await creemRes.json()) as { checkout_url?: string };
+        if (creemData.checkout_url) {
           return NextResponse.json({
             mode: "live_redirect",
-            gateway: "Lemon Squeezy",
-            checkoutUrl,
+            gateway: "Creem.io",
+            checkoutUrl: creemData.checkout_url,
           });
         }
       }
@@ -129,7 +121,7 @@ export async function POST(req: NextRequest) {
     // 3. 本地沙盒模式（未配置真实收款 Key 时可直接走通订阅升级体验）
     return NextResponse.json({
       mode: "sandbox",
-      gateway: body.gateway === "stripe" ? "Stripe Sandbox" : "Lemon Squeezy MoR Sandbox",
+      gateway: body.gateway === "stripe" ? "Stripe Sandbox" : "Creem.io MoR Sandbox",
       plan,
       planName: meta.name,
       amountUsd: meta.monthlyUsd,

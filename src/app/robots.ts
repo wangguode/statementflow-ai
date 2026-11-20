@@ -5,7 +5,7 @@ export const dynamic = "force-static";
 export default function robots(): MetadataRoute.Robots {
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    "https://statementflow.ai";
+    "https://statementflow.win";
 
   return {
     rules: {

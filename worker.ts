@@ -156,12 +156,49 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
   });
 }
 
+async function handleVerifyCheckout(request: Request, env: Env): Promise<Response> {
+  const checkoutId = new URL(request.url).searchParams.get("checkout_id")?.trim();
+  const creemApiKey = env.CREEM_API_KEY?.trim();
+
+  if (!checkoutId || !creemApiKey) {
+    return jsonResponse({ verified: false, error: "Missing checkout_id or API key" }, 400);
+  }
+
+  try {
+    const res = await fetch(
+      `https://api.creem.io/v1/checkouts?checkout_id=${encodeURIComponent(checkoutId)}`,
+      { headers: { "x-api-key": creemApiKey } }
+    );
+    if (!res.ok) {
+      return jsonResponse({ verified: false, status: "unverified" }, 402);
+    }
+    const data = (await res.json()) as {
+      id?: string;
+      status?: string;
+      metadata?: { plan?: string };
+    };
+    const verified = data.status === "completed";
+    return jsonResponse({
+      verified,
+      status: data.status || "unknown",
+      checkoutId: data.id,
+      plan: data.metadata?.plan || "pro",
+    });
+  } catch {
+    return jsonResponse({ verified: false, error: "Verification failed" }, 500);
+  }
+}
+
 const worker = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const { pathname } = new URL(request.url);
 
     if (pathname === "/api/checkout" && request.method === "POST") {
       return handleCheckout(request, env);
+    }
+
+    if (pathname === "/api/verify-checkout" && request.method === "GET") {
+      return handleVerifyCheckout(request, env);
     }
 
     if (pathname === "/api/webhook" && request.method === "POST") {

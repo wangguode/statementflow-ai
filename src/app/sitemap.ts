@@ -6,7 +6,7 @@ export const dynamic = "force-static";
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    "https://statementflow.ai";
+    "https://statementflow.win";
 
   const now = new Date();
 

@@ -299,6 +299,57 @@ export function StatementWorkbench() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const pressVideoRef = useRef<HTMLVideoElement | null>(null);
 
+  // Creem 支付成功回跳时，通过服务端 /api/verify-checkout 核验订单真实性后再持久解锁
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const checkoutId = params.get("checkout_id");
+    if (params.get("checkout") !== "success" || !checkoutId) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/verify-checkout?checkout_id=${encodeURIComponent(checkoutId)}`
+        );
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          verified?: boolean;
+          plan?: string;
+        };
+        if (data.verified && !cancelled) {
+          const unlockedPlan: PlanTier =
+            data.plan === "business" ? "business" : "pro";
+          setBilling((prev) => {
+            const next: BillingState = {
+              ...prev,
+              plan: unlockedPlan,
+            };
+            localStorage.setItem(STORAGE_KEY_BILLING, JSON.stringify(next));
+            return next;
+          });
+          setStatusNotice(
+            `Payment verified via Creem.io — ${unlockedPlan.toUpperCase()} license is now active.`
+          );
+          params.delete("checkout");
+          params.delete("checkout_id");
+          params.delete("plan");
+          const nextSearch = params.toString();
+          window.history.replaceState(
+            {},
+            "",
+            nextSearch ? `${window.location.pathname}?${nextSearch}` : window.location.pathname
+          );
+        }
+      } catch {
+        // 静默忽略瞬时网络异常
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // 滚动揭示动画 + 顶栏色彩随章节自适应 + 视频可见性播放控制
   useEffect(() => {
     const revealNodes = Array.from(
@@ -1651,6 +1702,27 @@ export function StatementWorkbench() {
                   <span className="tabular-nums">$49/mo</span>
                 </button>
               </div>
+            </div>
+
+            {/* B2B 高客单价：企业内网私有化与定制部署入口 */}
+            <div className="mt-10 flex flex-col justify-between gap-6 rounded-2xl border border-[#2a3142] bg-[#141720] p-8 sm:flex-row sm:items-center">
+              <div className="max-w-2xl">
+                <div className="text-xs font-semibold uppercase tracking-wider text-[#66b3ff]">
+                  Enterprise Self-Hosted · Starting at $2,500
+                </div>
+                <h3 className="mt-1.5 text-xl font-semibold text-white">
+                  Need an air-gapped Docker deployment or custom bank layout parser?
+                </h3>
+                <p className="mt-2 text-sm text-[#a0a6b5]">
+                  Deploy StatementFlow inside your private VPC with zero external data egress, dedicated batch throughput, custom ERP/QuickBooks schemas, and SLA engineering support.
+                </p>
+              </div>
+              <a
+                href="mailto:17768113090@163.com?subject=StatementFlow%20Enterprise%20Self-Hosted%20Inquiry"
+                className="sf-btn inline-flex min-h-12 shrink-0 items-center justify-center rounded-xl bg-white px-6 text-sm font-semibold text-[#0a0b0e] hover:bg-[#e8e8ed]"
+              >
+                Request Enterprise Quote
+              </a>
             </div>
           </div>
         </section>

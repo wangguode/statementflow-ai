@@ -472,18 +472,33 @@ export function StatementWorkbench() {
     setInputMode("upload");
 
     if (file.name.toLowerCase().endsWith(".pdf")) {
-      const buffer = await file.arrayBuffer();
-      const bytes = new Uint8Array(buffer);
-      let binary = "";
-      for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
+      setStatusNotice(`Parsing PDF "${file.name}" locally in your browser...`);
+      try {
+        const buffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        const { extractTextFromPdfBytes } = await import("@/lib/client-pdf");
+        const { text, pages } = await extractTextFromPdfBytes(bytes);
+
+        if (text.trim().length > 20) {
+          setUploadedPdfBase64("");
+          setCustomRawText(text);
+          setStatusNotice(
+            `Parsed ${pages} page(s) from "${file.name}" locally. Click "Run Extraction" to reconcile.`
+          );
+        } else {
+          setUploadedPdfBase64("");
+          setCustomRawText("");
+          setStatusNotice(
+            `No selectable text found in "${file.name}" (may be a scanned image PDF).`
+          );
+        }
+      } catch {
+        setUploadedPdfBase64("");
+        setCustomRawText("");
+        setStatusNotice(
+          `Unable to read "${file.name}". Please ensure it is not password-protected.`
+        );
       }
-      const base64 = btoa(binary);
-      setUploadedPdfBase64(base64);
-      setCustomRawText(
-        `[PDF Binary Attached: ${file.name} (${(file.size / 1024).toFixed(1)} KB)]\nClick "Run Extraction" to parse transactions and verify reconciliation.`
-      );
-      setStatusNotice(`Attached PDF "${file.name}". Ready to extract.`);
     } else {
       const text = await file.text();
       setUploadedPdfBase64("");

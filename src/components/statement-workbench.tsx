@@ -1836,6 +1836,16 @@ export function StatementWorkbench() {
                       Archival Ledger Proof
                     </a>
                   </li>
+                  <li>
+                    <a
+                      href="https://www.creem.io/affiliates/statementflow"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-8 items-center text-[#66b3ff] hover:text-white"
+                    >
+                      Affiliates (30% Commission)
+                    </a>
+                  </li>
                 </ul>
               </div>
 

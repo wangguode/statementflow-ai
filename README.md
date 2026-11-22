@@ -3,14 +3,20 @@
 # 📊 StatementFlow AI // Deterministic Financial Statement Parser & Double-Entry Audit Engine
 ### B2B PDF Bank Statement & Tax Invoice to Verified Excel Micro-SaaS ($0.01 Cent-Perfect Reconciliation)
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-Cloudflare_Workers-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://statementflow-ai.153557421.workers.dev)
+[![Live App](https://img.shields.io/badge/Live_App-statementflow.win-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://statementflow.win)
 [![Next.js](https://img.shields.io/badge/Stack-Next.js_+_TypeScript-000000?style=flat-square&logo=next.js&logoColor=white)](https://github.com/wangguode/statementflow-ai)
-[![Reconciliation](https://img.shields.io/badge/Reconciliation-$0.01_Deterministic-10B981?style=flat-square)](https://statementflow-ai.153557421.workers.dev)
+[![Reconciliation](https://img.shields.io/badge/Reconciliation-$0.00_Deterministic-10B981?style=flat-square)](https://statementflow.win)
+[![Banks](https://img.shields.io/badge/Banks_&_Ledgers-105+_Formats-0066CC?style=flat-square)](https://statementflow.win/sitemap.xml)
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](./LICENSE)
 
-**🇺🇸 English** | [🇨🇳 简体中文](./README.zh-CN.md) · [🌐 Live Demo](https://statementflow-ai.153557421.workers.dev) · [📖 Architecture Deep-Dive (DEV.to)](https://dev.to/wangguode/the-001-deterministic-ledger-why-you-should-never-let-llms-do-financial-math-f7i) · [🧩 Zhishu Agent](https://github.com/wangguode/zhishu-agent)
+**🇺🇸 English** | [🇨🇳 简体中文](./README.zh-CN.md) · [🌐 Live App (`statementflow.win`)](https://statementflow.win) · [🤝 30% Affiliate Program](https://www.creem.io/affiliates/statementflow) · [📖 Zero-Upload Deep-Dive (DEV.to)](https://dev.to/wangguode/zero-upload-bank-statement-parsing-why-we-moved-pdf-extraction-100-client-side-1lhp)
 
 </div>
+
+> **Key Capabilities (v2.1)**:
+> - 🔒 **100% Browser-Local Batch Multi-PDF Parsing (`pdfjs-dist`)**: Drop multiple monthly PDFs at once—text extraction runs locally in your browser tab with zero server file uploads.
+> - 🤖 **Hybrid Edge AI Precision Extraction (`/api/extract`)**: Server-side LLM structured extraction (no user API key required) paired with deterministic cent-level reconciliation (`Opening + Credits - Debits === Ending` to `$0.00`).
+> - 🌍 **105+ Bank & Accounting Formats**: Dedicated converters for US, UK, Canada, Australia/NZ, Europe & APAC banks plus QuickBooks, Xero, Wave, Sage, NetSuite, Actual Budget & Firefly III.
 
 ---
 

@@ -3,6 +3,7 @@
 # 📊 StatementFlow AI // Deterministic Financial Statement Parser & Double-Entry Audit Engine
 ### B2B PDF Bank Statement & Tax Invoice to Verified Excel Micro-SaaS ($0.01 Cent-Perfect Reconciliation)
 
+[![Product Hunt](https://img.shields.io/badge/Product_Hunt-Live_Today-DA552F?style=flat-square&logo=producthunt&logoColor=white)](https://www.producthunt.com/products/statementflow-ai-2/launches/statementflow-ai-2)
 [![Live App](https://img.shields.io/badge/Live_App-statementflow.win-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://statementflow.win)
 [![Next.js](https://img.shields.io/badge/Stack-Next.js_+_TypeScript-000000?style=flat-square&logo=next.js&logoColor=white)](https://github.com/wangguode/statementflow-ai)
 [![Reconciliation](https://img.shields.io/badge/Reconciliation-$0.00_Deterministic-10B981?style=flat-square)](https://statementflow.win)

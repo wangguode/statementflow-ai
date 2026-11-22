@@ -13,6 +13,9 @@ interface Env {
   CREEM_PRODUCT_ID_PRO?: string;
   CREEM_PRODUCT_ID_BUSINESS?: string;
   CREEM_WEBHOOK_SECRET?: string;
+  AI_API_KEY?: string;
+  AI_BASE_URL?: string;
+  AI_MODEL?: string;
 }
 
 const PLAN_METADATA = {
@@ -189,9 +192,200 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
   }
 }
 
+async function handleExtract(request: Request, env: Env): Promise<Response> {
+  const startTime = Date.now();
+  try {
+    const body = (await request.json()) as {
+      rawText?: string;
+      fileName?: string;
+      aiConfig?: {
+        provider?: "demo" | "openai_compatible";
+        apiKey?: string;
+        baseUrl?: string;
+        model?: string;
+      };
+    };
+
+    const rawText = (body.rawText || "").trim();
+    const fileName = (body.fileName || "statement.pdf").trim();
+    if (!rawText || rawText.length < 10) {
+      return jsonResponse({ error: "Document text is empty or too short." }, 400);
+    }
+
+    const effectiveKey =
+      (body.aiConfig?.provider === "openai_compatible"
+        ? body.aiConfig.apiKey?.trim()
+        : "") ||
+      env.AI_API_KEY?.trim() ||
+      "";
+    const effectiveBaseUrl = (
+      (body.aiConfig?.provider === "openai_compatible"
+        ? body.aiConfig.baseUrl?.trim()
+        : "") ||
+      env.AI_BASE_URL?.trim() ||
+      "https://maas.qianwenaiapi.com/compatible-mode/v1"
+    ).replace(/\/+$/, "");
+    const effectiveModel = (
+      (body.aiConfig?.provider === "openai_compatible"
+        ? body.aiConfig.model?.trim()
+        : "") ||
+      env.AI_MODEL?.trim() ||
+      "qwen-plus"
+    ).trim();
+
+    if (!effectiveKey) {
+      return jsonResponse(
+        { error: "Cloud AI Engine is not configured on this worker." },
+        503
+      );
+    }
+
+    const systemPrompt = `You are a deterministic financial statement extraction engine.
+Return ONLY a valid JSON object matching this exact schema (no markdown fences, no prose):
+{
+  "documentTitle": "string",
+  "documentType": "bank_statement" | "saas_invoice" | "vat_receipt",
+  "institution": "string",
+  "accountOrInvoiceNumber": "string",
+  "statementPeriod": "string",
+  "currency": "USD" | "GBP" | "EUR" | "CAD" | "AUD" | "SGD" | "HKD",
+  "openingBalance": number,
+  "closingBalance": number,
+  "transactions": [
+    {
+      "id": "tx_1",
+      "date": "YYYY-MM-DD",
+      "description": "string",
+      "merchant": "string",
+      "category": "Revenue & Payouts" | "Cloud & SaaS" | "Payroll & Contractors" | "Office & Operations" | "Marketing & Ads" | "Travel & Meals" | "Taxes & Fees" | "Equipment & Hardware" | "Transfer" | "Uncategorized",
+      "type": "credit" | "debit",
+      "amount": number (positive),
+      "signedAmount": number (+ for credit, - for debit),
+      "confidence": number (0.5 to 1.0)
+    }
+  ]
+}
+Rules:
+1. Extract EVERY single transaction line accurately. Never drop wrapped lines.
+2. Ensure openingBalance + sum(credits) - sum(debits) matches closingBalance to the exact cent.
+3. All amounts must be numeric floats rounded to 2 decimal places.`;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 24000);
+
+    let llmRes: Response;
+    try {
+      llmRes = await fetch(`${effectiveBaseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${effectiveKey}`,
+        },
+        body: JSON.stringify({
+          model: effectiveModel,
+          temperature: 0,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: systemPrompt },
+            {
+              role: "user",
+              content: `File: ${fileName}\n\nStatement Text:\n${rawText.slice(0, 48000)}`,
+            },
+          ],
+        }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    if (!llmRes.ok) {
+      return jsonResponse(
+        { error: `AI provider returned HTTP ${llmRes.status}` },
+        502
+      );
+    }
+
+    const llmJson = (await llmRes.json()) as {
+      choices?: { message?: { content?: string } }[];
+    };
+    const content = llmJson.choices?.[0]?.message?.content?.trim() || "";
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return jsonResponse({ error: "AI returned non-JSON payload." }, 502);
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
+    const rawTxs = Array.isArray(parsed.transactions) ? parsed.transactions : [];
+    const transactions = rawTxs.map((tx: Record<string, unknown>, idx: number) => {
+      const type = tx.type === "credit" ? "credit" : "debit";
+      const amount = Math.round(Math.abs(Number(tx.amount) || 0) * 100) / 100;
+      const signedAmount = type === "credit" ? amount : -amount;
+      return {
+        id: String(tx.id || `tx_${idx + 1}`),
+        date: String(tx.date || new Date().toISOString().slice(0, 10)),
+        description: String(tx.description || "Transaction"),
+        merchant: String(tx.merchant || tx.description || "Merchant"),
+        category: String(tx.category || "Uncategorized"),
+        type,
+        amount,
+        signedAmount,
+        confidence: Math.min(1, Math.max(0.5, Number(tx.confidence) || 0.94)),
+      };
+    });
+
+    const openingCents = Math.round((Number(parsed.openingBalance) || 0) * 100);
+    const closingCents = Math.round((Number(parsed.closingBalance) || 0) * 100);
+    let creditsCents = 0;
+    let debitsCents = 0;
+    for (const tx of transactions) {
+      if (tx.type === "credit") creditsCents += Math.round(tx.amount * 100);
+      else debitsCents += Math.round(tx.amount * 100);
+    }
+    const calculatedClosingCents = openingCents + creditsCents - debitsCents;
+    const discrepancyCents = calculatedClosingCents - closingCents;
+
+    const result = {
+      documentTitle: String(parsed.documentTitle || fileName),
+      documentType: String(parsed.documentType || "bank_statement"),
+      institution: String(parsed.institution || "Financial Institution"),
+      accountOrInvoiceNumber: String(parsed.accountOrInvoiceNumber || "N/A"),
+      statementPeriod: String(parsed.statementPeriod || "Statement Period"),
+      currency: String(parsed.currency || "USD"),
+      transactions,
+      reconciliation: {
+        openingBalance: openingCents / 100,
+        closingBalance: closingCents / 100,
+        totalCredits: creditsCents / 100,
+        totalDebits: debitsCents / 100,
+        netCashflow: (creditsCents - debitsCents) / 100,
+        calculatedClosingBalance: calculatedClosingCents / 100,
+        discrepancy: discrepancyCents / 100,
+        isBalanced: Math.abs(discrepancyCents) === 0,
+      },
+      meta: {
+        modeUsed: "llm_verified",
+        providerName: "StatementFlow Cloud AI",
+        modelName: effectiveModel,
+        latencyMs: Date.now() - startTime,
+        warnings: [],
+      },
+    };
+
+    return jsonResponse({ result });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "AI extraction error";
+    return jsonResponse({ error: msg }, 500);
+  }
+}
+
 const worker = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const { pathname } = new URL(request.url);
+
+    if (pathname === "/api/extract" && request.method === "POST") {
+      return handleExtract(request, env);
+    }
 
     if (pathname === "/api/checkout" && request.method === "POST") {
       return handleCheckout(request, env);

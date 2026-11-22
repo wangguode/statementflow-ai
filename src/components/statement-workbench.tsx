@@ -464,46 +464,69 @@ export function StatementWorkbench() {
     setStatusNotice(`Loaded verified sample: ${preset.name}`);
   }
 
-  // 处理本地文件上传 (.pdf, .csv, .txt)
+  // 处理本地单文件或多文件批量上传 (.pdf, .csv, .txt)，全部在浏览器端 100% 本地提取
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadedFileName(file.name);
+    const fileList = Array.from(e.target.files || []);
+    if (fileList.length === 0) return;
+
+    const batchLabel =
+      fileList.length === 1
+        ? fileList[0].name
+        : `${fileList.length} files (${fileList[0].name} +${fileList.length - 1} more)`;
+    setUploadedFileName(batchLabel);
     setInputMode("upload");
+    setUploadedPdfBase64("");
 
-    if (file.name.toLowerCase().endsWith(".pdf")) {
-      setStatusNotice(`Parsing PDF "${file.name}" locally in your browser...`);
-      try {
-        const buffer = await file.arrayBuffer();
-        const bytes = new Uint8Array(buffer);
-        const { extractTextFromPdfBytes } = await import("@/lib/client-pdf");
-        const { text, pages } = await extractTextFromPdfBytes(bytes);
+    setStatusNotice(
+      `Parsing ${fileList.length} statement file(s) 100% locally in your browser...`
+    );
 
-        if (text.trim().length > 20) {
-          setUploadedPdfBase64("");
-          setCustomRawText(text);
-          setStatusNotice(
-            `Parsed ${pages} page(s) from "${file.name}" locally. Click "Run Extraction" to reconcile.`
-          );
-        } else {
-          setUploadedPdfBase64("");
-          setCustomRawText("");
-          setStatusNotice(
-            `No selectable text found in "${file.name}" (may be a scanned image PDF).`
-          );
+    const combinedChunks: string[] = [];
+    let totalPages = 0;
+    let parsedCount = 0;
+    let failedCount = 0;
+
+    for (const file of fileList) {
+      if (file.name.toLowerCase().endsWith(".pdf")) {
+        try {
+          const buffer = await file.arrayBuffer();
+          const bytes = new Uint8Array(buffer);
+          const { extractTextFromPdfBytes } = await import("@/lib/client-pdf");
+          const { text, pages } = await extractTextFromPdfBytes(bytes);
+          if (text.trim().length > 20) {
+            combinedChunks.push(`=== FILE: ${file.name} ===\n${text}`);
+            totalPages += pages;
+            parsedCount += 1;
+          } else {
+            failedCount += 1;
+          }
+        } catch {
+          failedCount += 1;
         }
-      } catch {
-        setUploadedPdfBase64("");
-        setCustomRawText("");
-        setStatusNotice(
-          `Unable to read "${file.name}". Please ensure it is not password-protected.`
-        );
+      } else {
+        const text = await file.text();
+        if (text.trim().length > 0) {
+          combinedChunks.push(`=== FILE: ${file.name} ===\n${text}`);
+          totalPages += 1;
+          parsedCount += 1;
+        }
       }
+    }
+
+    if (combinedChunks.length > 0) {
+      setCustomRawText(combinedChunks.join("\n\n"));
+      const warnSuffix =
+        failedCount > 0
+          ? ` (${failedCount} file(s) had no selectable text / may be scanned).`
+          : "";
+      setStatusNotice(
+        `Parsed ${parsedCount} file(s) (${totalPages} total page(s)) locally in browser. Click "Run Extraction" to reconcile.${warnSuffix}`
+      );
     } else {
-      const text = await file.text();
-      setUploadedPdfBase64("");
-      setCustomRawText(text);
-      setStatusNotice(`Loaded text from "${file.name}". Ready to extract.`);
+      setCustomRawText("");
+      setStatusNotice(
+        `No selectable text found in the uploaded file(s). Please ensure PDFs are text-based and not password-protected.`
+      );
     }
   }
 
@@ -1040,6 +1063,7 @@ export function StatementWorkbench() {
                 <input
                   ref={fileInputRef}
                   type="file"
+                  multiple
                   accept=".pdf,.txt,.csv"
                   onChange={handleFileChange}
                   className="hidden"

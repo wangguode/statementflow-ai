@@ -401,9 +401,37 @@ Rules:
   }
 }
 
+async function handleEvent(request: Request): Promise<Response> {
+  try {
+    const body = (await request.json()) as {
+      event?: string;
+      meta?: Record<string, string | number | boolean>;
+    };
+    const eventName = String(body.event || "unknown").slice(0, 48);
+    const country = request.headers.get("cf-ipcountry") || "XX";
+    // 仅记录匿名漏斗事件与国家码，绝不记录 IP、邮箱或任何财务文件内容
+    console.log(
+      JSON.stringify({
+        tag: "funnel",
+        event: eventName,
+        country,
+        meta: body.meta || {},
+        ts: new Date().toISOString(),
+      })
+    );
+    return jsonResponse({ ok: true });
+  } catch {
+    return jsonResponse({ ok: false }, 400);
+  }
+}
+
 const worker = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const { pathname } = new URL(request.url);
+
+    if (pathname === "/api/event" && request.method === "POST") {
+      return handleEvent(request);
+    }
 
     if (pathname === "/api/extract" && request.method === "POST") {
       return handleExtract(request, env);

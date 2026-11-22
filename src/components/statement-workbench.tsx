@@ -54,9 +54,37 @@ const DEFAULT_AI_CONFIG: AIConfigSettings = {
 
 const DEFAULT_BILLING: BillingState = {
   plan: "free",
-  creditsUsed: 1,
+  creditsUsed: 0,
   creditsLimit: 3,
 };
+
+/**
+ * 零 Cookie、零个人数据的轻量转化漏斗埋点，用于监控 Upload -> Extract -> Export -> Checkout 流失率
+ */
+function trackFunnelEvent(
+  event: string,
+  meta?: Record<string, string | number | boolean>
+) {
+  if (typeof window === "undefined") return;
+  try {
+    const payload = JSON.stringify({ event, meta });
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(
+        "/api/event",
+        new Blob([payload], { type: "application/json" })
+      );
+    } else {
+      fetch("/api/event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+        keepalive: true,
+      }).catch(() => {});
+    }
+  } catch {
+    // 埋点失败不影响主流程
+  }
+}
 
 const ALL_CATEGORIES: TransactionCategory[] = [
   "Revenue & Payouts",
@@ -550,6 +578,11 @@ export function StatementWorkbench() {
     if (combinedChunks.length > 0) {
       setCustomRawText(combinedChunks.join("\n\n"));
       setUploadedPageImages([]);
+      trackFunnelEvent("upload_files", {
+        files: parsedCount,
+        pages: totalPages,
+        mode: "text",
+      });
       const warnSuffix =
         failedCount > 0
           ? ` (${failedCount} file(s) could not be read).`
@@ -560,6 +593,11 @@ export function StatementWorkbench() {
     } else if (scannedImages.length > 0) {
       setCustomRawText("");
       setUploadedPageImages(scannedImages);
+      trackFunnelEvent("upload_files", {
+        files: parsedCount,
+        pages: scannedImages.length,
+        mode: "vision_ocr",
+      });
       setStatusNotice(
         `Detected scanned PDF / image (${scannedImages.length} page(s) ready for Vision AI OCR). Click "Run Extraction" to parse and reconcile.`
       );
@@ -578,6 +616,7 @@ export function StatementWorkbench() {
       billing.plan === "free" &&
       billing.creditsUsed >= billing.creditsLimit
     ) {
+      trackFunnelEvent("paywall_hit", { creditsUsed: billing.creditsUsed });
       setCheckoutPlan("pro");
       return;
     }
@@ -641,6 +680,16 @@ export function StatementWorkbench() {
         result = data.result ?? data;
       }
       setExtraction(result);
+      trackFunnelEvent(
+        result.reconciliation.isBalanced
+          ? "extract_balanced"
+          : "extract_unbalanced",
+        {
+          txCount: result.transactions.length,
+          currency: result.currency,
+          mode: result.meta.modeUsed,
+        }
+      );
 
       if (billing.plan === "free") {
         const nextBilling: BillingState = {
@@ -755,6 +804,7 @@ export function StatementWorkbench() {
 
   // 导出处理函数
   function handleExportCsv() {
+    trackFunnelEvent("export_csv", { txCount: extraction.transactions.length });
     const csv = buildCsvContent(extraction);
     const safeName = extraction.accountOrInvoiceNumber.replace(
       /[^a-zA-Z0-9_-]/g,
@@ -768,6 +818,9 @@ export function StatementWorkbench() {
   }
 
   function handleExportExcel() {
+    trackFunnelEvent("export_excel", {
+      txCount: extraction.transactions.length,
+    });
     const xml = buildExcelWorkbookXml(extraction);
     const safeName = extraction.accountOrInvoiceNumber.replace(
       /[^a-zA-Z0-9_-]/g,
@@ -781,6 +834,9 @@ export function StatementWorkbench() {
   }
 
   function handleExportQuickBooks() {
+    trackFunnelEvent("export_quickbooks", {
+      txCount: extraction.transactions.length,
+    });
     const csv = buildQuickBooksCsvContent(extraction);
     const safeName = extraction.accountOrInvoiceNumber.replace(
       /[^a-zA-Z0-9_-]/g,
@@ -794,6 +850,7 @@ export function StatementWorkbench() {
   }
 
   function handleExportXero() {
+    trackFunnelEvent("export_xero", { txCount: extraction.transactions.length });
     const csv = buildXeroCsvContent(extraction);
     const safeName = extraction.accountOrInvoiceNumber.replace(
       /[^a-zA-Z0-9_-]/g,

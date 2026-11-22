@@ -1935,7 +1935,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Lloyds Bank UK PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Lloyds Bank UK Statement Formatting",
     statementQuirkDescription:
-      "Lloyds Bank UK PDF statements often contain UK DD/MM/YY dates, BACS/Faster Payments codes, and Money In/Money Out columns. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Lloyds Bank UK PDF statements often contain UK DD/MM/YY dates, BACS/Faster Payments codes, and Money In/Money Out columns. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to £0.00.",
     supportedAccountTypes: [
       "Lloyds Business & Current Account",
       "Lloyds Bank UK Monthly & Historical Archive PDFs",
@@ -1954,7 +1954,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Lloyds Bank UK PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (£0.00 discrepancy).",
       },
     ],
   },
@@ -1971,7 +1971,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert NatWest UK PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling NatWest UK Statement Formatting",
     statementQuirkDescription:
-      "NatWest UK PDF statements often contain multi-line POS/FPO/BAC descriptions and blank date carry-forward rows. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "NatWest UK PDF statements often contain multi-line POS/FPO/BAC descriptions and blank date carry-forward rows. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to £0.00.",
     supportedAccountTypes: [
       "NatWest Business & Personal Current",
       "NatWest UK Monthly & Historical Archive PDFs",
@@ -1990,7 +1990,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my NatWest UK PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (£0.00 discrepancy).",
       },
     ],
   },
@@ -2007,7 +2007,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Royal Bank of Scotland (RBS) PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Royal Bank of Scotland (RBS) Statement Formatting",
     statementQuirkDescription:
-      "Royal Bank of Scotland (RBS) PDF statements often contain same-day grouped dates and separate Paid In / Withdrawn columns. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Royal Bank of Scotland (RBS) PDF statements often contain same-day grouped dates and separate Paid In / Withdrawn columns. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to £0.00.",
     supportedAccountTypes: [
       "RBS Business Current Accounts",
       "Royal Bank of Scotland (RBS) Monthly & Historical Archive PDFs",
@@ -2026,7 +2026,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Royal Bank of Scotland (RBS) PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (£0.00 discrepancy).",
       },
     ],
   },
@@ -2043,7 +2043,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Halifax UK PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Halifax UK Statement Formatting",
     statementQuirkDescription:
-      "Halifax UK PDF statements often contain abbreviated transaction type codes (DEB, FPI, DD) and running GBP balances. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Halifax UK PDF statements often contain abbreviated transaction type codes (DEB, FPI, DD) and running GBP balances. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to £0.00.",
     supportedAccountTypes: [
       "Halifax Current & Reward Accounts",
       "Halifax UK Monthly & Historical Archive PDFs",
@@ -2062,7 +2062,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Halifax UK PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (£0.00 discrepancy).",
       },
     ],
   },
@@ -2079,7 +2079,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Santander UK PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Santander UK Statement Formatting",
     statementQuirkDescription:
-      "Santander UK PDF statements often contain wrapped card payment descriptions and multi-page statement balance blocks. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Santander UK PDF statements often contain wrapped card payment descriptions and multi-page statement balance blocks. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to £0.00.",
     supportedAccountTypes: [
       "Santander 1|2|3 & Business Current",
       "Santander UK Monthly & Historical Archive PDFs",
@@ -2098,7 +2098,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Santander UK PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (£0.00 discrepancy).",
       },
     ],
   },
@@ -2115,7 +2115,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Nationwide Building Society PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Nationwide Building Society Statement Formatting",
     statementQuirkDescription:
-      "Nationwide Building Society PDF statements often contain UK date formats and split Out/In columns with multi-line payee details. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Nationwide Building Society PDF statements often contain UK date formats and split Out/In columns with multi-line payee details. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to £0.00.",
     supportedAccountTypes: [
       "Nationwide FlexAccount & FlexPlus",
       "Nationwide Building Society Monthly & Historical Archive PDFs",
@@ -2134,7 +2134,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Nationwide Building Society PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (£0.00 discrepancy).",
       },
     ],
   },
@@ -2151,7 +2151,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Tide Business UK PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Tide Business UK Statement Formatting",
     statementQuirkDescription:
-      "Tide Business UK PDF statements often contain FPS payment references, invoice tags, and VAT-ready GBP amounts. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Tide Business UK PDF statements often contain FPS payment references, invoice tags, and VAT-ready GBP amounts. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to £0.00.",
     supportedAccountTypes: [
       "Tide UK SME Business Accounts",
       "Tide Business UK Monthly & Historical Archive PDFs",
@@ -2170,7 +2170,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Tide Business UK PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (£0.00 discrepancy).",
       },
     ],
   },
@@ -2187,7 +2187,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Metro Bank UK PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Metro Bank UK Statement Formatting",
     statementQuirkDescription:
-      "Metro Bank UK PDF statements often contain multi-column Money Out / Money In tables and FX fee sub-rows. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Metro Bank UK PDF statements often contain multi-column Money Out / Money In tables and FX fee sub-rows. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to £0.00.",
     supportedAccountTypes: [
       "Metro Bank Business Current Account",
       "Metro Bank UK Monthly & Historical Archive PDFs",
@@ -2206,7 +2206,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Metro Bank UK PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (£0.00 discrepancy).",
       },
     ],
   },
@@ -2223,7 +2223,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert TSB Bank UK PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling TSB Bank UK Statement Formatting",
     statementQuirkDescription:
-      "TSB Bank UK PDF statements often contain UK DD MMM YY dates and abbreviated payment channel prefixes. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "TSB Bank UK PDF statements often contain UK DD MMM YY dates and abbreviated payment channel prefixes. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to £0.00.",
     supportedAccountTypes: [
       "TSB Spend & Save / Business Plus",
       "TSB Bank UK Monthly & Historical Archive PDFs",
@@ -2242,7 +2242,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my TSB Bank UK PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (£0.00 discrepancy).",
       },
     ],
   },
@@ -2259,7 +2259,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Virgin Money UK PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Virgin Money UK Statement Formatting",
     statementQuirkDescription:
-      "Virgin Money UK PDF statements often contain grouped daily debits, Direct Debits, and running balance verification. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Virgin Money UK PDF statements often contain grouped daily debits, Direct Debits, and running balance verification. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to £0.00.",
     supportedAccountTypes: [
       "Virgin Money M Plus & Business Current",
       "Virgin Money UK Monthly & Historical Archive PDFs",
@@ -2278,7 +2278,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Virgin Money UK PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (£0.00 discrepancy).",
       },
     ],
   },
@@ -2295,7 +2295,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Scotiabank Canada PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Scotiabank Canada Statement Formatting",
     statementQuirkDescription:
-      "Scotiabank Canada PDF statements often contain bilingual/Canadian date formats (MMM DD) and split Withdrawals/Deposits. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Scotiabank Canada PDF statements often contain bilingual/Canadian date formats (MMM DD) and split Withdrawals/Deposits. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to CA$0.00.",
     supportedAccountTypes: [
       "Scotiabank Business & Momentum Checking",
       "Scotiabank Canada Monthly & Historical Archive PDFs",
@@ -2314,7 +2314,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Scotiabank Canada PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (CA$0.00 discrepancy).",
       },
     ],
   },
@@ -2331,7 +2331,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert BMO Bank of Montreal PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling BMO Bank of Montreal Statement Formatting",
     statementQuirkDescription:
-      "BMO Bank of Montreal PDF statements often contain multi-line Interac e-Transfer memos and CAD running balance checks. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "BMO Bank of Montreal PDF statements often contain multi-line Interac e-Transfer memos and CAD running balance checks. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to CA$0.00.",
     supportedAccountTypes: [
       "BMO Business Builder & Everyday Banking",
       "BMO Bank of Montreal Monthly & Historical Archive PDFs",
@@ -2350,7 +2350,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my BMO Bank of Montreal PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (CA$0.00 discrepancy).",
       },
     ],
   },
@@ -2367,7 +2367,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert CIBC Canada PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling CIBC Canada Statement Formatting",
     statementQuirkDescription:
-      "CIBC Canada PDF statements often contain grouped Interac e-Transfers, service charges, and debit/credit columns. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "CIBC Canada PDF statements often contain grouped Interac e-Transfers, service charges, and debit/credit columns. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to CA$0.00.",
     supportedAccountTypes: [
       "CIBC Business Operating & Smart Account",
       "CIBC Canada Monthly & Historical Archive PDFs",
@@ -2386,7 +2386,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my CIBC Canada PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (CA$0.00 discrepancy).",
       },
     ],
   },
@@ -2403,7 +2403,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert TD Canada Trust PDF statements into clean QuickBooks CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling TD Canada Trust Statement Formatting",
     statementQuirkDescription:
-      "TD Canada Trust PDF statements often contain abbreviated POS/E-TFR codes and missing year markers on monthly rows. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "TD Canada Trust PDF statements often contain abbreviated POS/E-TFR codes and missing year markers on monthly rows. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to CA$0.00.",
     supportedAccountTypes: [
       "TD Every Day & Unlimited Business Plan",
       "TD Canada Trust Monthly & Historical Archive PDFs",
@@ -2422,7 +2422,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my TD Canada Trust PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (CA$0.00 discrepancy).",
       },
     ],
   },
@@ -2439,7 +2439,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert National Bank of Canada PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling National Bank of Canada Statement Formatting",
     statementQuirkDescription:
-      "National Bank of Canada PDF statements often contain French/English bilingual headers and CAD decimal formatting. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "National Bank of Canada PDF statements often contain French/English bilingual headers and CAD decimal formatting. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to CA$0.00.",
     supportedAccountTypes: [
       "National Bank Business & Personal Chequing",
       "National Bank of Canada Monthly & Historical Archive PDFs",
@@ -2458,7 +2458,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my National Bank of Canada PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (CA$0.00 discrepancy).",
       },
     ],
   },
@@ -2475,7 +2475,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Tangerine Bank Canada PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Tangerine Bank Canada Statement Formatting",
     statementQuirkDescription:
-      "Tangerine Bank Canada PDF statements often contain interleaved e-Transfer memos and monthly interest payout lines. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Tangerine Bank Canada PDF statements often contain interleaved e-Transfer memos and monthly interest payout lines. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to CA$0.00.",
     supportedAccountTypes: [
       "Tangerine Chequing & Money-Back Card",
       "Tangerine Bank Canada Monthly & Historical Archive PDFs",
@@ -2494,7 +2494,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Tangerine Bank Canada PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (CA$0.00 discrepancy).",
       },
     ],
   },
@@ -2511,7 +2511,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert EQ Bank Canada PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling EQ Bank Canada Statement Formatting",
     statementQuirkDescription:
-      "EQ Bank Canada PDF statements often contain high-interest payout lines and EFT transfer reference codes. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "EQ Bank Canada PDF statements often contain high-interest payout lines and EFT transfer reference codes. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to CA$0.00.",
     supportedAccountTypes: [
       "EQ Bank Personal & Notice Savings",
       "EQ Bank Canada Monthly & Historical Archive PDFs",
@@ -2530,7 +2530,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my EQ Bank Canada PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (CA$0.00 discrepancy).",
       },
     ],
   },
@@ -2547,7 +2547,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Simplii Financial PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Simplii Financial Statement Formatting",
     statementQuirkDescription:
-      "Simplii Financial PDF statements often contain CIBC-style debit/credit columns and Interac e-Transfer descriptions. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Simplii Financial PDF statements often contain CIBC-style debit/credit columns and Interac e-Transfer descriptions. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to CA$0.00.",
     supportedAccountTypes: [
       "Simplii No Fee Chequing Account",
       "Simplii Financial Monthly & Historical Archive PDFs",
@@ -2566,7 +2566,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Simplii Financial PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (CA$0.00 discrepancy).",
       },
     ],
   },
@@ -2583,7 +2583,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Commonwealth Bank (CommBank) PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Commonwealth Bank (CommBank) Statement Formatting",
     statementQuirkDescription:
-      "Commonwealth Bank (CommBank) PDF statements often contain AUD CR/DR suffixes, BPAY/OSKO references, and multi-line merchant text. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Commonwealth Bank (CommBank) PDF statements often contain AUD CR/DR suffixes, BPAY/OSKO references, and multi-line merchant text. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to A$0.00.",
     supportedAccountTypes: [
       "CommBank Business Transaction & Smart Access",
       "Commonwealth Bank (CommBank) Monthly & Historical Archive PDFs",
@@ -2602,7 +2602,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Commonwealth Bank (CommBank) PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (A$0.00 discrepancy).",
       },
     ],
   },
@@ -2619,7 +2619,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert ANZ Bank Australia PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling ANZ Bank Australia Statement Formatting",
     statementQuirkDescription:
-      "ANZ Bank Australia PDF statements often contain DD MMM date stamps, EFTPOS codes, and separate Withdrawals/Deposits. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "ANZ Bank Australia PDF statements often contain DD MMM date stamps, EFTPOS codes, and separate Withdrawals/Deposits. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to A$0.00.",
     supportedAccountTypes: [
       "ANZ Business Essentials & Everyday",
       "ANZ Bank Australia Monthly & Historical Archive PDFs",
@@ -2638,7 +2638,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my ANZ Bank Australia PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (A$0.00 discrepancy).",
       },
     ],
   },
@@ -2655,7 +2655,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Westpac Australia PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Westpac Australia Statement Formatting",
     statementQuirkDescription:
-      "Westpac Australia PDF statements often contain multi-line PayID/OSKO memos and running AUD balance reconciliation. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Westpac Australia PDF statements often contain multi-line PayID/OSKO memos and running AUD balance reconciliation. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to A$0.00.",
     supportedAccountTypes: [
       "Westpac Business One & Choice",
       "Westpac Australia Monthly & Historical Archive PDFs",
@@ -2674,7 +2674,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Westpac Australia PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (A$0.00 discrepancy).",
       },
     ],
   },
@@ -2691,7 +2691,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert NAB (National Australia Bank) PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling NAB (National Australia Bank) Statement Formatting",
     statementQuirkDescription:
-      "NAB (National Australia Bank) PDF statements often contain grouped debit/credit columns and BPAY biller codes. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "NAB (National Australia Bank) PDF statements often contain grouped debit/credit columns and BPAY biller codes. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to A$0.00.",
     supportedAccountTypes: [
       "NAB Business Everyday & Classic",
       "NAB (National Australia Bank) Monthly & Historical Archive PDFs",
@@ -2710,7 +2710,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my NAB (National Australia Bank) PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (A$0.00 discrepancy).",
       },
     ],
   },
@@ -2727,7 +2727,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Macquarie Bank Australia PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Macquarie Bank Australia Statement Formatting",
     statementQuirkDescription:
-      "Macquarie Bank Australia PDF statements often contain clean modern tables with wrapped merchant locations and OSKO IDs. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Macquarie Bank Australia PDF statements often contain clean modern tables with wrapped merchant locations and OSKO IDs. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to A$0.00.",
     supportedAccountTypes: [
       "Macquarie Transaction & Business CMA",
       "Macquarie Bank Australia Monthly & Historical Archive PDFs",
@@ -2746,7 +2746,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Macquarie Bank Australia PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (A$0.00 discrepancy).",
       },
     ],
   },
@@ -2763,7 +2763,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert ING Australia PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling ING Australia Statement Formatting",
     statementQuirkDescription:
-      "ING Australia PDF statements often contain combined EFTPOS/Visa debit descriptors and international fee rebates. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "ING Australia PDF statements often contain combined EFTPOS/Visa debit descriptors and international fee rebates. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to A$0.00.",
     supportedAccountTypes: [
       "ING Orange Everyday & Business Optima",
       "ING Australia Monthly & Historical Archive PDFs",
@@ -2782,7 +2782,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my ING Australia PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (A$0.00 discrepancy).",
       },
     ],
   },
@@ -2799,7 +2799,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert ASB Bank New Zealand PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling ASB Bank New Zealand Statement Formatting",
     statementQuirkDescription:
-      "ASB Bank New Zealand PDF statements often contain NZ particular/code/reference 3-field memos and daily running balances. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "ASB Bank New Zealand PDF statements often contain NZ particular/code/reference 3-field memos and daily running balances. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to A$0.00.",
     supportedAccountTypes: [
       "ASB Business Focus & Streamline",
       "ASB Bank New Zealand Monthly & Historical Archive PDFs",
@@ -2818,7 +2818,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my ASB Bank New Zealand PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (A$0.00 discrepancy).",
       },
     ],
   },
@@ -2835,7 +2835,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert BNZ (Bank of New Zealand) PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling BNZ (Bank of New Zealand) Statement Formatting",
     statementQuirkDescription:
-      "BNZ (Bank of New Zealand) PDF statements often contain multi-column payee/particulars/code/reference layouts. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "BNZ (Bank of New Zealand) PDF statements often contain multi-column payee/particulars/code/reference layouts. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to A$0.00.",
     supportedAccountTypes: [
       "BNZ MyMoney for Business & YouMoney",
       "BNZ (Bank of New Zealand) Monthly & Historical Archive PDFs",
@@ -2854,7 +2854,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my BNZ (Bank of New Zealand) PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (A$0.00 discrepancy).",
       },
     ],
   },
@@ -2871,7 +2871,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert ING Bank (Netherlands / Germany) PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling ING Bank (Netherlands / Germany) Statement Formatting",
     statementQuirkDescription:
-      "ING Bank (Netherlands / Germany) PDF statements often contain European comma-decimal amounts (1.234,56 EUR) and SEPA IBAN references. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "ING Bank (Netherlands / Germany) PDF statements often contain European comma-decimal amounts (1.234,56 EUR) and SEPA IBAN references. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to €0.00.",
     supportedAccountTypes: [
       "ING Zakelijk & DiBa Girokonto",
       "ING Bank (Netherlands / Germany) Monthly & Historical Archive PDFs",
@@ -2890,7 +2890,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my ING Bank (Netherlands / Germany) PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (€0.00 discrepancy).",
       },
     ],
   },
@@ -2907,7 +2907,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Deutsche Bank PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Deutsche Bank Statement Formatting",
     statementQuirkDescription:
-      "Deutsche Bank PDF statements often contain SEPA Überweisung / Lastschrift multi-line blocks and EUR comma decimals. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Deutsche Bank PDF statements often contain SEPA Überweisung / Lastschrift multi-line blocks and EUR comma decimals. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to €0.00.",
     supportedAccountTypes: [
       "Deutsche Bank Geschäftskonto & AktivKonto",
       "Deutsche Bank Monthly & Historical Archive PDFs",
@@ -2926,7 +2926,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Deutsche Bank PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (€0.00 discrepancy).",
       },
     ],
   },
@@ -2943,7 +2943,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert BNP Paribas PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling BNP Paribas Statement Formatting",
     statementQuirkDescription:
-      "BNP Paribas PDF statements often contain French DD.MM date format, Débit/Crédit split columns, and EUR decimals. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "BNP Paribas PDF statements often contain French DD.MM date format, Débit/Crédit split columns, and EUR decimals. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to €0.00.",
     supportedAccountTypes: [
       "BNP Paribas Compte Pro & Esprit Libre",
       "BNP Paribas Monthly & Historical Archive PDFs",
@@ -2962,7 +2962,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my BNP Paribas PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (€0.00 discrepancy).",
       },
     ],
   },
@@ -2979,7 +2979,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Qonto Business Banking PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Qonto Business Banking Statement Formatting",
     statementQuirkDescription:
-      "Qonto Business Banking PDF statements often contain multi-member corporate card rows, SEPA transfers, and VAT metadata. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Qonto Business Banking PDF statements often contain multi-member corporate card rows, SEPA transfers, and VAT metadata. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to €0.00.",
     supportedAccountTypes: [
       "Qonto European SME & Freelancer Accounts",
       "Qonto Business Banking Monthly & Historical Archive PDFs",
@@ -2998,7 +2998,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Qonto Business Banking PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (€0.00 discrepancy).",
       },
     ],
   },
@@ -3015,7 +3015,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert BBVA Bank PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling BBVA Bank Statement Formatting",
     statementQuirkDescription:
-      "BBVA Bank PDF statements often contain Spanish/European date formats and comma-decimal EUR amount parsing. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "BBVA Bank PDF statements often contain Spanish/European date formats and comma-decimal EUR amount parsing. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to €0.00.",
     supportedAccountTypes: [
       "BBVA Empresas & Cuenta Online",
       "BBVA Bank Monthly & Historical Archive PDFs",
@@ -3034,7 +3034,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my BBVA Bank PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (€0.00 discrepancy).",
       },
     ],
   },
@@ -3051,7 +3051,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert UBS Switzerland PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling UBS Switzerland Statement Formatting",
     statementQuirkDescription:
-      "UBS Switzerland PDF statements often contain Swiss apostrophe thousand separators (1'250.00) and multi-currency lines. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "UBS Switzerland PDF statements often contain Swiss apostrophe thousand separators (1'250.00) and multi-currency lines. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to €0.00.",
     supportedAccountTypes: [
       "UBS Corporate & Private Account Statements",
       "UBS Switzerland Monthly & Historical Archive PDFs",
@@ -3070,7 +3070,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my UBS Switzerland PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (€0.00 discrepancy).",
       },
     ],
   },
@@ -3087,7 +3087,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert UOB Singapore PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling UOB Singapore Statement Formatting",
     statementQuirkDescription:
-      "UOB Singapore PDF statements often contain FAST/PayNow multi-line transfer references and SGD balance verification. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "UOB Singapore PDF statements often contain FAST/PayNow multi-line transfer references and SGD balance verification. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to S$0.00.",
     supportedAccountTypes: [
       "UOB eBusiness & One Account",
       "UOB Singapore Monthly & Historical Archive PDFs",
@@ -3106,7 +3106,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my UOB Singapore PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (S$0.00 discrepancy).",
       },
     ],
   },
@@ -3123,7 +3123,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert HSBC Hong Kong PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling HSBC Hong Kong Statement Formatting",
     statementQuirkDescription:
-      "HSBC Hong Kong PDF statements often contain multi-currency HKD/USD/CNY sub-ledgers inside one composite PDF statement. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "HSBC Hong Kong PDF statements often contain multi-currency HKD/USD/CNY sub-ledgers inside one composite PDF statement. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to HK$0.00.",
     supportedAccountTypes: [
       "HSBC Business Integrated & Premier HK",
       "HSBC Hong Kong Monthly & Historical Archive PDFs",
@@ -3142,7 +3142,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my HSBC Hong Kong PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (HK$0.00 discrepancy).",
       },
     ],
   },
@@ -3159,7 +3159,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Hang Seng Bank Hong Kong PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Hang Seng Bank Hong Kong Statement Formatting",
     statementQuirkDescription:
-      "Hang Seng Bank Hong Kong PDF statements often contain FPS transfer memos, multi-currency sections, and HKD balance checks. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Hang Seng Bank Hong Kong PDF statements often contain FPS transfer memos, multi-currency sections, and HKD balance checks. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to HK$0.00.",
     supportedAccountTypes: [
       "Hang Seng Business & Prestige Banking",
       "Hang Seng Bank Hong Kong Monthly & Historical Archive PDFs",
@@ -3178,7 +3178,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Hang Seng Bank Hong Kong PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (HK$0.00 discrepancy).",
       },
     ],
   },
@@ -3195,7 +3195,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Standard Chartered PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Standard Chartered Statement Formatting",
     statementQuirkDescription:
-      "Standard Chartered PDF statements often contain multi-region SG/HK/UK statement templates and FX conversion rows. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Standard Chartered PDF statements often contain multi-region SG/HK/UK statement templates and FX conversion rows. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to S$0.00.",
     supportedAccountTypes: [
       "Standard Chartered Business & Priority",
       "Standard Chartered Monthly & Historical Archive PDFs",
@@ -3214,7 +3214,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Standard Chartered PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (S$0.00 discrepancy).",
       },
     ],
   },
@@ -3303,7 +3303,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Sage 50 & Sage Accounting PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Sage 50 & Sage Accounting Statement Formatting",
     statementQuirkDescription:
-      "Sage 50 & Sage Accounting PDF statements often contain strict Sage Date/Reference/Details/Net columns with cent-level balance check. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Sage 50 & Sage Accounting PDF statements often contain strict Sage Date/Reference/Details/Net columns with cent-level balance check. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to £0.00.",
     supportedAccountTypes: [
       "Sage 50cloud & Sage Business Cloud",
       "Sage 50 & Sage Accounting Monthly & Historical Archive PDFs",
@@ -3322,7 +3322,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Sage 50 & Sage Accounting PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (£0.00 discrepancy).",
       },
     ],
   },
@@ -3411,7 +3411,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert MYOB Business PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling MYOB Business Statement Formatting",
     statementQuirkDescription:
-      "MYOB Business PDF statements often contain AUD DD/MM/YYYY date formatting and verified running balance alignment. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "MYOB Business PDF statements often contain AUD DD/MM/YYYY date formatting and verified running balance alignment. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to A$0.00.",
     supportedAccountTypes: [
       "MYOB AccountRight & Business Bank Feeds",
       "MYOB Business Monthly & Historical Archive PDFs",
@@ -3430,7 +3430,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my MYOB Business PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (A$0.00 discrepancy).",
       },
     ],
   },
@@ -3447,7 +3447,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert FreeAgent UK PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling FreeAgent UK Statement Formatting",
     statementQuirkDescription:
-      "FreeAgent UK PDF statements often contain strict 3-column DD/MM/YYYY, Amount, Description schema required by FreeAgent. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "FreeAgent UK PDF statements often contain strict 3-column DD/MM/YYYY, Amount, Description schema required by FreeAgent. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to £0.00.",
     supportedAccountTypes: [
       "FreeAgent UK Contractor Bank Upload",
       "FreeAgent UK Monthly & Historical Archive PDFs",
@@ -3466,7 +3466,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my FreeAgent UK PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (£0.00 discrepancy).",
       },
     ],
   },
@@ -3519,7 +3519,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       "Convert Firefly III (Self-Hosted) PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Firefly III (Self-Hosted) Statement Formatting",
     statementQuirkDescription:
-      "Firefly III (Self-Hosted) PDF statements often contain zero-upload client-side parsing with clean payee, amount, and date columns. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+      "Firefly III (Self-Hosted) PDF statements often contain zero-upload client-side parsing with clean payee, amount, and date columns. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to €0.00.",
     supportedAccountTypes: [
       "Firefly III Data Importer CSV",
       "Firefly III (Self-Hosted) Monthly & Historical Archive PDFs",
@@ -3538,7 +3538,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "How do I know no transactions were missed from my Firefly III (Self-Hosted) PDF?",
-        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent (€0.00 discrepancy).",
       },
     ],
   },

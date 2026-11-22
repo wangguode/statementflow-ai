@@ -1917,13 +1917,19 @@ export function StatementWorkbench() {
             </div>
           </div>
 
-          {/* Programmatic SEO 银行与发票转换器内链矩阵 */}
+          {/* Programmatic SEO 银行与发票转换器内链矩阵（默认展示 Top 16，其余折叠以兼顾 SEO 内链与页面整洁） */}
           <div className="mt-12">
-            <div className="text-base font-semibold text-white">
-              Dedicated Bank & Platform Converters
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <div className="text-base font-semibold text-white">
+                Dedicated Bank & Platform Converters ({PSEO_BANK_ENTRIES.length}{" "}
+                Supported)
+              </div>
+              <span className="text-xs text-[#8b92a5]">
+                100% client-side · US, UK, Canada, AU/NZ, Europe & APAC
+              </span>
             </div>
             <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {PSEO_BANK_ENTRIES.map((bank) => (
+              {PSEO_BANK_ENTRIES.slice(0, 16).map((bank) => (
                 <Link
                   key={bank.slug}
                   href={`/convert/${bank.slug}`}
@@ -1936,6 +1942,29 @@ export function StatementWorkbench() {
                 </Link>
               ))}
             </div>
+            {PSEO_BANK_ENTRIES.length > 16 && (
+              <details className="mt-4 rounded-xl border border-[#222733] bg-[#101319] p-4">
+                <summary className="cursor-pointer select-none text-sm font-medium text-[#c5cad6] hover:text-white">
+                  Browse all {PSEO_BANK_ENTRIES.length} supported banks &
+                  accounting CSV converters (+{PSEO_BANK_ENTRIES.length - 16}{" "}
+                  more)
+                </summary>
+                <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                  {PSEO_BANK_ENTRIES.slice(16).map((bank) => (
+                    <Link
+                      key={bank.slug}
+                      href={`/convert/${bank.slug}`}
+                      className="inline-flex min-h-9 items-center justify-between rounded-md bg-[#151921] px-3 py-1.5 text-xs text-[#c5cad6] hover:bg-[#0066cc] hover:text-white"
+                    >
+                      <span className="truncate pr-2">{bank.shortName}</span>
+                      <span className="shrink-0 tabular-nums opacity-70">
+                        {bank.defaultCurrency}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </details>
+            )}
           </div>
 
           {/* Blueprint: The mark, built large (12-column architectural wordmark blocks) */}

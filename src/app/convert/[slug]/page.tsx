@@ -335,27 +335,59 @@ export default async function BankConverterLandingPage({ params }: PageProps) {
         className="overflow-x-clip bg-[#0a0b0e] py-16 text-[#f5f5f7] lg:py-24"
       >
         <div className="sf-wrap">
-          <div className="text-base font-semibold text-white">
-            Supported Bank & Invoice Converters
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <div className="text-base font-semibold text-white">
+              Related {bank.region} & Popular Converters
+            </div>
+            <span className="text-xs text-[#8b92a5]">
+              {PSEO_BANK_ENTRIES.length} global banks & accounting formats
+              supported
+            </span>
           </div>
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {PSEO_BANK_ENTRIES.map((item) => (
-              <Link
-                key={item.slug}
-                href={`/convert/${item.slug}`}
-                className={`inline-flex min-h-11 items-center justify-between rounded-lg px-4 py-2 text-sm font-medium ${
-                  item.slug === bank.slug
-                    ? "bg-[#0066cc] text-white"
-                    : "bg-[#151921] text-[#c5cad6] hover:text-white"
-                }`}
-              >
-                <span>{item.shortName}</span>
-                <span className="tabular-nums opacity-75">
-                  {item.defaultCurrency}
-                </span>
-              </Link>
-            ))}
+            {PSEO_BANK_ENTRIES.filter((item) => item.region === bank.region)
+              .slice(0, 12)
+              .map((item) => (
+                <Link
+                  key={item.slug}
+                  href={`/convert/${item.slug}`}
+                  className={`inline-flex min-h-11 items-center justify-between rounded-lg px-4 py-2 text-sm font-medium ${
+                    item.slug === bank.slug
+                      ? "bg-[#0066cc] text-white"
+                      : "bg-[#151921] text-[#c5cad6] hover:text-white"
+                  }`}
+                >
+                  <span className="truncate pr-2">{item.shortName}</span>
+                  <span className="shrink-0 tabular-nums opacity-75">
+                    {item.defaultCurrency}
+                  </span>
+                </Link>
+              ))}
           </div>
+          <details className="mt-4 rounded-xl border border-[#222733] bg-[#101319] p-4">
+            <summary className="cursor-pointer select-none text-sm font-medium text-[#c5cad6] hover:text-white">
+              View full directory of all {PSEO_BANK_ENTRIES.length} bank &
+              accounting converters
+            </summary>
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {PSEO_BANK_ENTRIES.map((item) => (
+                <Link
+                  key={item.slug}
+                  href={`/convert/${item.slug}`}
+                  className={`inline-flex min-h-9 items-center justify-between rounded-md px-3 py-1.5 text-xs ${
+                    item.slug === bank.slug
+                      ? "bg-[#0066cc] text-white"
+                      : "bg-[#151921] text-[#c5cad6] hover:text-white"
+                  }`}
+                >
+                  <span className="truncate pr-2">{item.shortName}</span>
+                  <span className="shrink-0 tabular-nums opacity-70">
+                    {item.defaultCurrency}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </details>
 
           <div className="mt-10 flex flex-wrap items-center justify-between gap-4 text-sm text-[#8b92a5]">
             <span>

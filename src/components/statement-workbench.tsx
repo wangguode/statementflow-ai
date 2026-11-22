@@ -28,6 +28,8 @@ import { extractWithAISafety } from "@/lib/ai-extractor";
 import {
   buildCsvContent,
   buildExcelWorkbookXml,
+  buildQuickBooksCsvContent,
+  buildXeroCsvContent,
   triggerBrowserDownload,
 } from "@/lib/export-utils";
 import { AISettingsModal, CheckoutModal } from "@/components/modals";
@@ -236,6 +238,7 @@ export function StatementWorkbench() {
   );
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
   const [uploadedPdfBase64, setUploadedPdfBase64] = useState<string>("");
+  const [uploadedPageImages, setUploadedPageImages] = useState<string[]>([]);
 
   // 当前结构化提取结果（支持行内实时编辑与重算）
   const [extraction, setExtraction] = useState<ExtractionResult>(() => {
@@ -476,29 +479,60 @@ export function StatementWorkbench() {
     setUploadedFileName(batchLabel);
     setInputMode("upload");
     setUploadedPdfBase64("");
+    setUploadedPageImages([]);
 
     setStatusNotice(
       `Parsing ${fileList.length} statement file(s) 100% locally in your browser...`
     );
 
     const combinedChunks: string[] = [];
+    const scannedImages: string[] = [];
     let totalPages = 0;
     let parsedCount = 0;
     let failedCount = 0;
 
     for (const file of fileList) {
-      if (file.name.toLowerCase().endsWith(".pdf")) {
+      const lower = file.name.toLowerCase();
+      if (lower.endsWith(".pdf")) {
         try {
           const buffer = await file.arrayBuffer();
           const bytes = new Uint8Array(buffer);
-          const { extractTextFromPdfBytes } = await import("@/lib/client-pdf");
+          const { extractTextFromPdfBytes, renderPdfPagesToJpegDataUrls } =
+            await import("@/lib/client-pdf");
           const { text, pages } = await extractTextFromPdfBytes(bytes);
           if (text.trim().length > 20) {
             combinedChunks.push(`=== FILE: ${file.name} ===\n${text}`);
             totalPages += pages;
             parsedCount += 1;
           } else {
-            failedCount += 1;
+            // 扫描版图片 PDF：自动渲染前 4 页为 JPEG 供视觉 AI OCR 精准识表
+            const imgs = await renderPdfPagesToJpegDataUrls(
+              bytes,
+              Math.max(1, 4 - scannedImages.length)
+            );
+            if (imgs.length > 0) {
+              scannedImages.push(...imgs);
+              totalPages += imgs.length;
+              parsedCount += 1;
+            } else {
+              failedCount += 1;
+            }
+          }
+        } catch {
+          failedCount += 1;
+        }
+      } else if (/\.(png|jpe?g|webp)$/.test(lower)) {
+        try {
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(String(reader.result || ""));
+            reader.onerror = () => reject(new Error("Image read failed"));
+            reader.readAsDataURL(file);
+          });
+          if (dataUrl && scannedImages.length < 4) {
+            scannedImages.push(dataUrl);
+            totalPages += 1;
+            parsedCount += 1;
           }
         } catch {
           failedCount += 1;
@@ -515,17 +549,25 @@ export function StatementWorkbench() {
 
     if (combinedChunks.length > 0) {
       setCustomRawText(combinedChunks.join("\n\n"));
+      setUploadedPageImages([]);
       const warnSuffix =
         failedCount > 0
-          ? ` (${failedCount} file(s) had no selectable text / may be scanned).`
+          ? ` (${failedCount} file(s) could not be read).`
           : "";
       setStatusNotice(
         `Parsed ${parsedCount} file(s) (${totalPages} total page(s)) locally in browser. Click "Run Extraction" to reconcile.${warnSuffix}`
       );
+    } else if (scannedImages.length > 0) {
+      setCustomRawText("");
+      setUploadedPageImages(scannedImages);
+      setStatusNotice(
+        `Detected scanned PDF / image (${scannedImages.length} page(s) ready for Vision AI OCR). Click "Run Extraction" to parse and reconcile.`
+      );
     } else {
       setCustomRawText("");
+      setUploadedPageImages([]);
       setStatusNotice(
-        `No selectable text found in the uploaded file(s). Please ensure PDFs are text-based and not password-protected.`
+        `No selectable text or readable images found in the uploaded file(s). Please ensure PDFs are not password-protected.`
       );
     }
   }
@@ -552,6 +594,8 @@ export function StatementWorkbench() {
         rawText: customRawText,
         fileName: uploadedFileName || "statement.txt",
         pdfBase64: uploadedPdfBase64 || undefined,
+        pageImages:
+          uploadedPageImages.length > 0 ? uploadedPageImages : undefined,
         aiConfig:
           aiConfig.provider === "openai_compatible" ? aiConfig : undefined,
       };
@@ -733,6 +777,32 @@ export function StatementWorkbench() {
       xml,
       `StatementFlow_${safeName}.xls`,
       "application/vnd.ms-excel"
+    );
+  }
+
+  function handleExportQuickBooks() {
+    const csv = buildQuickBooksCsvContent(extraction);
+    const safeName = extraction.accountOrInvoiceNumber.replace(
+      /[^a-zA-Z0-9_-]/g,
+      "_"
+    );
+    triggerBrowserDownload(
+      csv,
+      `StatementFlow_QuickBooks_${safeName}.csv`,
+      "text/csv;charset=utf-8;"
+    );
+  }
+
+  function handleExportXero() {
+    const csv = buildXeroCsvContent(extraction);
+    const safeName = extraction.accountOrInvoiceNumber.replace(
+      /[^a-zA-Z0-9_-]/g,
+      "_"
+    );
+    triggerBrowserDownload(
+      csv,
+      `StatementFlow_Xero_${safeName}.csv`,
+      "text/csv;charset=utf-8;"
     );
   }
 
@@ -1064,7 +1134,7 @@ export function StatementWorkbench() {
                   ref={fileInputRef}
                   type="file"
                   multiple
-                  accept=".pdf,.txt,.csv"
+                  accept=".pdf,.png,.jpg,.jpeg,.webp,.txt,.csv"
                   onChange={handleFileChange}
                   className="hidden"
                 />
@@ -1341,6 +1411,22 @@ export function StatementWorkbench() {
                     >
                       <Download className="size-4" />
                       <span>CSV</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleExportQuickBooks}
+                      className="sf-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#1d3b2a] px-3.5 py-2 text-sm font-medium text-[#86efac] hover:bg-[#234a34]"
+                    >
+                      <Download className="size-4" />
+                      <span>QuickBooks</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleExportXero}
+                      className="sf-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#19324a] px-3.5 py-2 text-sm font-medium text-[#7dd3fc] hover:bg-[#1f3f5e]"
+                    >
+                      <Download className="size-4" />
+                      <span>Xero</span>
                     </button>
                     <button
                       type="button"

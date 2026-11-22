@@ -68,3 +68,44 @@ export async function extractTextFromPdfBytes(
     pages: doc.numPages,
   };
 }
+
+/**
+ * 当检测到扫描件 PDF（无可选中文本层）时，在浏览器本地将前 N 页渲染为 JPEG Data URL，
+ * 供边缘多模态视觉模型进行高精度表格 OCR 提取。
+ */
+export async function renderPdfPagesToJpegDataUrls(
+  bytes: Uint8Array,
+  maxPages = 4
+): Promise<string[]> {
+  const pdfjs = await import("pdfjs-dist");
+  pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+
+  const loadingTask = pdfjs.getDocument({ data: bytes });
+  const doc = await loadingTask.promise;
+  const images: string[] = [];
+
+  try {
+    const limit = Math.min(doc.numPages, maxPages);
+    for (let pageNum = 1; pageNum <= limit; pageNum += 1) {
+      const page = await doc.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 1.5 });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(viewport.width);
+      canvas.height = Math.round(viewport.height);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) continue;
+
+      await page.render({
+        canvas,
+        canvasContext: ctx,
+        viewport,
+      }).promise;
+
+      images.push(canvas.toDataURL("image/jpeg", 0.82));
+    }
+  } finally {
+    await loadingTask.destroy();
+  }
+
+  return images;
+}

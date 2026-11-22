@@ -59,6 +59,45 @@ export function buildCsvContent(data: ExtractionResult): string {
 }
 
 /**
+ * 生成严格符合 QuickBooks Online 官方 3 列导入规范的 CSV（Date, Description, Amount）
+ * 日期统一为 MM/DD/YYYY，无货币符号、无多余千分位逗号，避免 QBO 拒收
+ */
+export function buildQuickBooksCsvContent(data: ExtractionResult): string {
+  const headers = ["Date", "Description", "Amount"];
+  const rows = data.transactions.map((tx) => {
+    const signed = tx.type === "debit" ? -tx.amount : tx.amount;
+    const parts = tx.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const qboDate = parts ? `${parts[2]}/${parts[3]}/${parts[1]}` : tx.date;
+    const desc =
+      tx.merchant && tx.merchant !== tx.description
+        ? `${tx.merchant} - ${tx.description}`
+        : tx.description;
+    return [qboDate, desc, signed.toFixed(2)].map(escapeCsvCell).join(",");
+  });
+  return [headers.join(","), ...rows].join("\r\n");
+}
+
+/**
+ * 生成严格符合 Xero 官方银行对账单导入规范的 5 列 CSV（Date, Amount, Payee, Description, Reference）
+ */
+export function buildXeroCsvContent(data: ExtractionResult): string {
+  const headers = ["Date", "Amount", "Payee", "Description", "Reference"];
+  const rows = data.transactions.map((tx) => {
+    const signed = tx.type === "debit" ? -tx.amount : tx.amount;
+    return [
+      tx.date,
+      signed.toFixed(2),
+      tx.merchant || tx.description,
+      tx.description,
+      tx.id,
+    ]
+      .map(escapeCsvCell)
+      .join(",");
+  });
+  return [headers.join(","), ...rows].join("\r\n");
+}
+
+/**
  * 生成包含「交易明细」与「财务对账汇总」双工作表的原生 Excel XML Workbook (.xls)
  */
 export function buildExcelWorkbookXml(data: ExtractionResult): string {

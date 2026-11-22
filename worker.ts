@@ -198,6 +198,7 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
     const body = (await request.json()) as {
       rawText?: string;
       fileName?: string;
+      pageImages?: string[];
       aiConfig?: {
         provider?: "demo" | "openai_compatible";
         apiKey?: string;
@@ -207,9 +208,17 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
     };
 
     const rawText = (body.rawText || "").trim();
+    const pageImages = Array.isArray(body.pageImages)
+      ? body.pageImages
+          .filter((img) => typeof img === "string" && img.startsWith("data:image/"))
+          .slice(0, 4)
+      : [];
     const fileName = (body.fileName || "statement.pdf").trim();
-    if (!rawText || rawText.length < 10) {
-      return jsonResponse({ error: "Document text is empty or too short." }, 400);
+    if ((!rawText || rawText.length < 10) && pageImages.length === 0) {
+      return jsonResponse(
+        { error: "Document text is empty and no scanned page images were provided." },
+        400
+      );
     }
 
     const effectiveKey =
@@ -225,13 +234,16 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
       env.AI_BASE_URL?.trim() ||
       "https://maas.qianwenaiapi.com/compatible-mode/v1"
     ).replace(/\/+$/, "");
-    const effectiveModel = (
-      (body.aiConfig?.provider === "openai_compatible"
-        ? body.aiConfig.model?.trim()
-        : "") ||
-      env.AI_MODEL?.trim() ||
-      "qwen-plus"
-    ).trim();
+    const isVisionMode = pageImages.length > 0 && rawText.length < 40;
+    const effectiveModel = isVisionMode
+      ? "qwen-vl-plus"
+      : (
+          (body.aiConfig?.provider === "openai_compatible"
+            ? body.aiConfig.model?.trim()
+            : "") ||
+          env.AI_MODEL?.trim() ||
+          "qwen-plus"
+        ).trim();
 
     if (!effectiveKey) {
       return jsonResponse(
@@ -270,8 +282,21 @@ Rules:
 2. Ensure openingBalance + sum(credits) - sum(debits) matches closingBalance to the exact cent.
 3. All amounts must be numeric floats rounded to 2 decimal places.`;
 
+    const userMessageContent = isVisionMode
+      ? [
+          {
+            type: "text",
+            text: `File: ${fileName}\nExtract every transaction and opening/closing balance from these scanned bank statement page image(s) into the exact JSON schema.`,
+          },
+          ...pageImages.map((imgUrl) => ({
+            type: "image_url",
+            image_url: { url: imgUrl },
+          })),
+        ]
+      : `File: ${fileName}\n\nStatement Text:\n${rawText.slice(0, 48000)}`;
+
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 24000);
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
     let llmRes: Response;
     try {
@@ -284,13 +309,10 @@ Rules:
         body: JSON.stringify({
           model: effectiveModel,
           temperature: 0,
-          response_format: { type: "json_object" },
+          ...(isVisionMode ? {} : { response_format: { type: "json_object" } }),
           messages: [
             { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content: `File: ${fileName}\n\nStatement Text:\n${rawText.slice(0, 48000)}`,
-            },
+            { role: "user", content: userMessageContent },
           ],
         }),
         signal: controller.signal,

@@ -5,8 +5,8 @@ export interface PseoBankEntry {
   slug: string;
   institutionName: string;
   shortName: string;
-  region: "United States" | "United Kingdom" | "Europe & Global";
-  defaultCurrency: "USD" | "GBP" | "EUR";
+  region: "United States" | "United Kingdom" | "Canada" | "Australia & NZ" | "Europe & Global" | "Asia-Pacific";
+  defaultCurrency: "USD" | "GBP" | "EUR" | "CAD" | "AUD" | "SGD" | "HKD";
   targetFormat: "Excel (.xls)" | "CSV" | "QuickBooks CSV" | "Xero CSV";
   recommendedSampleId:
     | "chase-checking-oct"
@@ -839,6 +839,2707 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     extractedColumns: ["Effective Date", "Wire / ACH Description", "Reference ID", "Category", "Signed Amount"],
     specificFaqs: [
       { q: "Can it process multi-year historical SVB PDFs?", a: "Yes. Multi-page commercial statements are parsed and verified page by page." },
+    ],
+  },
+
+  {
+    slug: "pnc-bank-statement-to-excel",
+    institutionName: "PNC Bank",
+    shortName: "PNC Bank PDF to Excel",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "PNC Bank PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert PNC Bank PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling PNC Bank Statement Formatting",
+    statementQuirkDescription:
+      "PNC Bank PDF statements often contain multi-section Activity Detail tables and daily balance summaries. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "PNC Business Checking & Virtual Wallet",
+      "PNC Bank Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my PNC Bank PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my PNC Bank PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "us-bank-statement-to-csv",
+    institutionName: "U.S. Bank",
+    shortName: "U.S. Bank to CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "U.S. Bank PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert U.S. Bank PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling U.S. Bank Statement Formatting",
+    statementQuirkDescription:
+      "U.S. Bank PDF statements often contain split Customer Deposits, Other Withdrawals, and card purchase blocks. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "U.S. Bank Silver/Gold Business Checking",
+      "U.S. Bank Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my U.S. Bank PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my U.S. Bank PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "truist-bank-statement-to-excel",
+    institutionName: "Truist Bank",
+    shortName: "Truist PDF to Excel",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Truist Bank PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Truist Bank PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Truist Bank Statement Formatting",
+    statementQuirkDescription:
+      "Truist Bank PDF statements often contain merged SunTrust/BB&T legacy layout headers and multi-line ACH descriptions. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Truist Simple/Dynamic Business Checking",
+      "Truist Bank Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Truist Bank PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Truist Bank PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "discover-card-statement-to-csv",
+    institutionName: "Discover Card",
+    shortName: "Discover PDF to CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Discover Card PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Discover Card PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Discover Card Statement Formatting",
+    statementQuirkDescription:
+      "Discover Card PDF statements often contain split Transaction Date vs. Post Date columns and cashback credit lines. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Discover it Business & Cash Back Cards",
+      "Discover Card Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Discover Card PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Discover Card PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "citizens-bank-statement-to-excel",
+    institutionName: "Citizens Bank",
+    shortName: "Citizens Bank to Excel",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Citizens Bank PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Citizens Bank PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Citizens Bank Statement Formatting",
+    statementQuirkDescription:
+      "Citizens Bank PDF statements often contain wrapped debit card merchant strings and interleaved check serial tables. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Citizens Clearly Better Business Checking",
+      "Citizens Bank Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Citizens Bank PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Citizens Bank PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "fifth-third-bank-statement-to-csv",
+    institutionName: "Fifth Third Bank",
+    shortName: "Fifth Third to CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Fifth Third Bank PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Fifth Third Bank PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Fifth Third Bank Statement Formatting",
+    statementQuirkDescription:
+      "Fifth Third Bank PDF statements often contain multi-column Withdrawals/Deposits with separate daily ledger balances. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Fifth Third Business Standard Checking",
+      "Fifth Third Bank Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Fifth Third Bank PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Fifth Third Bank PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "regions-bank-statement-to-excel",
+    institutionName: "Regions Bank",
+    shortName: "Regions Bank to Excel",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Regions Bank PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Regions Bank PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Regions Bank Statement Formatting",
+    statementQuirkDescription:
+      "Regions Bank PDF statements often contain grouped ACH debits, card swipes, and check-clearing blocks. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Regions LifeGreen & Business Checking",
+      "Regions Bank Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Regions Bank PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Regions Bank PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "keybank-statement-to-csv",
+    institutionName: "KeyBank",
+    shortName: "KeyBank PDF to CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "KeyBank PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert KeyBank PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling KeyBank Statement Formatting",
+    statementQuirkDescription:
+      "KeyBank PDF statements often contain long wire reference memos and commercial analysis fee rows. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "KeyBank Basic & Commercial Business Checking",
+      "KeyBank Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my KeyBank PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my KeyBank PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "mt-bank-statement-to-excel",
+    institutionName: "M&T Bank",
+    shortName: "M&T Bank to Excel",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "M&T Bank PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert M&T Bank PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling M&T Bank Statement Formatting",
+    statementQuirkDescription:
+      "M&T Bank PDF statements often contain multi-page electronic transaction grids and check image footers. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "M&T Simple Checking for Business",
+      "M&T Bank Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my M&T Bank PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my M&T Bank PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "huntington-bank-statement-to-csv",
+    institutionName: "Huntington Bank",
+    shortName: "Huntington to CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Huntington Bank PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Huntington Bank PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Huntington Bank Statement Formatting",
+    statementQuirkDescription:
+      "Huntington Bank PDF statements often contain wrapped POS merchant locations and ACH trace numbers. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Huntington Unlimited Business Checking",
+      "Huntington Bank Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Huntington Bank PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Huntington Bank PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "bmo-us-statement-to-excel",
+    institutionName: "BMO Bank (US)",
+    shortName: "BMO US PDF to Excel",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "BMO Bank (US) PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert BMO Bank (US) PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling BMO Bank (US) Statement Formatting",
+    statementQuirkDescription:
+      "BMO Bank (US) PDF statements often contain dual-section deposit/withdrawal formatting and daily balance snapshots. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "BMO Business Checking (formerly BMO Harris)",
+      "BMO Bank (US) Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my BMO Bank (US) PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my BMO Bank (US) PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "ally-bank-statement-to-csv",
+    institutionName: "Ally Bank",
+    shortName: "Ally Bank to CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Ally Bank PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Ally Bank PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Ally Bank Statement Formatting",
+    statementQuirkDescription:
+      "Ally Bank PDF statements often contain interest accrual rows, bucket transfers, and running balance columns. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Ally Spending & High-Yield Savings",
+      "Ally Bank Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Ally Bank PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Ally Bank PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "sofi-bank-statement-to-excel",
+    institutionName: "SoFi Bank",
+    shortName: "SoFi PDF to Excel",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "SoFi Bank PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert SoFi Bank PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling SoFi Bank Statement Formatting",
+    statementQuirkDescription:
+      "SoFi Bank PDF statements often contain vault sub-account transfers and multi-line card authorization descriptors. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "SoFi Checking, Savings & Vaults",
+      "SoFi Bank Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my SoFi Bank PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my SoFi Bank PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "chime-bank-statement-to-csv",
+    institutionName: "Chime",
+    shortName: "Chime PDF to CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Chime PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Chime PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Chime Statement Formatting",
+    statementQuirkDescription:
+      "Chime PDF statements often contain mobile-first PDF statement tables with split transfer and card sections. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Chime Checking & Credit Builder",
+      "Chime Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Chime PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Chime PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "navy-federal-statement-to-excel",
+    institutionName: "Navy Federal Credit Union",
+    shortName: "Navy Federal to Excel",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Navy Federal Credit Union PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Navy Federal Credit Union PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Navy Federal Credit Union Statement Formatting",
+    statementQuirkDescription:
+      "Navy Federal Credit Union PDF statements often contain combined checking/savings/share-certificate pages inside one monthly PDF. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "NFCU Business & Personal Checking",
+      "Navy Federal Credit Union Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Navy Federal Credit Union PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Navy Federal Credit Union PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "usaa-bank-statement-to-csv",
+    institutionName: "USAA Federal Savings Bank",
+    shortName: "USAA PDF to CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "USAA Federal Savings Bank PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert USAA Federal Savings Bank PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling USAA Federal Savings Bank Statement Formatting",
+    statementQuirkDescription:
+      "USAA Federal Savings Bank PDF statements often contain multi-account PDF packets with separate debit/credit columns. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "USAA Classic Checking & Credit Cards",
+      "USAA Federal Savings Bank Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my USAA Federal Savings Bank PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my USAA Federal Savings Bank PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "charles-schwab-statement-to-excel",
+    institutionName: "Charles Schwab Bank",
+    shortName: "Charles Schwab to Excel",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Charles Schwab Bank PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Charles Schwab Bank PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Charles Schwab Bank Statement Formatting",
+    statementQuirkDescription:
+      "Charles Schwab Bank PDF statements often contain mixed cash management transactions, ATM fee rebates, and wire transfers. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Schwab Investor Checking & Brokerage",
+      "Charles Schwab Bank Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Charles Schwab Bank PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Charles Schwab Bank PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "fidelity-cash-management-to-csv",
+    institutionName: "Fidelity Cash Management",
+    shortName: "Fidelity PDF to CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Fidelity Cash Management PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Fidelity Cash Management PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Fidelity Cash Management Statement Formatting",
+    statementQuirkDescription:
+      "Fidelity Cash Management PDF statements often contain core sweep redemptions interleaved with debit card and ACH bill pay rows. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Fidelity CMA & Core Money Market",
+      "Fidelity Cash Management Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Fidelity Cash Management PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Fidelity Cash Management PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "relay-financial-statement-to-quickbooks",
+    institutionName: "Relay Financial",
+    shortName: "Relay to QuickBooks",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "QuickBooks CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Relay Financial PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Relay Financial PDF statements into clean QuickBooks CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Relay Financial Statement Formatting",
+    statementQuirkDescription:
+      "Relay Financial PDF statements often contain Profit First sub-account transfers and team virtual card expenses. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Relay Multi-Account Business Checking",
+      "Relay Financial Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Relay Financial PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Relay Financial PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "novo-bank-statement-to-csv",
+    institutionName: "Novo Business Banking",
+    shortName: "Novo PDF to CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Novo Business Banking PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Novo Business Banking PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Novo Business Banking Statement Formatting",
+    statementQuirkDescription:
+      "Novo Business Banking PDF statements often contain Reserve allocations, Stripe instant payouts, and ACH vendor payments. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Novo Small Business Checking & Reserves",
+      "Novo Business Banking Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Novo Business Banking PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Novo Business Banking PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "bluevine-statement-to-quickbooks",
+    institutionName: "Bluevine Business Banking",
+    shortName: "Bluevine to QuickBooks",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "QuickBooks CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Bluevine Business Banking PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Bluevine Business Banking PDF statements into clean QuickBooks CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Bluevine Business Banking Statement Formatting",
+    statementQuirkDescription:
+      "Bluevine Business Banking PDF statements often contain sub-account transfers, bill-pay batches, and interest payout rows. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Bluevine Business Checking & Line of Credit",
+      "Bluevine Business Banking Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Bluevine Business Banking PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Bluevine Business Banking PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "found-banking-statement-to-csv",
+    institutionName: "Found Business Banking",
+    shortName: "Found PDF to CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Found Business Banking PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Found Business Banking PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Found Business Banking Statement Formatting",
+    statementQuirkDescription:
+      "Found Business Banking PDF statements often contain automatic tax-pocket set-asides and Schedule C expense tags. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Found Self-Employed Checking & Tax Pockets",
+      "Found Business Banking Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Found Business Banking PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Found Business Banking PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "lili-bank-statement-to-excel",
+    institutionName: "Lili Banking",
+    shortName: "Lili PDF to Excel",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Lili Banking PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Lili Banking PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Lili Banking Statement Formatting",
+    statementQuirkDescription:
+      "Lili Banking PDF statements often contain emergency bucket transfers and wrapped merchant descriptions. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Lili Freelancer & Small Business Checking",
+      "Lili Banking Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Lili Banking PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Lili Banking PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "grasshopper-bank-statement-to-csv",
+    institutionName: "Grasshopper Bank",
+    shortName: "Grasshopper to CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Grasshopper Bank PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Grasshopper Bank PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Grasshopper Bank Statement Formatting",
+    statementQuirkDescription:
+      "Grasshopper Bank PDF statements often contain startup ACH batches, wire transfers, and cash-back credit lines. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Grasshopper Innovator Business Checking",
+      "Grasshopper Bank Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Grasshopper Bank PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Grasshopper Bank PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "bill-divvy-statement-to-quickbooks",
+    institutionName: "BILL Spend & Expense (Divvy)",
+    shortName: "BILL / Divvy to QuickBooks",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "QuickBooks CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "BILL Spend & Expense (Divvy) PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert BILL Spend & Expense (Divvy) PDF statements into clean QuickBooks CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling BILL Spend & Expense (Divvy) Statement Formatting",
+    statementQuirkDescription:
+      "BILL Spend & Expense (Divvy) PDF statements often contain budget-grouped card transactions and multi-department merchant memos. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "BILL Corporate Card & AP Statements",
+      "BILL Spend & Expense (Divvy) Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my BILL Spend & Expense (Divvy) PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my BILL Spend & Expense (Divvy) PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "amex-personal-card-to-csv",
+    institutionName: "American Express Personal",
+    shortName: "Amex Card to CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "American Express Personal PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert American Express Personal PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling American Express Personal Statement Formatting",
+    statementQuirkDescription:
+      "American Express Personal PDF statements often contain cardmember sub-sections, foreign FX conversion lines, and statement credits. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Amex Platinum, Gold & Blue Cash PDFs",
+      "American Express Personal Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my American Express Personal PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my American Express Personal PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "citi-business-card-to-excel",
+    institutionName: "Citi Commercial & Credit Cards",
+    shortName: "Citi Card to Excel",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Citi Commercial & Credit Cards PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Citi Commercial & Credit Cards PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Citi Commercial & Credit Cards Statement Formatting",
+    statementQuirkDescription:
+      "Citi Commercial & Credit Cards PDF statements often contain split sale/post dates and multi-cardholder subtotal blocks. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Citi Custom Cash & Costco Anywhere",
+      "Citi Commercial & Credit Cards Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Citi Commercial & Credit Cards PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Citi Commercial & Credit Cards PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "chase-credit-card-to-quickbooks",
+    institutionName: "Chase Credit Card (Sapphire / Ink)",
+    shortName: "Chase Card to QuickBooks",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "QuickBooks CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Chase Credit Card (Sapphire / Ink) PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Chase Credit Card (Sapphire / Ink) PDF statements into clean QuickBooks CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Chase Credit Card (Sapphire / Ink) Statement Formatting",
+    statementQuirkDescription:
+      "Chase Credit Card (Sapphire / Ink) PDF statements often contain Payments/Credits vs. Purchases sections with signed sign-flip normalization. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Chase Ink Business & Sapphire Statements",
+      "Chase Credit Card (Sapphire / Ink) Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Chase Credit Card (Sapphire / Ink) PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Chase Credit Card (Sapphire / Ink) PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "bofa-credit-card-to-csv",
+    institutionName: "Bank of America Credit Card",
+    shortName: "BofA Card to CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Bank of America Credit Card PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Bank of America Credit Card PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Bank of America Credit Card Statement Formatting",
+    statementQuirkDescription:
+      "Bank of America Credit Card PDF statements often contain 4-digit card reference codes and reference numbers appended to descriptions. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "BofA Business Advantage & Customized Cash",
+      "Bank of America Credit Card Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Bank of America Credit Card PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Bank of America Credit Card PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "wells-fargo-credit-card-to-excel",
+    institutionName: "Wells Fargo Credit Card",
+    shortName: "Wells Fargo Card to Excel",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Wells Fargo Credit Card PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Wells Fargo Credit Card PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Wells Fargo Credit Card Statement Formatting",
+    statementQuirkDescription:
+      "Wells Fargo Credit Card PDF statements often contain wrapped merchant cities, reference strings, and payment credit sections. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Wells Fargo Active Cash & Autograph",
+      "Wells Fargo Credit Card Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Wells Fargo Credit Card PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Wells Fargo Credit Card PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "lloyds-bank-statement-to-csv",
+    institutionName: "Lloyds Bank UK",
+    shortName: "Lloyds PDF to CSV",
+    region: "United Kingdom",
+    defaultCurrency: "GBP",
+    targetFormat: "Xero CSV",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "Lloyds Bank UK PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Lloyds Bank UK PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Lloyds Bank UK Statement Formatting",
+    statementQuirkDescription:
+      "Lloyds Bank UK PDF statements often contain UK DD/MM/YY dates, BACS/Faster Payments codes, and Money In/Money Out columns. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Lloyds Business & Current Account",
+      "Lloyds Bank UK Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Lloyds Bank UK PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Lloyds Bank UK PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "natwest-bank-statement-to-xero",
+    institutionName: "NatWest UK",
+    shortName: "NatWest PDF to Xero",
+    region: "United Kingdom",
+    defaultCurrency: "GBP",
+    targetFormat: "Xero CSV",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "NatWest UK PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert NatWest UK PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling NatWest UK Statement Formatting",
+    statementQuirkDescription:
+      "NatWest UK PDF statements often contain multi-line POS/FPO/BAC descriptions and blank date carry-forward rows. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "NatWest Business & Personal Current",
+      "NatWest UK Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my NatWest UK PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my NatWest UK PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "rbs-bank-statement-to-csv",
+    institutionName: "Royal Bank of Scotland (RBS)",
+    shortName: "RBS PDF to CSV",
+    region: "United Kingdom",
+    defaultCurrency: "GBP",
+    targetFormat: "Xero CSV",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "Royal Bank of Scotland (RBS) PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Royal Bank of Scotland (RBS) PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Royal Bank of Scotland (RBS) Statement Formatting",
+    statementQuirkDescription:
+      "Royal Bank of Scotland (RBS) PDF statements often contain same-day grouped dates and separate Paid In / Withdrawn columns. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "RBS Business Current Accounts",
+      "Royal Bank of Scotland (RBS) Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Royal Bank of Scotland (RBS) PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Royal Bank of Scotland (RBS) PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "halifax-bank-statement-to-excel",
+    institutionName: "Halifax UK",
+    shortName: "Halifax PDF to Excel",
+    region: "United Kingdom",
+    defaultCurrency: "GBP",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "Halifax UK PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Halifax UK PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Halifax UK Statement Formatting",
+    statementQuirkDescription:
+      "Halifax UK PDF statements often contain abbreviated transaction type codes (DEB, FPI, DD) and running GBP balances. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Halifax Current & Reward Accounts",
+      "Halifax UK Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Halifax UK PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Halifax UK PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "santander-uk-statement-to-csv",
+    institutionName: "Santander UK",
+    shortName: "Santander UK to CSV",
+    region: "United Kingdom",
+    defaultCurrency: "GBP",
+    targetFormat: "Xero CSV",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "Santander UK PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Santander UK PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Santander UK Statement Formatting",
+    statementQuirkDescription:
+      "Santander UK PDF statements often contain wrapped card payment descriptions and multi-page statement balance blocks. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Santander 1|2|3 & Business Current",
+      "Santander UK Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Santander UK PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Santander UK PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "nationwide-uk-statement-to-excel",
+    institutionName: "Nationwide Building Society",
+    shortName: "Nationwide to Excel",
+    region: "United Kingdom",
+    defaultCurrency: "GBP",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "Nationwide Building Society PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Nationwide Building Society PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Nationwide Building Society Statement Formatting",
+    statementQuirkDescription:
+      "Nationwide Building Society PDF statements often contain UK date formats and split Out/In columns with multi-line payee details. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Nationwide FlexAccount & FlexPlus",
+      "Nationwide Building Society Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Nationwide Building Society PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Nationwide Building Society PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "tide-business-statement-to-xero",
+    institutionName: "Tide Business UK",
+    shortName: "Tide PDF to Xero",
+    region: "United Kingdom",
+    defaultCurrency: "GBP",
+    targetFormat: "Xero CSV",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "Tide Business UK PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Tide Business UK PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Tide Business UK Statement Formatting",
+    statementQuirkDescription:
+      "Tide Business UK PDF statements often contain FPS payment references, invoice tags, and VAT-ready GBP amounts. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Tide UK SME Business Accounts",
+      "Tide Business UK Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Tide Business UK PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Tide Business UK PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "metro-bank-uk-statement-to-csv",
+    institutionName: "Metro Bank UK",
+    shortName: "Metro Bank to CSV",
+    region: "United Kingdom",
+    defaultCurrency: "GBP",
+    targetFormat: "Xero CSV",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "Metro Bank UK PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Metro Bank UK PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Metro Bank UK Statement Formatting",
+    statementQuirkDescription:
+      "Metro Bank UK PDF statements often contain multi-column Money Out / Money In tables and FX fee sub-rows. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Metro Bank Business Current Account",
+      "Metro Bank UK Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Metro Bank UK PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Metro Bank UK PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "tsb-bank-uk-statement-to-excel",
+    institutionName: "TSB Bank UK",
+    shortName: "TSB UK PDF to Excel",
+    region: "United Kingdom",
+    defaultCurrency: "GBP",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "TSB Bank UK PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert TSB Bank UK PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling TSB Bank UK Statement Formatting",
+    statementQuirkDescription:
+      "TSB Bank UK PDF statements often contain UK DD MMM YY dates and abbreviated payment channel prefixes. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "TSB Spend & Save / Business Plus",
+      "TSB Bank UK Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my TSB Bank UK PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my TSB Bank UK PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "virgin-money-uk-statement-to-csv",
+    institutionName: "Virgin Money UK",
+    shortName: "Virgin Money to CSV",
+    region: "United Kingdom",
+    defaultCurrency: "GBP",
+    targetFormat: "Xero CSV",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "Virgin Money UK PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Virgin Money UK PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Virgin Money UK Statement Formatting",
+    statementQuirkDescription:
+      "Virgin Money UK PDF statements often contain grouped daily debits, Direct Debits, and running balance verification. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Virgin Money M Plus & Business Current",
+      "Virgin Money UK Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Virgin Money UK PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Virgin Money UK PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "scotiabank-statement-to-excel",
+    institutionName: "Scotiabank Canada",
+    shortName: "Scotiabank to Excel",
+    region: "Canada",
+    defaultCurrency: "CAD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Scotiabank Canada PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Scotiabank Canada PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Scotiabank Canada Statement Formatting",
+    statementQuirkDescription:
+      "Scotiabank Canada PDF statements often contain bilingual/Canadian date formats (MMM DD) and split Withdrawals/Deposits. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Scotiabank Business & Momentum Checking",
+      "Scotiabank Canada Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Scotiabank Canada PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Scotiabank Canada PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "bmo-canada-statement-to-csv",
+    institutionName: "BMO Bank of Montreal",
+    shortName: "BMO Canada to CSV",
+    region: "Canada",
+    defaultCurrency: "CAD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "BMO Bank of Montreal PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert BMO Bank of Montreal PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling BMO Bank of Montreal Statement Formatting",
+    statementQuirkDescription:
+      "BMO Bank of Montreal PDF statements often contain multi-line Interac e-Transfer memos and CAD running balance checks. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "BMO Business Builder & Everyday Banking",
+      "BMO Bank of Montreal Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my BMO Bank of Montreal PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my BMO Bank of Montreal PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "cibc-bank-statement-to-excel",
+    institutionName: "CIBC Canada",
+    shortName: "CIBC PDF to Excel",
+    region: "Canada",
+    defaultCurrency: "CAD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "CIBC Canada PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert CIBC Canada PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling CIBC Canada Statement Formatting",
+    statementQuirkDescription:
+      "CIBC Canada PDF statements often contain grouped Interac e-Transfers, service charges, and debit/credit columns. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "CIBC Business Operating & Smart Account",
+      "CIBC Canada Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my CIBC Canada PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my CIBC Canada PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "td-canada-trust-statement-to-quickbooks",
+    institutionName: "TD Canada Trust",
+    shortName: "TD Canada to QuickBooks",
+    region: "Canada",
+    defaultCurrency: "CAD",
+    targetFormat: "QuickBooks CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "TD Canada Trust PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert TD Canada Trust PDF statements into clean QuickBooks CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling TD Canada Trust Statement Formatting",
+    statementQuirkDescription:
+      "TD Canada Trust PDF statements often contain abbreviated POS/E-TFR codes and missing year markers on monthly rows. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "TD Every Day & Unlimited Business Plan",
+      "TD Canada Trust Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my TD Canada Trust PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my TD Canada Trust PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "national-bank-canada-to-csv",
+    institutionName: "National Bank of Canada",
+    shortName: "National Bank to CSV",
+    region: "Canada",
+    defaultCurrency: "CAD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "National Bank of Canada PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert National Bank of Canada PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling National Bank of Canada Statement Formatting",
+    statementQuirkDescription:
+      "National Bank of Canada PDF statements often contain French/English bilingual headers and CAD decimal formatting. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "National Bank Business & Personal Chequing",
+      "National Bank of Canada Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my National Bank of Canada PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my National Bank of Canada PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "tangerine-bank-statement-to-excel",
+    institutionName: "Tangerine Bank Canada",
+    shortName: "Tangerine to Excel",
+    region: "Canada",
+    defaultCurrency: "CAD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Tangerine Bank Canada PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Tangerine Bank Canada PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Tangerine Bank Canada Statement Formatting",
+    statementQuirkDescription:
+      "Tangerine Bank Canada PDF statements often contain interleaved e-Transfer memos and monthly interest payout lines. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Tangerine Chequing & Money-Back Card",
+      "Tangerine Bank Canada Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Tangerine Bank Canada PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Tangerine Bank Canada PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "eq-bank-statement-to-csv",
+    institutionName: "EQ Bank Canada",
+    shortName: "EQ Bank PDF to CSV",
+    region: "Canada",
+    defaultCurrency: "CAD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "EQ Bank Canada PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert EQ Bank Canada PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling EQ Bank Canada Statement Formatting",
+    statementQuirkDescription:
+      "EQ Bank Canada PDF statements often contain high-interest payout lines and EFT transfer reference codes. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "EQ Bank Personal & Notice Savings",
+      "EQ Bank Canada Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my EQ Bank Canada PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my EQ Bank Canada PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "simplii-financial-statement-to-excel",
+    institutionName: "Simplii Financial",
+    shortName: "Simplii PDF to Excel",
+    region: "Canada",
+    defaultCurrency: "CAD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Simplii Financial PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Simplii Financial PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Simplii Financial Statement Formatting",
+    statementQuirkDescription:
+      "Simplii Financial PDF statements often contain CIBC-style debit/credit columns and Interac e-Transfer descriptions. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Simplii No Fee Chequing Account",
+      "Simplii Financial Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Simplii Financial PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Simplii Financial PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "commbank-statement-to-xero",
+    institutionName: "Commonwealth Bank (CommBank)",
+    shortName: "CommBank to Xero",
+    region: "Australia & NZ",
+    defaultCurrency: "AUD",
+    targetFormat: "Xero CSV",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "Commonwealth Bank (CommBank) PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Commonwealth Bank (CommBank) PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Commonwealth Bank (CommBank) Statement Formatting",
+    statementQuirkDescription:
+      "Commonwealth Bank (CommBank) PDF statements often contain AUD CR/DR suffixes, BPAY/OSKO references, and multi-line merchant text. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "CommBank Business Transaction & Smart Access",
+      "Commonwealth Bank (CommBank) Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Commonwealth Bank (CommBank) PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Commonwealth Bank (CommBank) PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "anz-australia-statement-to-csv",
+    institutionName: "ANZ Bank Australia",
+    shortName: "ANZ PDF to CSV",
+    region: "Australia & NZ",
+    defaultCurrency: "AUD",
+    targetFormat: "Xero CSV",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "ANZ Bank Australia PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert ANZ Bank Australia PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling ANZ Bank Australia Statement Formatting",
+    statementQuirkDescription:
+      "ANZ Bank Australia PDF statements often contain DD MMM date stamps, EFTPOS codes, and separate Withdrawals/Deposits. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "ANZ Business Essentials & Everyday",
+      "ANZ Bank Australia Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my ANZ Bank Australia PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my ANZ Bank Australia PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "westpac-statement-to-excel",
+    institutionName: "Westpac Australia",
+    shortName: "Westpac PDF to Excel",
+    region: "Australia & NZ",
+    defaultCurrency: "AUD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "Westpac Australia PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Westpac Australia PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Westpac Australia Statement Formatting",
+    statementQuirkDescription:
+      "Westpac Australia PDF statements often contain multi-line PayID/OSKO memos and running AUD balance reconciliation. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Westpac Business One & Choice",
+      "Westpac Australia Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Westpac Australia PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Westpac Australia PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "nab-bank-statement-to-xero",
+    institutionName: "NAB (National Australia Bank)",
+    shortName: "NAB PDF to Xero",
+    region: "Australia & NZ",
+    defaultCurrency: "AUD",
+    targetFormat: "Xero CSV",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "NAB (National Australia Bank) PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert NAB (National Australia Bank) PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling NAB (National Australia Bank) Statement Formatting",
+    statementQuirkDescription:
+      "NAB (National Australia Bank) PDF statements often contain grouped debit/credit columns and BPAY biller codes. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "NAB Business Everyday & Classic",
+      "NAB (National Australia Bank) Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my NAB (National Australia Bank) PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my NAB (National Australia Bank) PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "macquarie-bank-statement-to-csv",
+    institutionName: "Macquarie Bank Australia",
+    shortName: "Macquarie to CSV",
+    region: "Australia & NZ",
+    defaultCurrency: "AUD",
+    targetFormat: "CSV",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "Macquarie Bank Australia PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Macquarie Bank Australia PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Macquarie Bank Australia Statement Formatting",
+    statementQuirkDescription:
+      "Macquarie Bank Australia PDF statements often contain clean modern tables with wrapped merchant locations and OSKO IDs. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Macquarie Transaction & Business CMA",
+      "Macquarie Bank Australia Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Macquarie Bank Australia PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Macquarie Bank Australia PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "ing-australia-statement-to-excel",
+    institutionName: "ING Australia",
+    shortName: "ING AU PDF to Excel",
+    region: "Australia & NZ",
+    defaultCurrency: "AUD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "ING Australia PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert ING Australia PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling ING Australia Statement Formatting",
+    statementQuirkDescription:
+      "ING Australia PDF statements often contain combined EFTPOS/Visa debit descriptors and international fee rebates. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "ING Orange Everyday & Business Optima",
+      "ING Australia Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my ING Australia PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my ING Australia PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "asb-bank-nz-statement-to-xero",
+    institutionName: "ASB Bank New Zealand",
+    shortName: "ASB NZ to Xero",
+    region: "Australia & NZ",
+    defaultCurrency: "AUD",
+    targetFormat: "Xero CSV",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "ASB Bank New Zealand PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert ASB Bank New Zealand PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling ASB Bank New Zealand Statement Formatting",
+    statementQuirkDescription:
+      "ASB Bank New Zealand PDF statements often contain NZ particular/code/reference 3-field memos and daily running balances. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "ASB Business Focus & Streamline",
+      "ASB Bank New Zealand Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my ASB Bank New Zealand PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my ASB Bank New Zealand PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "bnz-bank-nz-statement-to-csv",
+    institutionName: "BNZ (Bank of New Zealand)",
+    shortName: "BNZ NZ PDF to CSV",
+    region: "Australia & NZ",
+    defaultCurrency: "AUD",
+    targetFormat: "Xero CSV",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "BNZ (Bank of New Zealand) PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert BNZ (Bank of New Zealand) PDF statements into clean Xero CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling BNZ (Bank of New Zealand) Statement Formatting",
+    statementQuirkDescription:
+      "BNZ (Bank of New Zealand) PDF statements often contain multi-column payee/particulars/code/reference layouts. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "BNZ MyMoney for Business & YouMoney",
+      "BNZ (Bank of New Zealand) Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my BNZ (Bank of New Zealand) PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my BNZ (Bank of New Zealand) PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "ing-europe-statement-to-csv",
+    institutionName: "ING Bank (Netherlands / Germany)",
+    shortName: "ING Europe to CSV",
+    region: "Europe & Global",
+    defaultCurrency: "EUR",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "ING Bank (Netherlands / Germany) PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert ING Bank (Netherlands / Germany) PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling ING Bank (Netherlands / Germany) Statement Formatting",
+    statementQuirkDescription:
+      "ING Bank (Netherlands / Germany) PDF statements often contain European comma-decimal amounts (1.234,56 EUR) and SEPA IBAN references. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "ING Zakelijk & DiBa Girokonto",
+      "ING Bank (Netherlands / Germany) Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my ING Bank (Netherlands / Germany) PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my ING Bank (Netherlands / Germany) PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "deutsche-bank-statement-to-excel",
+    institutionName: "Deutsche Bank",
+    shortName: "Deutsche Bank to Excel",
+    region: "Europe & Global",
+    defaultCurrency: "EUR",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Deutsche Bank PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Deutsche Bank PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Deutsche Bank Statement Formatting",
+    statementQuirkDescription:
+      "Deutsche Bank PDF statements often contain SEPA Überweisung / Lastschrift multi-line blocks and EUR comma decimals. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Deutsche Bank Geschäftskonto & AktivKonto",
+      "Deutsche Bank Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Deutsche Bank PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Deutsche Bank PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "bnp-paribas-statement-to-csv",
+    institutionName: "BNP Paribas",
+    shortName: "BNP Paribas to CSV",
+    region: "Europe & Global",
+    defaultCurrency: "EUR",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "BNP Paribas PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert BNP Paribas PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling BNP Paribas Statement Formatting",
+    statementQuirkDescription:
+      "BNP Paribas PDF statements often contain French DD.MM date format, Débit/Crédit split columns, and EUR decimals. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "BNP Paribas Compte Pro & Esprit Libre",
+      "BNP Paribas Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my BNP Paribas PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my BNP Paribas PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "qonto-business-statement-to-excel",
+    institutionName: "Qonto Business Banking",
+    shortName: "Qonto PDF to Excel",
+    region: "Europe & Global",
+    defaultCurrency: "EUR",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Qonto Business Banking PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Qonto Business Banking PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Qonto Business Banking Statement Formatting",
+    statementQuirkDescription:
+      "Qonto Business Banking PDF statements often contain multi-member corporate card rows, SEPA transfers, and VAT metadata. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Qonto European SME & Freelancer Accounts",
+      "Qonto Business Banking Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Qonto Business Banking PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Qonto Business Banking PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "bbva-bank-statement-to-csv",
+    institutionName: "BBVA Bank",
+    shortName: "BBVA PDF to CSV",
+    region: "Europe & Global",
+    defaultCurrency: "EUR",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "BBVA Bank PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert BBVA Bank PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling BBVA Bank Statement Formatting",
+    statementQuirkDescription:
+      "BBVA Bank PDF statements often contain Spanish/European date formats and comma-decimal EUR amount parsing. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "BBVA Empresas & Cuenta Online",
+      "BBVA Bank Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my BBVA Bank PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my BBVA Bank PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "ubs-switzerland-statement-to-excel",
+    institutionName: "UBS Switzerland",
+    shortName: "UBS PDF to Excel",
+    region: "Europe & Global",
+    defaultCurrency: "EUR",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "UBS Switzerland PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert UBS Switzerland PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling UBS Switzerland Statement Formatting",
+    statementQuirkDescription:
+      "UBS Switzerland PDF statements often contain Swiss apostrophe thousand separators (1'250.00) and multi-currency lines. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "UBS Corporate & Private Account Statements",
+      "UBS Switzerland Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my UBS Switzerland PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my UBS Switzerland PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "uob-singapore-statement-to-excel",
+    institutionName: "UOB Singapore",
+    shortName: "UOB PDF to Excel",
+    region: "Asia-Pacific",
+    defaultCurrency: "SGD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "UOB Singapore PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert UOB Singapore PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling UOB Singapore Statement Formatting",
+    statementQuirkDescription:
+      "UOB Singapore PDF statements often contain FAST/PayNow multi-line transfer references and SGD balance verification. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "UOB eBusiness & One Account",
+      "UOB Singapore Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my UOB Singapore PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my UOB Singapore PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "hsbc-hong-kong-statement-to-csv",
+    institutionName: "HSBC Hong Kong",
+    shortName: "HSBC HK to CSV",
+    region: "Asia-Pacific",
+    defaultCurrency: "HKD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "HSBC Hong Kong PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert HSBC Hong Kong PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling HSBC Hong Kong Statement Formatting",
+    statementQuirkDescription:
+      "HSBC Hong Kong PDF statements often contain multi-currency HKD/USD/CNY sub-ledgers inside one composite PDF statement. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "HSBC Business Integrated & Premier HK",
+      "HSBC Hong Kong Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my HSBC Hong Kong PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my HSBC Hong Kong PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "hang-seng-bank-statement-to-excel",
+    institutionName: "Hang Seng Bank Hong Kong",
+    shortName: "Hang Seng to Excel",
+    region: "Asia-Pacific",
+    defaultCurrency: "HKD",
+    targetFormat: "Excel (.xls)",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Hang Seng Bank Hong Kong PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Hang Seng Bank Hong Kong PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Hang Seng Bank Hong Kong Statement Formatting",
+    statementQuirkDescription:
+      "Hang Seng Bank Hong Kong PDF statements often contain FPS transfer memos, multi-currency sections, and HKD balance checks. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Hang Seng Business & Prestige Banking",
+      "Hang Seng Bank Hong Kong Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Hang Seng Bank Hong Kong PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Hang Seng Bank Hong Kong PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "standard-chartered-statement-to-csv",
+    institutionName: "Standard Chartered",
+    shortName: "Standard Chartered to CSV",
+    region: "Asia-Pacific",
+    defaultCurrency: "SGD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Standard Chartered PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Standard Chartered PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Standard Chartered Statement Formatting",
+    statementQuirkDescription:
+      "Standard Chartered PDF statements often contain multi-region SG/HK/UK statement templates and FX conversion rows. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Standard Chartered Business & Priority",
+      "Standard Chartered Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Standard Chartered PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Standard Chartered PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "pdf-to-wave-accounting-csv",
+    institutionName: "Wave Accounting",
+    shortName: "PDF to Wave CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Wave Accounting PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Wave Accounting PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Wave Accounting Statement Formatting",
+    statementQuirkDescription:
+      "Wave Accounting PDF statements often contain clean Date, Description, Amount columns formatted for zero-error Wave upload. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Wave Accounting Bank Statement Import",
+      "Wave Accounting Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Wave Accounting PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Wave Accounting PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "pdf-to-freshbooks-csv",
+    institutionName: "FreshBooks",
+    shortName: "PDF to FreshBooks CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "FreshBooks PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert FreshBooks PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling FreshBooks Statement Formatting",
+    statementQuirkDescription:
+      "FreshBooks PDF statements often contain normalized dates and signed numeric amounts accepted by FreshBooks. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "FreshBooks Expense & Bank Import",
+      "FreshBooks Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my FreshBooks PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my FreshBooks PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "pdf-to-sage-accounting-csv",
+    institutionName: "Sage 50 & Sage Accounting",
+    shortName: "PDF to Sage CSV",
+    region: "United Kingdom",
+    defaultCurrency: "GBP",
+    targetFormat: "CSV",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "Sage 50 & Sage Accounting PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Sage 50 & Sage Accounting PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Sage 50 & Sage Accounting Statement Formatting",
+    statementQuirkDescription:
+      "Sage 50 & Sage Accounting PDF statements often contain strict Sage Date/Reference/Details/Net columns with cent-level balance check. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Sage 50cloud & Sage Business Cloud",
+      "Sage 50 & Sage Accounting Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Sage 50 & Sage Accounting PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Sage 50 & Sage Accounting PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "pdf-to-zoho-books-csv",
+    institutionName: "Zoho Books",
+    shortName: "PDF to Zoho Books CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Zoho Books PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Zoho Books PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Zoho Books Statement Formatting",
+    statementQuirkDescription:
+      "Zoho Books PDF statements often contain separate Deposits/Withdrawals columns matching Zoho Books import mapper. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Zoho Books Manual Bank Feed Import",
+      "Zoho Books Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Zoho Books PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Zoho Books PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "pdf-to-netsuite-csv",
+    institutionName: "Oracle NetSuite",
+    shortName: "PDF to NetSuite CSV",
+    region: "United States",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Oracle NetSuite PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Oracle NetSuite PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Oracle NetSuite Statement Formatting",
+    statementQuirkDescription:
+      "Oracle NetSuite PDF statements often contain clean ISO dates, reference IDs, and deterministic debit/credit parity. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "NetSuite Bank Data & Reconciliation CSV",
+      "Oracle NetSuite Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Oracle NetSuite PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Oracle NetSuite PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "pdf-to-myob-csv",
+    institutionName: "MYOB Business",
+    shortName: "PDF to MYOB CSV",
+    region: "Australia & NZ",
+    defaultCurrency: "AUD",
+    targetFormat: "CSV",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "MYOB Business PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert MYOB Business PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling MYOB Business Statement Formatting",
+    statementQuirkDescription:
+      "MYOB Business PDF statements often contain AUD DD/MM/YYYY date formatting and verified running balance alignment. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "MYOB AccountRight & Business Bank Feeds",
+      "MYOB Business Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my MYOB Business PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my MYOB Business PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "pdf-to-freeagent-csv",
+    institutionName: "FreeAgent UK",
+    shortName: "PDF to FreeAgent CSV",
+    region: "United Kingdom",
+    defaultCurrency: "GBP",
+    targetFormat: "CSV",
+    recommendedSampleId: "amazon-uk-receipt",
+    heroHeadline: "FreeAgent UK PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert FreeAgent UK PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling FreeAgent UK Statement Formatting",
+    statementQuirkDescription:
+      "FreeAgent UK PDF statements often contain strict 3-column DD/MM/YYYY, Amount, Description schema required by FreeAgent. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "FreeAgent UK Contractor Bank Upload",
+      "FreeAgent UK Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my FreeAgent UK PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my FreeAgent UK PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "pdf-to-actual-budget-csv",
+    institutionName: "Actual Budget (Open Source)",
+    shortName: "PDF to Actual Budget CSV",
+    region: "Europe & Global",
+    defaultCurrency: "USD",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Actual Budget (Open Source) PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Actual Budget (Open Source) PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Actual Budget (Open Source) Statement Formatting",
+    statementQuirkDescription:
+      "Actual Budget (Open Source) PDF statements often contain 100% browser-local PDF extraction matching Actual Budget's privacy-first ethos. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Actual Budget Local-First Personal Finance",
+      "Actual Budget (Open Source) Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Actual Budget (Open Source) PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Actual Budget (Open Source) PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
+    ],
+  },
+  {
+    slug: "pdf-to-firefly-iii-csv",
+    institutionName: "Firefly III (Self-Hosted)",
+    shortName: "PDF to Firefly III CSV",
+    region: "Europe & Global",
+    defaultCurrency: "EUR",
+    targetFormat: "CSV",
+    recommendedSampleId: "chase-checking-oct",
+    heroHeadline: "Firefly III (Self-Hosted) PDFs, verified to zero.",
+    heroSubheadline:
+      "Convert Firefly III (Self-Hosted) PDF statements into clean CSV and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+    statementQuirkTitle: "Handling Firefly III (Self-Hosted) Statement Formatting",
+    statementQuirkDescription:
+      "Firefly III (Self-Hosted) PDF statements often contain zero-upload client-side parsing with clean payee, amount, and date columns. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
+    supportedAccountTypes: [
+      "Firefly III Data Importer CSV",
+      "Firefly III (Self-Hosted) Monthly & Historical Archive PDFs",
+    ],
+    extractedColumns: [
+      "Post Date (YYYY-MM-DD)",
+      "Normalized Merchant / Payee",
+      "Full Reference & Memo",
+      "Expense Category",
+      "Signed Amount & Split Debit/Credit",
+    ],
+    specificFaqs: [
+      {
+        q: "Are my Firefly III (Self-Hosted) PDF statements uploaded to a cloud server?",
+        a: "No. StatementFlow runs PDF extraction 100% client-side inside your browser tab using pdf.js—your financial PDF never leaves your device.",
+      },
+      {
+        q: "How do I know no transactions were missed from my Firefly III (Self-Hosted) PDF?",
+        a: "Our deterministic ledger engine verifies Opening Balance + Total Credits - Total Debits against your Closing Balance to the exact cent ($0.00 discrepancy).",
+      },
     ],
   },
 ];

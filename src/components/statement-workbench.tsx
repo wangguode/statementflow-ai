@@ -1078,6 +1078,31 @@ export function StatementWorkbench() {
           className="bg-[#101216] py-16 text-[#f5f5f7] lg:py-24"
         >
           <div className="sf-wrap">
+            {/* 35 秒真实操作演示视频（零剪辑实机录屏，拉满陌生访客首屏信任度） */}
+            <div className="mb-14 overflow-hidden rounded-2xl border border-[#242a38] bg-[#0b0d12] shadow-2xl">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1d2230] px-5 py-3 text-xs text-[#9ca3b5]">
+                <div className="flex items-center gap-2 font-medium text-white">
+                  <span className="inline-block size-2 rounded-full bg-[#34d399]" />
+                  <span>
+                    35s Live Product Walkthrough · Multi-PDF Batch → $0.00
+                    Balance Proof → QuickBooks / Xero CSV
+                  </span>
+                </div>
+                <span className="font-mono text-[#66b3ff]">
+                  100% Browser-Local + Vision OCR
+                </span>
+              </div>
+              <video
+                src="/demo/statementflow-demo.mp4"
+                autoPlay
+                loop
+                muted
+                playsInline
+                controls
+                className="aspect-video w-full bg-[#0a0b0e] object-cover"
+              />
+            </div>
+
             {/* 章节标题与输入源切换 */}
             <div
               data-reveal
@@ -1829,25 +1854,90 @@ export function StatementWorkbench() {
               </div>
             </div>
 
-            {/* B2B 高客单价：企业内网私有化与定制部署入口 */}
-            <div className="mt-10 flex flex-col justify-between gap-6 rounded-2xl border border-[#2a3142] bg-[#141720] p-8 sm:flex-row sm:items-center">
-              <div className="max-w-2xl">
-                <div className="text-xs font-semibold uppercase tracking-wider text-[#66b3ff]">
-                  Enterprise Self-Hosted · Starting at $2,500
+            {/* B2B 三阶务实破冰与企业内网私有化部署方案 */}
+            <div className="mt-10 rounded-2xl border border-[#2a3142] bg-[#141720] p-8">
+              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+                <div className="max-w-2xl">
+                  <div className="text-xs font-semibold uppercase tracking-wider text-[#66b3ff]">
+                    For Bookkeeping Firms & Accounting Teams · Pilot from $199
+                  </div>
+                  <h3 className="mt-1.5 text-xl font-semibold text-white">
+                    Start with a zero-risk 14-day firm pilot, then scale to
+                    air-gapped Docker self-hosting.
+                  </h3>
+                  <p className="mt-2 text-sm text-[#a0a6b5]">
+                    No per-user seat tax. Unlimited team members, custom regional
+                    bank layout tuning, and strict local privacy compliance.
+                  </p>
                 </div>
-                <h3 className="mt-1.5 text-xl font-semibold text-white">
-                  Need an air-gapped Docker deployment or custom bank layout parser?
-                </h3>
-                <p className="mt-2 text-sm text-[#a0a6b5]">
-                  Deploy StatementFlow inside your private VPC with zero external data egress, dedicated batch throughput, custom ERP/QuickBooks schemas, and SLA engineering support.
-                </p>
+                <a
+                  href="mailto:153557421@qq.com?subject=StatementFlow%20%24199%20Firm%20Pilot%20Inquiry"
+                  className="sf-btn inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-white px-5 text-sm font-semibold text-[#0a0b0e] hover:bg-[#e8e8ed]"
+                >
+                  Send 1 Free Test PDF →
+                </a>
               </div>
-              <a
-                href="mailto:17768113090@163.com?subject=StatementFlow%20Enterprise%20Self-Hosted%20Inquiry"
-                className="sf-btn inline-flex min-h-12 shrink-0 items-center justify-center rounded-xl bg-white px-6 text-sm font-semibold text-[#0a0b0e] hover:bg-[#e8e8ed]"
-              >
-                Request Enterprise Quote
-              </a>
+
+              <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="rounded-xl border border-[#242a38] bg-[#0e1118] p-5">
+                  <div className="text-xs font-mono text-[#34d399]">
+                    STEP 1 · PAID PILOT
+                  </div>
+                  <div className="mt-1 text-2xl font-bold tabular-nums text-white">
+                    $199{" "}
+                    <span className="text-xs font-normal text-[#8b92a5]">
+                      one-time
+                    </span>
+                  </div>
+                  <div className="mt-1 text-sm font-medium text-white">
+                    14-Day Boutique Firm Pilot
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-[#9ca3b5]">
+                    Unlimited seats for 1–3 client books, white-glove tuning on
+                    your trickiest scanned/regional bank PDFs, plus native
+                    QBO/Xero exports.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-[#0066cc] bg-[#0e1118] p-5">
+                  <div className="text-xs font-mono text-[#66b3ff]">
+                    STEP 2 · SELF-HOSTED PACK
+                  </div>
+                  <div className="mt-1 text-2xl font-bold tabular-nums text-white">
+                    $999{" "}
+                    <span className="text-xs font-normal text-[#8b92a5]">
+                      one-time license
+                    </span>
+                  </div>
+                  <div className="mt-1 text-sm font-medium text-white">
+                    Air-Gapped Docker Deployment
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-[#9ca3b5]">
+                    Run StatementFlow inside your firm&apos;s own VPC/office
+                    server with zero external data egress, batch CLI/API, and
+                    local Ollama/OpenAI routing.
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-[#242a38] bg-[#0e1118] p-5">
+                  <div className="text-xs font-mono text-[#a0a6b5]">
+                    STEP 3 · ENTERPRISE CUSTOM
+                  </div>
+                  <div className="mt-1 text-2xl font-bold tabular-nums text-white">
+                    $2,500+{" "}
+                    <span className="text-xs font-normal text-[#8b92a5]">
+                      custom
+                    </span>
+                  </div>
+                  <div className="mt-1 text-sm font-medium text-white">
+                    Custom ERP & SLA Integration
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-[#9ca3b5]">
+                    Direct NetSuite/Sage/ERP webhook pipelines, custom audit
+                    rules, and dedicated 30-day architect onboarding support.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>

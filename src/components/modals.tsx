@@ -249,15 +249,14 @@ export function CheckoutModal({
   onClose,
   onSuccessActivate,
 }: CheckoutModalProps) {
-  const [email, setEmail] = useState("founder@northstar-ops.io");
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
   if (!open) return null;
 
-  const amount = plan === "business" ? 49 : 19;
-  const planTitle =
-    plan === "business" ? "StatementFlow Firm" : "StatementFlow Pro";
+  const amount = 9;
+  const planTitle = "StatementFlow AI Pro";
 
   async function handleConfirmCheckout(e: React.FormEvent) {
     e.preventDefault();
@@ -343,15 +342,15 @@ export function CheckoutModal({
           <div className="flex items-baseline justify-between rounded-lg bg-[#e8e8ed] px-4 py-3">
             <div>
               <div className="text-base font-medium text-[#111215]">
-                Monthly license
+                One-time lifetime unlock
               </div>
               <div className="text-sm text-[#494b52]">
-                Cancel anytime in one click
+                No recurring subscription · Instant access
               </div>
             </div>
             <div className="text-2xl font-semibold tabular-nums text-[#111215]">
               ${amount}
-              <span className="text-sm font-normal text-[#494b52]">/mo</span>
+              <span className="text-sm font-normal text-[#494b52]"> once</span>
             </div>
           </div>
 

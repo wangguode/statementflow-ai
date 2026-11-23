@@ -1758,37 +1758,16 @@ export function StatementWorkbench() {
               className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end"
             >
               <div>
-                <h2 className="sf-head text-[#111215]">Plans that scale.</h2>
+                <h2 className="sf-head text-[#111215]">Simple, honest pricing.</h2>
                 <p className="mt-3 text-base text-[#494b52]">
-                  Start immediately in Keyless Demo Mode. Upgrade via Creem.io
-                  Merchant of Record or Stripe Checkout when your
-                  monthly statement volume grows.
+                  Test 3 extractions for free with zero signup. Upgrade once via
+                  Creem.io Merchant of Record—no recurring subscription traps.
                 </p>
               </div>
 
-              <div className="inline-flex flex-wrap items-center gap-2 rounded-xl bg-[#f5f5f7] p-1.5">
-                <button
-                  type="button"
-                  onClick={() => setGateway("creem")}
-                  className={`sf-btn min-h-11 rounded-lg px-4 py-2 text-sm font-semibold ${
-                    gateway === "creem"
-                      ? "bg-[#0066cc] text-white"
-                      : "text-[#111215]"
-                  }`}
-                >
-                  Creem.io (Global Tax MoR)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGateway("stripe")}
-                  className={`sf-btn min-h-11 rounded-lg px-4 py-2 text-sm font-semibold ${
-                    gateway === "stripe"
-                      ? "bg-[#0066cc] text-white"
-                      : "text-[#111215]"
-                  }`}
-                >
-                  Stripe Checkout
-                </button>
+              <div className="inline-flex items-center gap-2 rounded-xl bg-[#f5f5f7] px-4 py-2.5 text-sm font-medium text-[#111215]">
+                <ShieldCheck className="size-4 text-[#0066cc]" />
+                <span>Secured by Creem.io (Global Tax MoR)</span>
               </div>
             </div>
 
@@ -1801,21 +1780,22 @@ export function StatementWorkbench() {
                 className="flex min-h-[380px] flex-col justify-between overflow-hidden rounded-xl bg-[#f5f5f7] text-[#111215] lg:col-span-4"
               >
                 <div className="p-8">
-                  <div className="text-base font-semibold">Starter Studio</div>
+                  <div className="text-base font-semibold">Free Preview</div>
                   <div className="mt-3 flex items-baseline gap-1.5">
                     <span className="sf-lead font-semibold tabular-nums">
                       $0
                     </span>
-                    <span className="text-sm text-[#494b52]">/forever</span>
+                    <span className="text-sm text-[#494b52]">/no signup</span>
                   </div>
                   <p className="mt-3 text-sm text-[#494b52]">
-                    Built for founders testing multi-currency presets and local
-                    heuristic statement conversion.
+                    Verify accuracy on your own bank statement PDF before paying
+                    a single cent.
                   </p>
                   <ul className="mt-6 space-y-2.5 text-sm text-[#111215]">
-                    <li>3 statement extraction runs included</li>
-                    <li>Deterministic balance equation check</li>
-                    <li>Bring your own OpenAI / DeepSeek key</li>
+                    <li>3 free extraction runs included</li>
+                    <li>100% browser-local PDF text parsing</li>
+                    <li>Deterministic $0.00 balance verification</li>
+                    <li>Excel, CSV, QuickBooks & Xero export</li>
                   </ul>
                 </div>
 
@@ -1823,12 +1803,12 @@ export function StatementWorkbench() {
                   href="#workbench"
                   className="sf-btn flex min-h-16 w-full items-center justify-between bg-[#e2e2e8] px-8 text-base font-semibold text-[#111215]"
                 >
-                  <span>Launch Free Studio</span>
+                  <span>Try Free Studio</span>
                   <span className="tabular-nums">Free</span>
                 </a>
               </div>
 
-              {/* Tier 2: StatementFlow Pro (Taller column) */}
+              {/* Tier 2: StatementFlow Pro (One-Time $9, 100% matches Creem product) */}
               <div
                 data-reveal
                 style={{ "--delay": "90ms" } as React.CSSProperties}
@@ -1840,24 +1820,24 @@ export function StatementWorkbench() {
                       StatementFlow Pro
                     </span>
                     <span className="rounded-md bg-[#0066cc] px-2.5 py-1 text-sm font-semibold text-white">
-                      Recommended
+                      Best Value
                     </span>
                   </div>
                   <div className="mt-3 flex items-baseline gap-1.5">
                     <span className="sf-lead font-semibold tabular-nums text-white">
-                      $19
+                      $9
                     </span>
-                    <span className="text-sm text-[#a0a6b5]">/month</span>
+                    <span className="text-sm text-[#a0a6b5]">one-time</span>
                   </div>
                   <p className="mt-3 text-sm text-[#a0a6b5]">
-                    Unlimited statement and invoice conversions for independent
-                    operators, e-commerce sellers, and bookkeepers.
+                    Pay once, unlock unlimited conversions forever. Built for
+                    bookkeepers, SMB owners, and solo operators.
                   </p>
                   <ul className="mt-6 space-y-2.5 text-sm text-[#e2e6f0]">
-                    <li>Unlimited monthly PDF & CSV extractions</li>
-                    <li>Multi-sheet Excel (.xls) & QuickBooks CSV</li>
-                    <li>Inline ledger editor & discrepancy alerts</li>
-                    <li>Automatic EU/UK VAT tax receipt</li>
+                    <li>Unlimited batch multi-PDF conversions</li>
+                    <li>Scanned PDF & photo Vision OCR engine</li>
+                    <li>Native QuickBooks (3-col) & Xero (5-col) CSV</li>
+                    <li>Zero monthly fees · Automatic VAT receipt</li>
                   </ul>
                 </div>
 
@@ -1866,12 +1846,12 @@ export function StatementWorkbench() {
                   onClick={() => setCheckoutPlan("pro")}
                   className="sf-btn flex min-h-16 w-full items-center justify-between bg-[#0066cc] px-8 text-base font-semibold text-white"
                 >
-                  <span>Activate Pro</span>
-                  <span className="tabular-nums">$19/mo</span>
+                  <span>Unlock Pro Forever</span>
+                  <span className="tabular-nums">$9 once</span>
                 </button>
               </div>
 
-              {/* Tier 3: Accounting Firm (Tallest column) */}
+              {/* Tier 3: Boutique Firm Pilot ($199) */}
               <div
                 data-reveal
                 style={{ "--delay": "180ms" } as React.CSSProperties}
@@ -1879,35 +1859,33 @@ export function StatementWorkbench() {
               >
                 <div className="p-8">
                   <div className="text-base font-semibold text-white">
-                    Accounting Firm
+                    Bookkeeping Firm Pilot
                   </div>
                   <div className="mt-3 flex items-baseline gap-1.5">
                     <span className="sf-lead font-semibold tabular-nums text-white">
-                      $49
+                      $199
                     </span>
-                    <span className="text-sm text-[#a0a6b5]">/month</span>
+                    <span className="text-sm text-[#a0a6b5]">one-time pilot</span>
                   </div>
                   <p className="mt-3 text-sm text-[#a0a6b5]">
-                    Built for CPA practices, fractional CFOs, and multi-entity
-                    finance teams reconciling client accounts at scale.
+                    Zero-risk 14-day guided pilot for boutique firms reconciling
+                    dozens of client accounts every month.
                   </p>
                   <ul className="mt-6 space-y-2.5 text-sm text-[#e2e6f0]">
-                    <li>Everything in StatementFlow Pro</li>
-                    <li>5 team seats & shared category rules</li>
-                    <li>Dedicated REST API & webhook pipeline</li>
-                    <li>Custom chart-of-accounts JSON mapping</li>
-                    <li>Priority schema engineering support</li>
+                    <li>Unlimited team seats (no per-user tax)</li>
+                    <li>White-glove tuning on your tricky bank PDFs</li>
+                    <li>Custom QBO / Xero / Sage column presets</li>
+                    <li>Upgrade path to $999 air-gapped Docker</li>
                   </ul>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setCheckoutPlan("business")}
+                <a
+                  href="mailto:153557421@qq.com?subject=StatementFlow%20%24199%20Firm%20Pilot%20Inquiry"
                   className="sf-btn flex min-h-16 w-full items-center justify-between bg-[#1d2230] px-8 text-base font-semibold text-white hover:bg-[#0066cc]"
                 >
-                  <span>Activate Firm</span>
-                  <span className="tabular-nums">$49/mo</span>
-                </button>
+                  <span>Start Firm Pilot</span>
+                  <span className="tabular-nums">$199</span>
+                </a>
               </div>
             </div>
 

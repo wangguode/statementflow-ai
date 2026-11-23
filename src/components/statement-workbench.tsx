@@ -874,11 +874,10 @@ export function StatementWorkbench() {
   function handleAutoBalanceRow() {
     const diff = extraction.reconciliation.discrepancy;
     if (Math.abs(diff) < 0.005) return;
-    // discrepancy = expectedClosing - actualClosing；若 > 0 说明净流入偏多，需补一笔 debit；反之补 credit
-    const type: "credit" | "debit" = diff > 0 ? "debit" : "credit";
     const amount = Math.round(Math.abs(diff) * 100) / 100;
     const latestDate = extraction.transactions[0]?.date || "2026-10-30";
-    const newItem: TransactionItem = {
+    // 同时验算 credit / debit 两个方向，自动选取能令复式恒等式差额归零的方向（兼容银行对账单与发票模式）
+    const makeEntry = (type: "credit" | "debit"): TransactionItem => ({
       id: `reconcile-${Date.now()}`,
       date: latestDate,
       merchant: "Reconciliation Balancing Entry",
@@ -887,20 +886,31 @@ export function StatementWorkbench() {
       type,
       amount,
       confidence: 1,
-    };
-    setExtraction((prev) => {
-      const nextTx = [newItem, ...prev.transactions];
-      return {
-        ...prev,
-        transactions: nextTx,
-        reconciliation: computeReconciliation(
-          prev.reconciliation.openingBalance,
-          prev.reconciliation.closingBalance,
-          nextTx,
-          prev.documentType
-        ),
-      };
     });
+    const creditEntry = makeEntry("credit");
+    const debitEntry = makeEntry("debit");
+    const recCredit = computeReconciliation(
+      extraction.reconciliation.openingBalance,
+      extraction.reconciliation.closingBalance,
+      [creditEntry, ...extraction.transactions],
+      extraction.documentType
+    );
+    const recDebit = computeReconciliation(
+      extraction.reconciliation.openingBalance,
+      extraction.reconciliation.closingBalance,
+      [debitEntry, ...extraction.transactions],
+      extraction.documentType
+    );
+    const useCredit =
+      Math.abs(recCredit.discrepancy) <= Math.abs(recDebit.discrepancy);
+    const chosenEntry = useCredit ? creditEntry : debitEntry;
+    const chosenRec = useCredit ? recCredit : recDebit;
+
+    setExtraction((prev) => ({
+      ...prev,
+      transactions: [chosenEntry, ...prev.transactions],
+      reconciliation: chosenRec,
+    }));
     setStatusNotice(`Added balancing entry (${amount.toFixed(2)}) — ledger reconciled to 0.00.`);
   }
 

@@ -6,8 +6,8 @@ export const metadata: Metadata = {
   description:
     "Convert PDF bank statements, Stripe SaaS invoices, and VAT receipts into reconciled multi-sheet Excel, UTF-8 CSV, and accounting JSON in seconds.",
   robots: {
-    index: false,
-    follow: false,
+    index: true,
+    follow: true,
   },
 };
 

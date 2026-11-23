@@ -2216,6 +2216,24 @@ export function StatementWorkbench() {
             </div>
           </div>
 
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-white/10 pt-6 text-sm text-[#c7ccd9]">
+            <span className="font-mono text-xs uppercase tracking-widest text-[#8b92a5]">
+              Free Browser-Local Tools:
+            </span>
+            <a
+              href="/tools/quickbooks-csv-fixer"
+              className="underline decoration-white/30 underline-offset-4 hover:text-white hover:decoration-white"
+            >
+              QuickBooks &amp; Xero CSV Import Fixer
+            </a>
+            <a
+              href="/tools/ofx-qbo-to-csv"
+              className="underline decoration-white/30 underline-offset-4 hover:text-white hover:decoration-white"
+            >
+              OFX / QFX / QBO to CSV Converter
+            </a>
+          </div>
+
           <div className="credits mt-10 max-w-2xl text-sm leading-7 text-[#8b92a5]">
             Media credits:{" "}
             <a

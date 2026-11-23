@@ -396,7 +396,7 @@ export function CheckoutModal({
             </li>
             <li className="flex items-center gap-2">
               <CheckCircle2 className="size-4 shrink-0 text-[#0066cc]" />
-              <span>Multi-sheet Excel (.xls), UTF-8 CSV and JSON export</span>
+              <span>Multi-sheet Excel (.xlsx), QuickBooks/Xero CSV &amp; JSON export</span>
             </li>
           </ul>
 

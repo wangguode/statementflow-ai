@@ -75,10 +75,6 @@ export default function PrivacyPage() {
             deletion requests, contact{" "}
             <a href="mailto:zhangsanx34@gmail.com" className="text-[#14532d] underline">
               zhangsanx34@gmail.com
-            </a>{" "}
-            or{" "}
-            <a href="mailto:153557421@qq.com" className="text-[#14532d] underline">
-              153557421@qq.com
             </a>
             .
           </p>

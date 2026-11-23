@@ -7,7 +7,7 @@ export interface PseoBankEntry {
   shortName: string;
   region: "United States" | "United Kingdom" | "Canada" | "Australia & NZ" | "Europe & Global" | "Asia-Pacific";
   defaultCurrency: "USD" | "GBP" | "EUR" | "CAD" | "AUD" | "SGD" | "HKD";
-  targetFormat: "Excel (.xls)" | "CSV" | "QuickBooks CSV" | "Xero CSV";
+  targetFormat: "Excel (.xlsx)" | "CSV" | "QuickBooks CSV" | "Xero CSV";
   recommendedSampleId:
     | "chase-checking-oct"
     | "vercel-stripe-invoice"
@@ -31,7 +31,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Chase PDF to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Chase statements, verified to zero.",
     heroSubheadline:
@@ -145,7 +145,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Citibank to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Citibank statements, balanced fast.",
     heroSubheadline:
@@ -221,7 +221,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Stripe Invoice Excel",
     region: "Europe & Global",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "vercel-stripe-invoice",
     heroHeadline: "Stripe invoices, parsed to the cent.",
     heroSubheadline:
@@ -249,7 +249,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "Does it extract the tax column separately for VAT/GST reclaim?",
-        a: "Every row includes a dedicated Tax column alongside the net/gross amount in both Excel (.xls) and CSV exports.",
+        a: "Every row includes a dedicated Tax column alongside the net/gross amount in both Excel (.xlsx) and CSV exports.",
       },
     ],
   },
@@ -373,7 +373,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Revolut to Excel",
     region: "Europe & Global",
     defaultCurrency: "EUR",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "amazon-uk-receipt",
     heroHeadline: "Revolut Business, verified to zero.",
     heroSubheadline:
@@ -411,7 +411,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "HSBC PDF to Excel",
     region: "United Kingdom",
     defaultCurrency: "GBP",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "amazon-uk-receipt",
     heroHeadline: "HSBC statements, zero drift.",
     heroSubheadline:
@@ -449,7 +449,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Amazon VAT to Excel",
     region: "United Kingdom",
     defaultCurrency: "GBP",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "amazon-uk-receipt",
     heroHeadline: "Amazon VAT invoices, itemized clean.",
     heroSubheadline:
@@ -487,7 +487,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Payoneer to Excel",
     region: "Europe & Global",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "vercel-stripe-invoice",
     heroHeadline: "Payoneer payouts, reconciled clean.",
     heroSubheadline:
@@ -527,7 +527,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Brex PDF to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Brex card statements to Excel.",
     heroSubheadline:
@@ -567,7 +567,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Amex PDF to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Amex Business PDFs to verified Excel.",
     heroSubheadline:
@@ -598,7 +598,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     supportedAccountTypes: ["Spark Business Checking", "Spark Cash Plus Card"],
     extractedColumns: ["Date", "Description", "Debit", "Credit", "Signed Amount"],
     specificFaqs: [
-      { q: "Can I export both Excel and CSV?", a: "Yes, every parsed statement supports .xls, .csv, and QuickBooks JSON." },
+      { q: "Can I export both Excel and CSV?", a: "Yes, every parsed statement supports .xlsx, .csv, and QuickBooks JSON." },
     ],
   },
   {
@@ -607,7 +607,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "TD Bank PDF to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "TD Bank PDFs converted with zero drift.",
     heroSubheadline:
@@ -667,7 +667,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Starling PDF to Excel",
     region: "United Kingdom",
     defaultCurrency: "GBP",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "amazon-uk-receipt",
     heroHeadline: "Starling Business statements to Excel.",
     heroSubheadline:
@@ -707,7 +707,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "DBS PDF to Excel",
     region: "Europe & Global",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "DBS Business PDFs to verified Excel.",
     heroSubheadline:
@@ -747,7 +747,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Square PDF to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "vercel-stripe-invoice",
     heroHeadline: "Square payouts & fees reconciled.",
     heroSubheadline:
@@ -827,7 +827,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "SVB PDF to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "SVB Commercial PDFs to verified Excel.",
     heroSubheadline:
@@ -848,11 +848,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "PNC Bank PDF to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "PNC Bank PDFs, verified to zero.",
     heroSubheadline:
-      "Convert PNC Bank PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert PNC Bank PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling PNC Bank Statement Formatting",
     statementQuirkDescription:
       "PNC Bank PDF statements often contain multi-section Activity Detail tables and daily balance summaries. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
@@ -920,11 +920,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Truist PDF to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Truist Bank PDFs, verified to zero.",
     heroSubheadline:
-      "Convert Truist Bank PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert Truist Bank PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Truist Bank Statement Formatting",
     statementQuirkDescription:
       "Truist Bank PDF statements often contain merged SunTrust/BB&T legacy layout headers and multi-line ACH descriptions. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
@@ -992,11 +992,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Citizens Bank to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Citizens Bank PDFs, verified to zero.",
     heroSubheadline:
-      "Convert Citizens Bank PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert Citizens Bank PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Citizens Bank Statement Formatting",
     statementQuirkDescription:
       "Citizens Bank PDF statements often contain wrapped debit card merchant strings and interleaved check serial tables. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
@@ -1064,11 +1064,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Regions Bank to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Regions Bank PDFs, verified to zero.",
     heroSubheadline:
-      "Convert Regions Bank PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert Regions Bank PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Regions Bank Statement Formatting",
     statementQuirkDescription:
       "Regions Bank PDF statements often contain grouped ACH debits, card swipes, and check-clearing blocks. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
@@ -1136,11 +1136,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "M&T Bank to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "M&T Bank PDFs, verified to zero.",
     heroSubheadline:
-      "Convert M&T Bank PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert M&T Bank PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling M&T Bank Statement Formatting",
     statementQuirkDescription:
       "M&T Bank PDF statements often contain multi-page electronic transaction grids and check image footers. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
@@ -1208,11 +1208,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "BMO US PDF to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "BMO Bank (US) PDFs, verified to zero.",
     heroSubheadline:
-      "Convert BMO Bank (US) PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert BMO Bank (US) PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling BMO Bank (US) Statement Formatting",
     statementQuirkDescription:
       "BMO Bank (US) PDF statements often contain dual-section deposit/withdrawal formatting and daily balance snapshots. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
@@ -1280,11 +1280,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "SoFi PDF to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "SoFi Bank PDFs, verified to zero.",
     heroSubheadline:
-      "Convert SoFi Bank PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert SoFi Bank PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling SoFi Bank Statement Formatting",
     statementQuirkDescription:
       "SoFi Bank PDF statements often contain vault sub-account transfers and multi-line card authorization descriptors. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
@@ -1352,11 +1352,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Navy Federal to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Navy Federal Credit Union PDFs, verified to zero.",
     heroSubheadline:
-      "Convert Navy Federal Credit Union PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert Navy Federal Credit Union PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Navy Federal Credit Union Statement Formatting",
     statementQuirkDescription:
       "Navy Federal Credit Union PDF statements often contain combined checking/savings/share-certificate pages inside one monthly PDF. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
@@ -1424,11 +1424,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Charles Schwab to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Charles Schwab Bank PDFs, verified to zero.",
     heroSubheadline:
-      "Convert Charles Schwab Bank PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert Charles Schwab Bank PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Charles Schwab Bank Statement Formatting",
     statementQuirkDescription:
       "Charles Schwab Bank PDF statements often contain mixed cash management transactions, ATM fee rebates, and wire transfers. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
@@ -1640,11 +1640,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Lili PDF to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Lili Banking PDFs, verified to zero.",
     heroSubheadline:
-      "Convert Lili Banking PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert Lili Banking PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Lili Banking Statement Formatting",
     statementQuirkDescription:
       "Lili Banking PDF statements often contain emergency bucket transfers and wrapped merchant descriptions. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
@@ -1784,11 +1784,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Citi Card to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Citi Commercial & Credit Cards PDFs, verified to zero.",
     heroSubheadline:
-      "Convert Citi Commercial & Credit Cards PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert Citi Commercial & Credit Cards PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Citi Commercial & Credit Cards Statement Formatting",
     statementQuirkDescription:
       "Citi Commercial & Credit Cards PDF statements often contain split sale/post dates and multi-cardholder subtotal blocks. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
@@ -1892,11 +1892,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Wells Fargo Card to Excel",
     region: "United States",
     defaultCurrency: "USD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Wells Fargo Credit Card PDFs, verified to zero.",
     heroSubheadline:
-      "Convert Wells Fargo Credit Card PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert Wells Fargo Credit Card PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Wells Fargo Credit Card Statement Formatting",
     statementQuirkDescription:
       "Wells Fargo Credit Card PDF statements often contain wrapped merchant cities, reference strings, and payment credit sections. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to $0.00.",
@@ -2036,11 +2036,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Halifax PDF to Excel",
     region: "United Kingdom",
     defaultCurrency: "GBP",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "amazon-uk-receipt",
     heroHeadline: "Halifax UK PDFs, verified to zero.",
     heroSubheadline:
-      "Convert Halifax UK PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert Halifax UK PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Halifax UK Statement Formatting",
     statementQuirkDescription:
       "Halifax UK PDF statements often contain abbreviated transaction type codes (DEB, FPI, DD) and running GBP balances. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to £0.00.",
@@ -2108,11 +2108,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Nationwide to Excel",
     region: "United Kingdom",
     defaultCurrency: "GBP",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "amazon-uk-receipt",
     heroHeadline: "Nationwide Building Society PDFs, verified to zero.",
     heroSubheadline:
-      "Convert Nationwide Building Society PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert Nationwide Building Society PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Nationwide Building Society Statement Formatting",
     statementQuirkDescription:
       "Nationwide Building Society PDF statements often contain UK date formats and split Out/In columns with multi-line payee details. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to £0.00.",
@@ -2216,11 +2216,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "TSB UK PDF to Excel",
     region: "United Kingdom",
     defaultCurrency: "GBP",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "amazon-uk-receipt",
     heroHeadline: "TSB Bank UK PDFs, verified to zero.",
     heroSubheadline:
-      "Convert TSB Bank UK PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert TSB Bank UK PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling TSB Bank UK Statement Formatting",
     statementQuirkDescription:
       "TSB Bank UK PDF statements often contain UK DD MMM YY dates and abbreviated payment channel prefixes. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to £0.00.",
@@ -2288,11 +2288,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Scotiabank to Excel",
     region: "Canada",
     defaultCurrency: "CAD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Scotiabank Canada PDFs, verified to zero.",
     heroSubheadline:
-      "Convert Scotiabank Canada PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert Scotiabank Canada PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Scotiabank Canada Statement Formatting",
     statementQuirkDescription:
       "Scotiabank Canada PDF statements often contain bilingual/Canadian date formats (MMM DD) and split Withdrawals/Deposits. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to CA$0.00.",
@@ -2360,11 +2360,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "CIBC PDF to Excel",
     region: "Canada",
     defaultCurrency: "CAD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "CIBC Canada PDFs, verified to zero.",
     heroSubheadline:
-      "Convert CIBC Canada PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert CIBC Canada PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling CIBC Canada Statement Formatting",
     statementQuirkDescription:
       "CIBC Canada PDF statements often contain grouped Interac e-Transfers, service charges, and debit/credit columns. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to CA$0.00.",
@@ -2468,11 +2468,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Tangerine to Excel",
     region: "Canada",
     defaultCurrency: "CAD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Tangerine Bank Canada PDFs, verified to zero.",
     heroSubheadline:
-      "Convert Tangerine Bank Canada PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert Tangerine Bank Canada PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Tangerine Bank Canada Statement Formatting",
     statementQuirkDescription:
       "Tangerine Bank Canada PDF statements often contain interleaved e-Transfer memos and monthly interest payout lines. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to CA$0.00.",
@@ -2540,11 +2540,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Simplii PDF to Excel",
     region: "Canada",
     defaultCurrency: "CAD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Simplii Financial PDFs, verified to zero.",
     heroSubheadline:
-      "Convert Simplii Financial PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert Simplii Financial PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Simplii Financial Statement Formatting",
     statementQuirkDescription:
       "Simplii Financial PDF statements often contain CIBC-style debit/credit columns and Interac e-Transfer descriptions. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to CA$0.00.",
@@ -2648,11 +2648,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Westpac PDF to Excel",
     region: "Australia & NZ",
     defaultCurrency: "AUD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "amazon-uk-receipt",
     heroHeadline: "Westpac Australia PDFs, verified to zero.",
     heroSubheadline:
-      "Convert Westpac Australia PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert Westpac Australia PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Westpac Australia Statement Formatting",
     statementQuirkDescription:
       "Westpac Australia PDF statements often contain multi-line PayID/OSKO memos and running AUD balance reconciliation. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to A$0.00.",
@@ -2756,11 +2756,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "ING AU PDF to Excel",
     region: "Australia & NZ",
     defaultCurrency: "AUD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "amazon-uk-receipt",
     heroHeadline: "ING Australia PDFs, verified to zero.",
     heroSubheadline:
-      "Convert ING Australia PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert ING Australia PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling ING Australia Statement Formatting",
     statementQuirkDescription:
       "ING Australia PDF statements often contain combined EFTPOS/Visa debit descriptors and international fee rebates. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to A$0.00.",
@@ -2900,11 +2900,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Deutsche Bank to Excel",
     region: "Europe & Global",
     defaultCurrency: "EUR",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Deutsche Bank PDFs, verified to zero.",
     heroSubheadline:
-      "Convert Deutsche Bank PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert Deutsche Bank PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Deutsche Bank Statement Formatting",
     statementQuirkDescription:
       "Deutsche Bank PDF statements often contain SEPA Überweisung / Lastschrift multi-line blocks and EUR comma decimals. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to €0.00.",
@@ -2972,11 +2972,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Qonto PDF to Excel",
     region: "Europe & Global",
     defaultCurrency: "EUR",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Qonto Business Banking PDFs, verified to zero.",
     heroSubheadline:
-      "Convert Qonto Business Banking PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert Qonto Business Banking PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Qonto Business Banking Statement Formatting",
     statementQuirkDescription:
       "Qonto Business Banking PDF statements often contain multi-member corporate card rows, SEPA transfers, and VAT metadata. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to €0.00.",
@@ -3044,11 +3044,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "UBS PDF to Excel",
     region: "Europe & Global",
     defaultCurrency: "EUR",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "UBS Switzerland PDFs, verified to zero.",
     heroSubheadline:
-      "Convert UBS Switzerland PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert UBS Switzerland PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling UBS Switzerland Statement Formatting",
     statementQuirkDescription:
       "UBS Switzerland PDF statements often contain Swiss apostrophe thousand separators (1'250.00) and multi-currency lines. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to €0.00.",
@@ -3080,11 +3080,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "UOB PDF to Excel",
     region: "Asia-Pacific",
     defaultCurrency: "SGD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "UOB Singapore PDFs, verified to zero.",
     heroSubheadline:
-      "Convert UOB Singapore PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert UOB Singapore PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling UOB Singapore Statement Formatting",
     statementQuirkDescription:
       "UOB Singapore PDF statements often contain FAST/PayNow multi-line transfer references and SGD balance verification. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to S$0.00.",
@@ -3152,11 +3152,11 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     shortName: "Hang Seng to Excel",
     region: "Asia-Pacific",
     defaultCurrency: "HKD",
-    targetFormat: "Excel (.xls)",
+    targetFormat: "Excel (.xlsx)",
     recommendedSampleId: "chase-checking-oct",
     heroHeadline: "Hang Seng Bank Hong Kong PDFs, verified to zero.",
     heroSubheadline:
-      "Convert Hang Seng Bank Hong Kong PDF statements into clean Excel (.xls) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
+      "Convert Hang Seng Bank Hong Kong PDF statements into clean Excel (.xlsx) and Excel workbooks 100% locally in your browser—zero server uploads, with deterministic cent-level balance verification.",
     statementQuirkTitle: "Handling Hang Seng Bank Hong Kong Statement Formatting",
     statementQuirkDescription:
       "Hang Seng Bank Hong Kong PDF statements often contain FPS transfer memos, multi-currency sections, and HKD balance checks. StatementFlow parses text locally in your browser via pdf.js, normalizes every row, and proves Opening + Credits - Debits = Ending to HK$0.00.",

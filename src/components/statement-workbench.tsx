@@ -134,7 +134,7 @@ const PIPELINE_STAGES = [
     shareClass: "lg:col-span-2",
     bgClass: "bg-[#cfcec9] text-[#141413]",
     detail:
-      "Generates multi-sheet SpreadsheetML (.xls), UTF-8 BOM CSV, and audit-ready JSON.",
+      "Generates zero-warning native multi-sheet Excel (.xlsx), QuickBooks/Xero CSV, and audit-ready JSON.",
   },
 ];
 
@@ -200,7 +200,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Will exported files open cleanly in Excel, QuickBooks, and Xero?",
-    a: "Yes. CSV exports include a UTF-8 BOM header and formula-injection escaping so international currency symbols (£, €, ¥) render properly in Microsoft Excel. The Excel (.xls) option outputs a native multi-worksheet XML workbook containing both Transactions and Reconciliation tabs.",
+    a: "Yes. CSV exports include a UTF-8 BOM header and formula-injection escaping so international currency symbols (£, €, ¥) render properly in Microsoft Excel. The Excel (.xlsx) option outputs a zero-warning native multi-worksheet OOXML workbook containing both Transactions and Reconciliation tabs.",
   },
   {
     q: "Are uploaded bank statements or API keys stored on a server?",
@@ -2087,7 +2087,7 @@ export function StatementWorkbench() {
                 </div>
 
                 <a
-                  href="mailto:153557421@qq.com?subject=StatementFlow%20%24199%20Firm%20Pilot%20Inquiry"
+                  href="mailto:zhangsanx34@gmail.com?subject=StatementFlow%20%24199%20Firm%20Pilot%20Inquiry"
                   className="sf-btn flex min-h-16 w-full items-center justify-between bg-[#1d2230] px-8 text-base font-semibold text-white hover:bg-[#0066cc]"
                 >
                   <span>Start Firm Pilot</span>
@@ -2113,7 +2113,7 @@ export function StatementWorkbench() {
                   </p>
                 </div>
                 <a
-                  href="mailto:153557421@qq.com?subject=StatementFlow%20%24199%20Firm%20Pilot%20Inquiry"
+                  href="mailto:zhangsanx34@gmail.com?subject=StatementFlow%20%24199%20Firm%20Pilot%20Inquiry"
                   className="sf-btn inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-white px-5 text-sm font-semibold text-[#0a0b0e] hover:bg-[#e8e8ed]"
                 >
                   Send 1 Free Test PDF →
@@ -2300,7 +2300,7 @@ export function StatementWorkbench() {
                       onClick={handleExportExcel}
                       className="inline-flex min-h-8 items-center hover:text-white"
                     >
-                      SpreadsheetML (.xls)
+                      Native Excel (.xlsx)
                     </button>
                   </li>
                   <li>

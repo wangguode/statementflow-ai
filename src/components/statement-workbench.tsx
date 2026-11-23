@@ -321,6 +321,7 @@ export function StatementWorkbench() {
     "free"
   > | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [batchFiles, setBatchFiles] = useState<{ name: string; text: string }[]>([]);
   const [extractProgress, setExtractProgress] = useState<{
     current: number;
@@ -503,8 +504,7 @@ export function StatementWorkbench() {
   }
 
   // 处理本地单文件或多文件批量上传 (.pdf, .csv, .txt)，全部在浏览器端 100% 本地提取
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const fileList = Array.from(e.target.files || []);
+  async function processUploadedFiles(fileList: File[]) {
     if (fileList.length === 0) return;
 
     const batchLabel =
@@ -621,6 +621,21 @@ export function StatementWorkbench() {
       setStatusNotice(
         `No selectable text or readable images found in the uploaded file(s). Please ensure PDFs are not password-protected.`
       );
+    }
+  }
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const fileList = Array.from(e.target.files || []);
+    await processUploadedFiles(fileList);
+    e.target.value = "";
+  }
+
+  async function handleWorkbenchDrop(e: React.DragEvent<HTMLElement>) {
+    e.preventDefault();
+    setIsDraggingFile(false);
+    const fileList = Array.from(e.dataTransfer.files || []);
+    if (fileList.length > 0) {
+      await processUploadedFiles(fileList);
     }
   }
 
@@ -854,6 +869,39 @@ export function StatementWorkbench() {
         ),
       };
     });
+  }
+
+  function handleAutoBalanceRow() {
+    const diff = extraction.reconciliation.discrepancy;
+    if (Math.abs(diff) < 0.005) return;
+    // discrepancy = expectedClosing - actualClosing；若 > 0 说明净流入偏多，需补一笔 debit；反之补 credit
+    const type: "credit" | "debit" = diff > 0 ? "debit" : "credit";
+    const amount = Math.round(Math.abs(diff) * 100) / 100;
+    const latestDate = extraction.transactions[0]?.date || "2026-10-30";
+    const newItem: TransactionItem = {
+      id: `reconcile-${Date.now()}`,
+      date: latestDate,
+      merchant: "Reconciliation Balancing Entry",
+      description: `Auto-balance adjustment (${type === "debit" ? "-" : "+"}${amount.toFixed(2)})`,
+      category: "Office & Operations",
+      type,
+      amount,
+      confidence: 1,
+    };
+    setExtraction((prev) => {
+      const nextTx = [newItem, ...prev.transactions];
+      return {
+        ...prev,
+        transactions: nextTx,
+        reconciliation: computeReconciliation(
+          prev.reconciliation.openingBalance,
+          prev.reconciliation.closingBalance,
+          nextTx,
+          prev.documentType
+        ),
+      };
+    });
+    setStatusNotice(`Added balancing entry (${amount.toFixed(2)}) — ledger reconciled to 0.00.`);
   }
 
   function handleDeleteTransactionRow(id: string) {
@@ -1223,7 +1271,17 @@ export function StatementWorkbench() {
             ===================================================================== */}
         <section
           id="workbench"
-          className="bg-[#101216] py-16 text-[#f5f5f7] lg:py-24"
+          onDragOver={(e) => {
+            e.preventDefault();
+            if (!isDraggingFile) setIsDraggingFile(true);
+          }}
+          onDragLeave={(e) => {
+            if (e.currentTarget === e.target) setIsDraggingFile(false);
+          }}
+          onDrop={handleWorkbenchDrop}
+          className={`bg-[#101216] py-16 text-[#f5f5f7] lg:py-24 transition-colors ${
+            isDraggingFile ? "ring-4 ring-inset ring-[#3b82f6]/70 bg-[#121826]" : ""
+          }`}
         >
           <div className="sf-wrap">
             {/* 35 秒真实操作演示视频（零剪辑实机录屏，拉满陌生访客首屏信任度） */}
@@ -1602,6 +1660,18 @@ export function StatementWorkbench() {
                       <Plus className="size-4" />
                       <span>Add Row</span>
                     </button>
+
+                    {!extraction.reconciliation.isBalanced && (
+                      <button
+                        type="button"
+                        onClick={handleAutoBalanceRow}
+                        className="sf-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#14532d] px-3.5 py-2 text-sm font-semibold text-[#86efac] hover:bg-[#166534]"
+                      >
+                        <span>
+                          Auto-Balance ({Math.abs(extraction.reconciliation.discrepancy).toFixed(2)})
+                        </span>
+                      </button>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
@@ -1611,7 +1681,7 @@ export function StatementWorkbench() {
                       className="sf-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#0066cc] px-3.5 py-2 text-sm font-semibold text-white"
                     >
                       <FileSpreadsheet className="size-4" />
-                      <span>Excel (.xls)</span>
+                      <span>Excel (.xlsx)</span>
                     </button>
                     <button
                       type="button"

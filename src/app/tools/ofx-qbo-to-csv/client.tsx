@@ -12,6 +12,7 @@ export default function OfxConverterClient() {
   const [rawText, setRawText] = useState<string>(SAMPLE_QBO_FILE);
   const [fileName, setFileName] = useState<string>("sample-chase-webconnect.qbo");
   const [exportMode, setExportMode] = useState<"quickbooks" | "xero" | "standard">("quickbooks");
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
 
   const parsed = useMemo(() => parseOfxContent(rawText), [rawText]);
@@ -20,9 +21,7 @@ export default function OfxConverterClient() {
     [parsed, exportMode]
   );
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const loadOfxFile = (file: File) => {
     setFileName(file.name);
     const reader = new FileReader();
     reader.onload = () => {
@@ -31,6 +30,18 @@ export default function OfxConverterClient() {
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) loadOfxFile(file);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) loadOfxFile(file);
   };
 
   const handleDownload = () => {
@@ -111,7 +122,19 @@ export default function OfxConverterClient() {
                 </button>
               </div>
 
-              <label className="block border-2 border-dashed border-[#d6d1c6] hover:border-[#14532d] rounded-xl p-5 text-center cursor-pointer transition bg-[#faf9f6]">
+              <label
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+                className={`block border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition ${
+                  isDragging
+                    ? "border-[#14532d] bg-[#e6efe9]"
+                    : "border-[#d6d1c6] hover:border-[#14532d] bg-[#faf9f6]"
+                }`}
+              >
                 <input
                   type="file"
                   accept=".ofx,.qfx,.qbo,.xml,.txt"
@@ -119,7 +142,7 @@ export default function OfxConverterClient() {
                   className="hidden"
                 />
                 <div className="text-sm font-medium text-[#161615]">
-                  Select .OFX, .QFX, or .QBO file
+                  Drag &amp; drop .OFX, .QFX, or .QBO here, or click to browse
                 </div>
                 <div className="text-xs text-[#6b6860] mt-1 font-mono truncate">
                   Active: {fileName}

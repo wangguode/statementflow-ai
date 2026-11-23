@@ -18,6 +18,7 @@ export interface FixerOptions {
   invertSigns: boolean;
   stripSpecialChars: boolean;
   dropZeroRows: boolean;
+  deduplicateRows?: boolean;
 }
 
 export interface FixedRow {
@@ -49,6 +50,7 @@ export interface FixerDiagnostics {
     multilineSanitized: number;
     emptyOrSummarySkipped: number;
     signsInverted: number;
+    duplicatesRemoved: number;
   };
   totalCredits: number;
   totalDebits: number;
@@ -367,6 +369,7 @@ export function fixBankCsv(rawCsv: string, options: FixerOptions): FixerResult {
       multilineSanitized: 0,
       emptyOrSummarySkipped: 0,
       signsInverted: 0,
+      duplicatesRemoved: 0,
     },
     totalCredits: 0,
     totalDebits: 0,
@@ -399,6 +402,7 @@ export function fixBankCsv(rawCsv: string, options: FixerOptions): FixerResult {
   }
 
   const rows: FixedRow[] = [];
+  const seenKeys = new Set<string>();
 
   for (let i = headerIdx + 1; i < matrix.length; i++) {
     const cols = matrix[i];
@@ -471,14 +475,23 @@ export function fixBankCsv(rawCsv: string, options: FixerOptions): FixerResult {
       issues.push("Inverted sign");
     }
 
+    const reference = refCol >= 0 ? (cols[refCol] || "").replace(/[\r\n]+/g, " ").trim() : "";
+    const payee = rawDesc.split(/\s+-\s+|\s+\|\s+/)[0].slice(0, 60).trim() || rawDesc.slice(0, 60);
+
+    if (options.deduplicateRows) {
+      const dedupeKey = `${formattedDate}|${amount.toFixed(2)}|${rawDesc.toLowerCase()}|${reference.toLowerCase()}`;
+      if (seenKeys.has(dedupeKey)) {
+        diagnostics.fixedCounts.duplicatesRemoved++;
+        continue;
+      }
+      seenKeys.add(dedupeKey);
+    }
+
     if (amount >= 0) {
       diagnostics.totalCredits = Math.round((diagnostics.totalCredits + amount) * 100) / 100;
     } else {
       diagnostics.totalDebits = Math.round((diagnostics.totalDebits + Math.abs(amount)) * 100) / 100;
     }
-
-    const reference = refCol >= 0 ? (cols[refCol] || "").replace(/[\r\n]+/g, " ").trim() : "";
-    const payee = rawDesc.split(/\s+-\s+|\s+\|\s+/)[0].slice(0, 60).trim() || rawDesc.slice(0, 60);
 
     rows.push({
       date: formattedDate,

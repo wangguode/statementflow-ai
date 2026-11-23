@@ -19,6 +19,8 @@ export default function CsvFixerClient() {
   const [invertSigns, setInvertSigns] = useState<boolean>(false);
   const [stripSpecialChars, setStripSpecialChars] = useState<boolean>(true);
   const [dropZeroRows, setDropZeroRows] = useState<boolean>(true);
+  const [deduplicateRows, setDeduplicateRows] = useState<boolean>(true);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
 
   const options: FixerOptions = useMemo(
@@ -29,15 +31,14 @@ export default function CsvFixerClient() {
       invertSigns,
       stripSpecialChars,
       dropZeroRows,
+      deduplicateRows,
     }),
-    [target, dateFormat, sourceDateOrder, invertSigns, stripSpecialChars, dropZeroRows]
+    [target, dateFormat, sourceDateOrder, invertSigns, stripSpecialChars, dropZeroRows, deduplicateRows]
   );
 
   const result = useMemo(() => fixBankCsv(rawCsv, options), [rawCsv, options]);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const loadCsvFile = (file: File) => {
     setFileName(file.name);
     const reader = new FileReader();
     reader.onload = () => {
@@ -46,6 +47,18 @@ export default function CsvFixerClient() {
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) loadCsvFile(file);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) loadCsvFile(file);
   };
 
   const handleDownload = () => {
@@ -138,7 +151,19 @@ export default function CsvFixerClient() {
                 </button>
               </div>
 
-              <label className="block border-2 border-dashed border-[#d6d1c6] hover:border-[#14532d] rounded-xl p-4 text-center cursor-pointer transition bg-[#faf9f6]">
+              <label
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={handleDrop}
+                className={`block border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition ${
+                  isDragging
+                    ? "border-[#14532d] bg-[#e6efe9]"
+                    : "border-[#d6d1c6] hover:border-[#14532d] bg-[#faf9f6]"
+                }`}
+              >
                 <input
                   type="file"
                   accept=".csv,.txt,text/csv"
@@ -146,7 +171,7 @@ export default function CsvFixerClient() {
                   className="hidden"
                 />
                 <div className="text-sm font-medium text-[#161615]">
-                  Click to choose a bank CSV file
+                  Drag &amp; drop a bank CSV here, or click to browse
                 </div>
                 <div className="text-xs text-[#6b6860] mt-1 font-mono truncate">
                   Active: {fileName}
@@ -253,6 +278,15 @@ export default function CsvFixerClient() {
                   />
                   <span>Drop $0.00 / summary footer rows automatically</span>
                 </label>
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={deduplicateRows}
+                    onChange={(e) => setDeduplicateRows(e.target.checked)}
+                    className="accent-[#14532d]"
+                  />
+                  <span>Remove exact duplicate transactions (prevents double-entry imports)</span>
+                </label>
               </div>
             </div>
           </div>
@@ -293,7 +327,8 @@ export default function CsvFixerClient() {
                   Delimiter: <b>{diagnostics.delimiter}</b> · Skipped top banner rows:{" "}
                   <b>{diagnostics.skippedHeaderRows}</b> · Multiline cleaned:{" "}
                   <b>{diagnostics.fixedCounts.multilineSanitized}</b> · Currency/brackets fixed:{" "}
-                  <b>{diagnostics.fixedCounts.currencyOrParensCleaned}</b>
+                  <b>{diagnostics.fixedCounts.currencyOrParensCleaned}</b> · Duplicates removed:{" "}
+                  <b>{diagnostics.fixedCounts.duplicatesRemoved}</b>
                 </div>
               </div>
               {diagnostics.warnings.length > 0 && (

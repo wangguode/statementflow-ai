@@ -321,6 +321,12 @@ export function StatementWorkbench() {
     "free"
   > | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [batchFiles, setBatchFiles] = useState<{ name: string; text: string }[]>([]);
+  const [extractProgress, setExtractProgress] = useState<{
+    current: number;
+    total: number;
+    label: string;
+  } | null>(null);
   const [statusNotice, setStatusNotice] = useState<string>(
     () => resolveInitialBankPreset().notice
   );
@@ -482,6 +488,7 @@ export function StatementWorkbench() {
     setCustomRawText(preset.rawPreviewText);
     setUploadedFileName(preset.fileName);
     setUploadedPdfBase64("");
+    setBatchFiles([]);
     setExtraction({
       ...preset.result,
       meta: {
@@ -514,6 +521,7 @@ export function StatementWorkbench() {
     );
 
     const combinedChunks: string[] = [];
+    const parsedEntries: { name: string; text: string }[] = [];
     const scannedImages: string[] = [];
     let totalPages = 0;
     let parsedCount = 0;
@@ -530,6 +538,7 @@ export function StatementWorkbench() {
           const { text, pages } = await extractTextFromPdfBytes(bytes);
           if (text.trim().length > 20) {
             combinedChunks.push(`=== FILE: ${file.name} ===\n${text}`);
+            parsedEntries.push({ name: file.name, text });
             totalPages += pages;
             parsedCount += 1;
           } else {
@@ -569,6 +578,7 @@ export function StatementWorkbench() {
         const text = await file.text();
         if (text.trim().length > 0) {
           combinedChunks.push(`=== FILE: ${file.name} ===\n${text}`);
+          parsedEntries.push({ name: file.name, text });
           totalPages += 1;
           parsedCount += 1;
         }
@@ -577,6 +587,7 @@ export function StatementWorkbench() {
 
     if (combinedChunks.length > 0) {
       setCustomRawText(combinedChunks.join("\n\n"));
+      setBatchFiles(parsedEntries);
       setUploadedPageImages([]);
       trackFunnelEvent("upload_files", {
         files: parsedCount,
@@ -588,10 +599,13 @@ export function StatementWorkbench() {
           ? ` (${failedCount} file(s) could not be read).`
           : "";
       setStatusNotice(
-        `Parsed ${parsedCount} file(s) (${totalPages} total page(s)) locally in browser. Click "Run Extraction" to reconcile.${warnSuffix}`
+        parsedEntries.length > 1
+          ? `Ready to merge ${parsedEntries.length} statements (${totalPages} pages) into 1 chronological ledger. Click "Run Extraction" to start chunked reconciliation.${warnSuffix}`
+          : `Parsed ${parsedCount} file(s) (${totalPages} total page(s)) locally in browser. Click "Run Extraction" to reconcile.${warnSuffix}`
       );
     } else if (scannedImages.length > 0) {
       setCustomRawText("");
+      setBatchFiles([]);
       setUploadedPageImages(scannedImages);
       trackFunnelEvent("upload_files", {
         files: parsedCount,
@@ -623,62 +637,121 @@ export function StatementWorkbench() {
 
     setIsExtracting(true);
     setStatusNotice("");
+    setExtractProgress(
+      inputMode === "upload" && batchFiles.length > 1
+        ? { current: 0, total: batchFiles.length, label: "Starting chunked multi-statement merge..." }
+        : { current: 1, total: 1, label: `Extracting ${uploadedFileName || "statement"}...` }
+    );
 
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 25000);
-
-    try {
-      const payload = {
-        sampleId: inputMode === "sample" ? selectedSampleId : undefined,
-        rawText: customRawText,
-        fileName: uploadedFileName || "statement.txt",
-        pdfBase64: uploadedPdfBase64 || undefined,
-        pageImages:
-          uploadedPageImages.length > 0 ? uploadedPageImages : undefined,
-        aiConfig:
-          aiConfig.provider === "openai_compatible" ? aiConfig : undefined,
-      };
-
-      const res = await fetch("/api/extract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
-      clearTimeout(timer);
-
-      let result: ExtractionResult;
-      if (res.status === 404) {
-        // 静态边缘托管（Cloudflare Workers Static Assets）无服务端 API 时，自动切换为浏览器端本地引擎执行
-        const sample =
-          inputMode === "sample" ? findSampleById(selectedSampleId) : undefined;
-        const textToParse = sample ? sample.rawPreviewText : customRawText;
-        const nameToParse = sample
-          ? sample.fileName
-          : uploadedFileName || "statement.txt";
-        result = await extractWithAISafety(
-          textToParse,
-          nameToParse,
-          aiConfig.provider === "openai_compatible"
-            ? {
-                apiKey: aiConfig.apiKey,
-                baseUrl: aiConfig.baseUrl,
-                model: aiConfig.model,
-              }
-            : undefined
-        );
-      } else if (!res.ok) {
-        const errData = (await res.json().catch(() => ({}))) as {
-          error?: string;
-        };
-        throw new Error(errData.error || `Extraction failed (${res.status})`);
-      } else {
+    const runSingleChunk = async (
+      chunkText: string,
+      chunkFileName: string,
+      sampleId?: string,
+      pageImgs?: string[]
+    ): Promise<ExtractionResult> => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 25000);
+      try {
+        const res = await fetch("/api/extract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sampleId,
+            rawText: chunkText,
+            fileName: chunkFileName,
+            pdfBase64: uploadedPdfBase64 || undefined,
+            pageImages: pageImgs && pageImgs.length > 0 ? pageImgs : undefined,
+            aiConfig:
+              aiConfig.provider === "openai_compatible" ? aiConfig : undefined,
+          }),
+          signal: controller.signal,
+        });
+        clearTimeout(timer);
+        if (res.status === 404) {
+          const sample = sampleId ? findSampleById(sampleId) : undefined;
+          return await extractWithAISafety(
+            sample ? sample.rawPreviewText : chunkText,
+            sample ? sample.fileName : chunkFileName,
+            aiConfig.provider === "openai_compatible"
+              ? {
+                  apiKey: aiConfig.apiKey,
+                  baseUrl: aiConfig.baseUrl,
+                  model: aiConfig.model,
+                }
+              : undefined
+          );
+        }
+        if (!res.ok) {
+          const errData = (await res.json().catch(() => ({}))) as {
+            error?: string;
+          };
+          throw new Error(errData.error || `Extraction failed (${res.status})`);
+        }
         const data = (await res.json()) as {
           result?: ExtractionResult;
-          rawPreviewText?: string;
         } & ExtractionResult;
-        result = data.result ?? data;
+        return data.result ?? data;
+      } catch (err) {
+        clearTimeout(timer);
+        throw err;
       }
+    };
+
+    try {
+      let result: ExtractionResult;
+      if (inputMode === "upload" && batchFiles.length > 1) {
+        // 多月 PDF 分块逐份提取 + 按日期自动合并为单份年度/多月总账本
+        const chunkResults: ExtractionResult[] = [];
+        for (let i = 0; i < batchFiles.length; i++) {
+          const item = batchFiles[i];
+          setExtractProgress({
+            current: i + 1,
+            total: batchFiles.length,
+            label: `Extracting ${i + 1} / ${batchFiles.length}: ${item.name}`,
+          });
+          const chunkRes = await runSingleChunk(item.text, item.name);
+          chunkResults.push(chunkRes);
+        }
+        const mergedTx: TransactionItem[] = chunkResults
+          .flatMap((cr, cIdx) =>
+            cr.transactions.map((tx, tIdx) => ({
+              ...tx,
+              id: `${tx.id || "tx"}-m${cIdx + 1}-${tIdx + 1}`,
+            }))
+          )
+          .sort((a, b) => a.date.localeCompare(b.date));
+        const first = chunkResults[0];
+        const last = chunkResults[chunkResults.length - 1];
+        const mergedRec = computeReconciliation(
+          first.reconciliation.openingBalance,
+          last.reconciliation.closingBalance,
+          mergedTx,
+          first.documentType
+        );
+        const totalLatency = chunkResults.reduce(
+          (acc, cr) => acc + (cr.meta?.latencyMs || 0),
+          0
+        );
+        result = {
+          ...first,
+          statementPeriod: `${first.statementPeriod} → ${last.statementPeriod} (${chunkResults.length} merged)`,
+          transactions: mergedTx,
+          reconciliation: mergedRec,
+          meta: {
+            ...first.meta,
+            latencyMs: totalLatency,
+            providerName: `${first.meta.providerName} · ${chunkResults.length}-File Merge`,
+          },
+        };
+      } else {
+        result = await runSingleChunk(
+          customRawText,
+          uploadedFileName || "statement.txt",
+          inputMode === "sample" ? selectedSampleId : undefined,
+          uploadedPageImages
+        );
+      }
+
       setExtraction(result);
       trackFunnelEvent(
         result.reconciliation.isBalanced
@@ -711,7 +784,6 @@ export function StatementWorkbench() {
         `Extracted ${result.transactions.length} rows in ${result.meta.latencyMs}ms via ${result.meta.providerName}.`
       );
     } catch (err) {
-      clearTimeout(timer);
       setStatusNotice(
         err instanceof Error
           ? err.message
@@ -719,6 +791,7 @@ export function StatementWorkbench() {
       );
     } finally {
       setIsExtracting(false);
+      setExtractProgress(null);
     }
   }
 
@@ -1314,10 +1387,46 @@ export function StatementWorkbench() {
                       className={`size-4 ${isExtracting ? "animate-spin" : ""}`}
                     />
                     <span>
-                      {isExtracting ? "Extracting..." : "Run Extraction"}
+                      {isExtracting
+                        ? extractProgress && extractProgress.total > 1
+                          ? `Merging ${extractProgress.current}/${extractProgress.total}...`
+                          : "Extracting..."
+                        : batchFiles.length > 1
+                        ? `Merge ${batchFiles.length} PDFs`
+                        : "Run Extraction"}
                     </span>
                   </button>
                 </div>
+
+                {extractProgress && (
+                  <div className="mt-3 rounded-lg border border-white/10 bg-white/5 p-3">
+                    <div className="flex items-center justify-between text-xs font-mono text-[#c7ccd9]">
+                      <span className="truncate">{extractProgress.label}</span>
+                      <span className="tabular-nums">
+                        {Math.round(
+                          (extractProgress.current / Math.max(1, extractProgress.total)) *
+                            100
+                        )}
+                        %
+                      </span>
+                    </div>
+                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-[#3b82f6] transition-all duration-300"
+                        style={{
+                          width: `${Math.max(
+                            12,
+                            Math.round(
+                              (extractProgress.current /
+                                Math.max(1, extractProgress.total)) *
+                                100
+                            )
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="mt-4 grid grid-cols-3 gap-2.5 text-sm">
                   <div className="ui-tile p-3">

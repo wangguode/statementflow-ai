@@ -294,7 +294,7 @@ export function CheckoutModal({
       }
 
       if (data.mode === "concierge_invoice") {
-        const to = data.contactEmail || "zhangsanx34@gmail.com";
+        const to = data.contactEmail || "hello@statementflow.win";
         const subj = encodeURIComponent(
           "StatementFlow $199 Firm Pilot Onboarding Request"
         );

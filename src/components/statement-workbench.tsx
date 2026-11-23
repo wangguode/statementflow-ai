@@ -2114,7 +2114,7 @@ export function StatementWorkbench() {
                   </p>
                 </div>
                 <a
-                  href="mailto:zhangsanx34@gmail.com?subject=StatementFlow%20%24199%20Firm%20Pilot%20Inquiry"
+                  href="mailto:hello@statementflow.win?subject=StatementFlow%20%24199%20Firm%20Pilot%20Inquiry"
                   className="sf-btn inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-white px-5 text-sm font-semibold text-[#0a0b0e] hover:bg-[#e8e8ed]"
                 >
                   Send 1 Free Test PDF →

@@ -129,7 +129,7 @@ async function handleCheckout(request: Request, env: Env): Promise<Response> {
         planName: meta.name,
         amountUsd: meta.oneTimeUsd,
         description: meta.description,
-        contactEmail: "zhangsanx34@gmail.com",
+        contactEmail: "hello@statementflow.win",
       });
     }
 

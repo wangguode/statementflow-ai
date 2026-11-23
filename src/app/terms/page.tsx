@@ -63,8 +63,8 @@ export default function TermsPage() {
           </ul>
           <p>
             If StatementFlow AI cannot accurately parse your bank statement format, email{" "}
-            <a href="mailto:zhangsanx34@gmail.com" className="text-[#14532d] underline">
-              zhangsanx34@gmail.com
+            <a href="mailto:hello@statementflow.win" className="text-[#14532d] underline">
+              hello@statementflow.win
             </a>{" "}
             within 7 days of purchase with your order ID for a full refund or free
             custom bank template tuning.
@@ -78,8 +78,8 @@ export default function TermsPage() {
           <p>
             Questions regarding licensing, enterprise Docker deployments, or refunds may
             be sent to{" "}
-            <a href="mailto:zhangsanx34@gmail.com" className="text-[#14532d] underline">
-              zhangsanx34@gmail.com
+            <a href="mailto:hello@statementflow.win" className="text-[#14532d] underline">
+              hello@statementflow.win
             </a>
             .
           </p>

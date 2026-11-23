@@ -73,8 +73,8 @@ export default function PrivacyPage() {
           <p>
             For privacy questions, enterprise security questionnaires, or order data
             deletion requests, contact{" "}
-            <a href="mailto:zhangsanx34@gmail.com" className="text-[#14532d] underline">
-              zhangsanx34@gmail.com
+            <a href="mailto:hello@statementflow.win" className="text-[#14532d] underline">
+              hello@statementflow.win
             </a>
             .
           </p>

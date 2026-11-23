@@ -255,8 +255,11 @@ export function CheckoutModal({
 
   if (!open) return null;
 
-  const amount = 9;
-  const planTitle = "StatementFlow AI Pro";
+  const amount = plan === "business" ? 199 : 9;
+  const planTitle =
+    plan === "business"
+      ? "StatementFlow Firm Pilot (14-Day)"
+      : "StatementFlow AI Pro";
 
   async function handleConfirmCheckout(e: React.FormEvent) {
     e.preventDefault();
@@ -276,18 +279,13 @@ export function CheckoutModal({
       clearTimeout(timer);
 
       if (!res.ok) {
-        if (res.status === 404) {
-          // 静态边缘托管无服务端 API 路由时，自动降级为前端沙盒体验闭环
-          onSuccessActivate(plan, email);
-          onClose();
-          return;
-        }
         throw new Error("Failed to create checkout session");
       }
 
       const data = (await res.json()) as {
-        mode: "live_redirect" | "sandbox";
+        mode: "live_redirect" | "concierge_invoice" | "sandbox";
         checkoutUrl?: string;
+        contactEmail?: string;
       };
 
       if (data.mode === "live_redirect" && data.checkoutUrl) {
@@ -295,11 +293,31 @@ export function CheckoutModal({
         return;
       }
 
-      onSuccessActivate(plan, email);
-      onClose();
+      if (data.mode === "concierge_invoice") {
+        const to = data.contactEmail || "zhangsanx34@gmail.com";
+        const subj = encodeURIComponent(
+          "StatementFlow $199 Firm Pilot Onboarding Request"
+        );
+        const body = encodeURIComponent(
+          `Hi Wang Guo,\n\nWe would like to start the $199 14-day StatementFlow Firm Pilot (unlimited seats).\nWork Email: ${email}\n\nPlease send the Creem/invoice link and onboarding instructions.`
+        );
+        window.location.href = `mailto:${to}?subject=${subj}&body=${body}`;
+        setErrorMsg(
+          `Direct B2B invoice draft opened for ${to}. You can also email us directly with your sample bank PDF.`
+        );
+        return;
+      }
+
+      if (data.mode === "sandbox") {
+        onSuccessActivate(plan, email);
+        onClose();
+        return;
+      }
+
+      throw new Error("Checkout session unavailable");
     } catch {
       clearTimeout(timer);
-      setErrorMsg("Network timeout initializing checkout. Please retry.");
+      setErrorMsg("Unable to initialize checkout right now. Please retry.");
     } finally {
       setLoading(false);
     }

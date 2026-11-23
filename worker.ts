@@ -85,8 +85,20 @@ async function handleCheckout(request: Request, env: Env): Promise<Response> {
     const creemApiKey = env.CREEM_API_KEY?.trim();
     const productId =
       plan === "business"
-        ? env.CREEM_PRODUCT_ID_BUSINESS?.trim() || env.CREEM_PRODUCT_ID_PRO?.trim()
+        ? env.CREEM_PRODUCT_ID_BUSINESS?.trim()
         : env.CREEM_PRODUCT_ID_PRO?.trim();
+
+    if (plan === "business" && !productId) {
+      return jsonResponse({
+        mode: "concierge_invoice",
+        gateway: "Direct B2B Invoice",
+        plan,
+        planName: meta.name,
+        amountUsd: meta.oneTimeUsd,
+        description: meta.description,
+        contactEmail: "zhangsanx34@gmail.com",
+      });
+    }
 
     if (creemApiKey && productId && body.gateway !== "stripe") {
       const creemPayload: Record<string, unknown> = {

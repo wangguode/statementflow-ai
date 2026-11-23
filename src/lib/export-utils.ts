@@ -86,7 +86,7 @@ export function buildQuickBooksCsvContent(data: ExtractionResult): string {
  * 生成严格符合 Xero 官方银行对账单导入规范的 5 列 CSV（Date, Amount, Payee, Description, Reference）
  */
 export function buildXeroCsvContent(data: ExtractionResult): string {
-  const headers = ["Date", "Amount", "Payee", "Description", "Reference"];
+  const headers = ["*Date", "*Amount", "Payee", "Description", "Reference"];
   const rows = data.transactions.map((tx) => {
     const signed = tx.type === "debit" ? -tx.amount : tx.amount;
     return [

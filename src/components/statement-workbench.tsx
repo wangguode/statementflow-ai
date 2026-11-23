@@ -700,17 +700,29 @@ export function StatementWorkbench() {
     try {
       let result: ExtractionResult;
       if (inputMode === "upload" && batchFiles.length > 1) {
-        // 多月 PDF 分块逐份提取 + 按日期自动合并为单份年度/多月总账本
-        const chunkResults: ExtractionResult[] = [];
-        for (let i = 0; i < batchFiles.length; i++) {
-          const item = batchFiles[i];
+        // 多月 PDF 并发分块提取（并发度=3，提速 2x-3x）+ 按日期自动合并为单份年度/多月总账本
+        const chunkResults: ExtractionResult[] = new Array(batchFiles.length);
+        let completed = 0;
+        const concurrency = 3;
+        for (let start = 0; start < batchFiles.length; start += concurrency) {
+          const slice = batchFiles.slice(start, start + concurrency);
           setExtractProgress({
-            current: i + 1,
+            current: completed,
             total: batchFiles.length,
-            label: `Extracting ${i + 1} / ${batchFiles.length}: ${item.name}`,
+            label: `Extracting ${Math.min(start + slice.length, batchFiles.length)} / ${batchFiles.length}: ${slice.map((s) => s.name).join(", ")}`,
           });
-          const chunkRes = await runSingleChunk(item.text, item.name);
-          chunkResults.push(chunkRes);
+          const batchOut = await Promise.all(
+            slice.map((item) => runSingleChunk(item.text, item.name))
+          );
+          batchOut.forEach((resItem, offset) => {
+            chunkResults[start + offset] = resItem;
+            completed += 1;
+          });
+          setExtractProgress({
+            current: completed,
+            total: batchFiles.length,
+            label: `Merged ${completed} / ${batchFiles.length} statement(s)...`,
+          });
         }
         const mergedTx: TransactionItem[] = chunkResults
           .flatMap((cr, cIdx) =>
@@ -879,10 +891,10 @@ export function StatementWorkbench() {
   function handleExportCsv() {
     trackFunnelEvent("export_csv", { txCount: extraction.transactions.length });
     const csv = buildCsvContent(extraction);
-    const safeName = extraction.accountOrInvoiceNumber.replace(
-      /[^a-zA-Z0-9_-]/g,
-      "_"
-    );
+    const safeName =
+      extraction.accountOrInvoiceNumber
+        .replace(/[^a-zA-Z0-9-]+/g, "_")
+        .replace(/^_+|_+$/g, "") || "statement";
     triggerBrowserDownload(
       csv,
       `StatementFlow_${safeName}.csv`,
@@ -895,10 +907,10 @@ export function StatementWorkbench() {
       txCount: extraction.transactions.length,
     });
     const xlsxBytes = buildExcelXlsxBytes(extraction);
-    const safeName = extraction.accountOrInvoiceNumber.replace(
-      /[^a-zA-Z0-9_-]/g,
-      "_"
-    );
+    const safeName =
+      extraction.accountOrInvoiceNumber
+        .replace(/[^a-zA-Z0-9-]+/g, "_")
+        .replace(/^_+|_+$/g, "") || "statement";
     triggerBrowserDownload(
       xlsxBytes,
       `StatementFlow_${safeName}.xlsx`,
@@ -911,10 +923,10 @@ export function StatementWorkbench() {
       txCount: extraction.transactions.length,
     });
     const csv = buildQuickBooksCsvContent(extraction);
-    const safeName = extraction.accountOrInvoiceNumber.replace(
-      /[^a-zA-Z0-9_-]/g,
-      "_"
-    );
+    const safeName =
+      extraction.accountOrInvoiceNumber
+        .replace(/[^a-zA-Z0-9-]+/g, "_")
+        .replace(/^_+|_+$/g, "") || "statement";
     triggerBrowserDownload(
       csv,
       `StatementFlow_QuickBooks_${safeName}.csv`,
@@ -925,10 +937,10 @@ export function StatementWorkbench() {
   function handleExportXero() {
     trackFunnelEvent("export_xero", { txCount: extraction.transactions.length });
     const csv = buildXeroCsvContent(extraction);
-    const safeName = extraction.accountOrInvoiceNumber.replace(
-      /[^a-zA-Z0-9_-]/g,
-      "_"
-    );
+    const safeName =
+      extraction.accountOrInvoiceNumber
+        .replace(/[^a-zA-Z0-9-]+/g, "_")
+        .replace(/^_+|_+$/g, "") || "statement";
     triggerBrowserDownload(
       csv,
       `StatementFlow_Xero_${safeName}.csv`,
@@ -938,10 +950,10 @@ export function StatementWorkbench() {
 
   function handleExportJson() {
     const json = JSON.stringify(extraction, null, 2);
-    const safeName = extraction.accountOrInvoiceNumber.replace(
-      /[^a-zA-Z0-9_-]/g,
-      "_"
-    );
+    const safeName =
+      extraction.accountOrInvoiceNumber
+        .replace(/[^a-zA-Z0-9-]+/g, "_")
+        .replace(/^_+|_+$/g, "") || "statement";
     triggerBrowserDownload(
       json,
       `StatementFlow_${safeName}.json`,

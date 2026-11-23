@@ -34,8 +34,41 @@ const PLAN_METADATA = {
 function jsonResponse(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
     status,
-    headers: { "Content-Type": "application/json; charset=utf-8" },
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "X-Content-Type-Options": "nosniff",
+      "Referrer-Policy": "strict-origin-when-cross-origin",
+    },
   });
+}
+
+/**
+ * 严格校验用户自定义 AI Base URL，阻断 SSRF 与私网/云元数据探测
+ */
+function isSafeExternalHttpsUrl(rawUrl: string): boolean {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.protocol !== "https:") return false;
+    const host = parsed.hostname.toLowerCase();
+    if (
+      host === "localhost" ||
+      host === "0.0.0.0" ||
+      host === "::1" ||
+      host === "[::1]" ||
+      host.endsWith(".local") ||
+      host.endsWith(".internal") ||
+      /^127\./.test(host) ||
+      /^10\./.test(host) ||
+      /^192\.168\./.test(host) ||
+      /^169\.254\./.test(host) ||
+      /^172\.(1[6-9]|2\d|3[01])\./.test(host)
+    ) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -222,10 +255,15 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
     const rawText = (body.rawText || "").trim();
     const pageImages = Array.isArray(body.pageImages)
       ? body.pageImages
-          .filter((img) => typeof img === "string" && img.startsWith("data:image/"))
+          .filter(
+            (img) =>
+              typeof img === "string" &&
+              img.startsWith("data:image/") &&
+              img.length <= 3_500_000
+          )
           .slice(0, 4)
       : [];
-    const fileName = (body.fileName || "statement.pdf").trim();
+    const fileName = (body.fileName || "statement.pdf").trim().slice(0, 180);
     if ((!rawText || rawText.length < 10) && pageImages.length === 0) {
       return jsonResponse(
         { error: "Document text is empty and no scanned page images were provided." },
@@ -233,16 +271,32 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
       );
     }
 
-    const effectiveKey =
-      (body.aiConfig?.provider === "openai_compatible"
-        ? body.aiConfig.apiKey?.trim()
-        : "") ||
-      env.AI_API_KEY?.trim() ||
-      "";
+    // 仅当用户自带 API Key 时才允许自定义 Base URL，严禁将服务端密钥发往外部自定义域名
+    const userProvidedKey =
+      body.aiConfig?.provider === "openai_compatible"
+        ? body.aiConfig.apiKey?.trim() || ""
+        : "";
+    const userProvidedBaseUrl =
+      body.aiConfig?.provider === "openai_compatible"
+        ? body.aiConfig.baseUrl?.trim() || ""
+        : "";
+
+    if (userProvidedBaseUrl && !userProvidedKey) {
+      return jsonResponse(
+        { error: "Custom API Base URL requires your own API key." },
+        400
+      );
+    }
+    if (userProvidedBaseUrl && !isSafeExternalHttpsUrl(userProvidedBaseUrl)) {
+      return jsonResponse(
+        { error: "Custom API Base URL must be a valid public HTTPS endpoint." },
+        400
+      );
+    }
+
+    const effectiveKey = userProvidedKey || env.AI_API_KEY?.trim() || "";
     const effectiveBaseUrl = (
-      (body.aiConfig?.provider === "openai_compatible"
-        ? body.aiConfig.baseUrl?.trim()
-        : "") ||
+      (userProvidedKey && userProvidedBaseUrl) ||
       env.AI_BASE_URL?.trim() ||
       "https://maas.qianwenaiapi.com/compatible-mode/v1"
     ).replace(/\/+$/, "");
@@ -377,7 +431,8 @@ Rules:
       else debitsCents += Math.round(tx.amount * 100);
     }
     const calculatedClosingCents = openingCents + creditsCents - debitsCents;
-    const discrepancyCents = calculatedClosingCents - closingCents;
+    // 与前端 schema.ts 保持一致：discrepancy = closingBalance - calculatedClosing
+    const discrepancyCents = closingCents - calculatedClosingCents;
 
     const result = {
       documentTitle: String(parsed.documentTitle || fileName),
@@ -393,7 +448,7 @@ Rules:
         totalCredits: creditsCents / 100,
         totalDebits: debitsCents / 100,
         netCashflow: (creditsCents - debitsCents) / 100,
-        calculatedClosingBalance: calculatedClosingCents / 100,
+        calculatedClosing: calculatedClosingCents / 100,
         discrepancy: discrepancyCents / 100,
         isBalanced: Math.abs(discrepancyCents) === 0,
       },
@@ -407,9 +462,11 @@ Rules:
     };
 
     return jsonResponse({ result });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "AI extraction error";
-    return jsonResponse({ error: msg }, 500);
+  } catch {
+    return jsonResponse(
+      { error: "Extraction failed due to an upstream or parsing error. Please retry." },
+      500
+    );
   }
 }
 

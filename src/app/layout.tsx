@@ -2,9 +2,33 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "StatementFlow — Bank Statements & Invoices to Verified Excel",
+  metadataBase: new URL("https://statementflow.win"),
+  title: "StatementFlow AI — Bank Statements & Invoices to Verified Excel (.xlsx)",
   description:
-    "Convert PDF bank statements, Stripe SaaS invoices, and VAT receipts into reconciled multi-sheet Excel, UTF-8 CSV, and accounting JSON in seconds.",
+    "Convert PDF bank statements, scanned statements, and VAT invoices into $0.00-reconciled native .xlsx Excel, QuickBooks 3-col CSV, and Xero 5-col CSV. 100% browser-local PDF extraction.",
+  openGraph: {
+    title: "StatementFlow AI — Bank Statements to $0.00-Verified Excel & QuickBooks CSV",
+    description:
+      "Browser-local batch PDF bank statement parser + Vision OCR + deterministic double-entry reconciliation ($9 one-time lifetime unlock).",
+    url: "https://statementflow.win",
+    siteName: "StatementFlow AI",
+    images: [
+      {
+        url: "/assets/blythe-house-ledger-room-1924.jpg",
+        width: 1200,
+        height: 630,
+        alt: "StatementFlow AI — Deterministic Financial Statement Reconciliation",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "StatementFlow AI — Bank Statements to $0.00-Verified Excel (.xlsx)",
+    description:
+      "Browser-local batch PDF parsing, Vision OCR & QuickBooks/Xero CSV export. $9 one-time lifetime unlock.",
+    images: ["/assets/blythe-house-ledger-room-1924.jpg"],
+  },
   robots: {
     index: true,
     follow: true,

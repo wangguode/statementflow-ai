@@ -1,4 +1,9 @@
+import * as XLSX from "xlsx";
 import type { ExtractionResult } from "@/types/statement";
+
+function sanitizeFormulaCell(value: string): string {
+  return /^[=+\-@]/.test(value) ? `'${value}` : value;
+}
 
 function escapeCsvCell(value: string | number | undefined): string {
   if (value === undefined || value === null) return "";
@@ -164,12 +169,87 @@ export function buildExcelWorkbookXml(data: ExtractionResult): string {
 </Workbook>`;
 }
 
+/**
+ * 生成真正原生无警告的双工作表 .xlsx 文件（OOXML 标准格式，兼容 Excel / Google Sheets / Numbers）
+ * 自动防御公式注入（=, +, -, @ 开头加单引号）并设定清晰列宽
+ */
+export function buildExcelXlsxBytes(data: ExtractionResult): Uint8Array {
+  const wb = XLSX.utils.book_new();
+
+  const txHeaders = [
+    "Date",
+    "Merchant",
+    "Description",
+    "Category",
+    "Direction",
+    `Amount (${data.currency})`,
+    `Tax (${data.currency})`,
+    "Confidence",
+  ];
+
+  const txRows = data.transactions.map((tx) => {
+    const signed = tx.type === "debit" ? -tx.amount : tx.amount;
+    return [
+      sanitizeFormulaCell(tx.date),
+      sanitizeFormulaCell(tx.merchant),
+      sanitizeFormulaCell(tx.description),
+      sanitizeFormulaCell(tx.category),
+      tx.type.toUpperCase(),
+      Number(signed.toFixed(2)),
+      Number((tx.taxAmount ?? 0).toFixed(2)),
+      `${Math.round(tx.confidence * 100)}%`,
+    ];
+  });
+
+  const wsTx = XLSX.utils.aoa_to_sheet([txHeaders, ...txRows]);
+  wsTx["!cols"] = [
+    { wch: 12 },
+    { wch: 24 },
+    { wch: 42 },
+    { wch: 20 },
+    { wch: 10 },
+    { wch: 16 },
+    { wch: 12 },
+    { wch: 12 },
+  ];
+  XLSX.utils.book_append_sheet(wb, wsTx, "Transactions");
+
+  const rec = data.reconciliation;
+  const recRows = [
+    ["Metric", `Value (${data.currency})`],
+    ["Institution", sanitizeFormulaCell(data.institution)],
+    ["Account / Ref", sanitizeFormulaCell(data.accountOrInvoiceNumber)],
+    ["Period", sanitizeFormulaCell(data.statementPeriod)],
+    ["Opening Balance", Number(rec.openingBalance.toFixed(2))],
+    ["Total Credits (+)", Number(rec.totalCredits.toFixed(2))],
+    ["Total Debits (-)", Number(rec.totalDebits.toFixed(2))],
+    ["Closing Balance", Number(rec.closingBalance.toFixed(2))],
+    [
+      "Reconciliation Status",
+      rec.isBalanced
+        ? "BALANCED (0.00 Discrepancy)"
+        : `UNBALANCED (${rec.discrepancy.toFixed(2)})`,
+    ],
+  ];
+
+  const wsRec = XLSX.utils.aoa_to_sheet(recRows);
+  wsRec["!cols"] = [{ wch: 26 }, { wch: 36 }];
+  XLSX.utils.book_append_sheet(wb, wsRec, "Reconciliation");
+
+  const buffer = XLSX.write(wb, { type: "array", bookType: "xlsx" }) as ArrayBuffer;
+  return new Uint8Array(buffer);
+}
+
 export function triggerBrowserDownload(
-  content: string,
+  content: string | Uint8Array,
   fileName: string,
   mimeType: string
 ): void {
-  const blob = new Blob([content], { type: mimeType });
+  const blobPart: BlobPart =
+    content instanceof Uint8Array
+      ? content.slice().buffer
+      : content;
+  const blob = new Blob([blobPart], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

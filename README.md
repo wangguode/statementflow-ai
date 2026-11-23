@@ -14,10 +14,15 @@
 
 </div>
 
-> **Key Capabilities (v2.1)**:
+> **Key Capabilities (v2.2)**:
 > - 🔒 **100% Browser-Local Batch Multi-PDF Parsing (`pdfjs-dist`)**: Drop multiple monthly PDFs at once—text extraction runs locally in your browser tab with zero server file uploads.
-> - 🤖 **Hybrid Edge AI Precision Extraction (`/api/extract`)**: Server-side LLM structured extraction (no user API key required) paired with deterministic cent-level reconciliation (`Opening + Credits - Debits === Ending` to `$0.00`).
-> - 🌍 **105+ Bank & Accounting Formats**: Dedicated converters for US, UK, Canada, Australia/NZ, Europe & APAC banks plus QuickBooks, Xero, Wave, Sage, NetSuite, Actual Budget & Firefly III.
+> - 🤖 **Hybrid Edge AI + Vision OCR (`/api/extract`)**: Structured extraction for both digital PDFs and scanned PDFs/photos (no user API key required), paired with deterministic cent-level reconciliation (`Opening + Credits - Debits === Ending` to `$0.00`).
+> - 📊 **Zero-Warning Native `.xlsx` + QuickBooks & Xero CSV**: Export multi-sheet OOXML `.xlsx` (Transactions + Reconciliation Summary), native QuickBooks Online 3-col CSV, and Xero 5-col CSV.
+> - 🛠️ **Free Browser-Local Accounting Utilities**:
+>   - [QuickBooks & Xero CSV Import Fixer](https://statementflow.win/tools/quickbooks-csv-fixer) (dates, split Debit/Credit merge, currency/brackets cleanup, sign flip)
+>   - [OFX / QFX / QBO to CSV Converter](https://statementflow.win/tools/ofx-qbo-to-csv) (OFX 1.x SGML & 2.x XML, fixes Error -16802)
+> - 🌍 **105+ Bank & Accounting Formats**: Dedicated converters for US, UK, Canada, Australia/NZ, Europe & APAC banks.
+> - 💳 **Transparent Pricing**: Free preview + `$9` one-time Pro lifetime unlock (via Creem.io) · `$199` 14-day Bookkeeping Firm Pilot · `$999` Air-Gapped Self-Hosted Docker.
 
 ---
 
@@ -53,9 +58,9 @@ Feeding raw financial documents directly into a generic LLM wrapper causes **thr
 - **Cent-Perfect Double-Entry Reconciliation** (`computeReconciliation` in `src/lib/schema.ts`):
   - **Never lets an LLM do math**. Enforces integer-cent arithmetic on `Opening Balance + Total Credits - Total Debits == Closing Balance` with `$0.01` discrepancy pinpointing.
 - **Formula-Injection Safe Exports** (`src/lib/export-utils.ts`):
-  - Neutralizes `=`, `+`, `-`, `@` prefixes before generating multi-sheet SpreadsheetML `.xls` or UTF-8 BOM `.csv` exports.
-- **Commercial Checkout & Timing-Safe Webhooks** (`src/app/api/checkout/route.ts` & `src/app/api/webhook/route.ts`):
-  - Integrated Lemon Squeezy (Merchant of Record) + Stripe Checkout with `crypto.timingSafeEqual` HMAC-SHA256 webhook verification.
+  - Neutralizes `=`, `+`, `-`, `@` prefixes before generating native multi-sheet OOXML `.xlsx`, QuickBooks 3-col CSV, Xero 5-col CSV, or UTF-8 BOM `.csv` exports.
+- **Commercial Checkout & Timing-Safe Webhooks** (`worker.ts`):
+  - Integrated **Creem.io** (Global Merchant of Record — `$9` one-time Pro / `$199` Firm Pilot) with `timingSafeEqualHex` HMAC-SHA256 webhook verification.
 
 ---
 

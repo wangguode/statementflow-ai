@@ -27,7 +27,7 @@ import { computeReconciliation } from "@/lib/schema";
 import { extractWithAISafety } from "@/lib/ai-extractor";
 import {
   buildCsvContent,
-  buildExcelWorkbookXml,
+  buildExcelXlsxBytes,
   buildQuickBooksCsvContent,
   buildXeroCsvContent,
   triggerBrowserDownload,
@@ -821,15 +821,15 @@ export function StatementWorkbench() {
     trackFunnelEvent("export_excel", {
       txCount: extraction.transactions.length,
     });
-    const xml = buildExcelWorkbookXml(extraction);
+    const xlsxBytes = buildExcelXlsxBytes(extraction);
     const safeName = extraction.accountOrInvoiceNumber.replace(
       /[^a-zA-Z0-9_-]/g,
       "_"
     );
     triggerBrowserDownload(
-      xml,
-      `StatementFlow_${safeName}.xls`,
-      "application/vnd.ms-excel"
+      xlsxBytes,
+      `StatementFlow_${safeName}.xlsx`,
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
   }
 
@@ -924,6 +924,12 @@ export function StatementWorkbench() {
             </a>
             <a href="#pricing" className="opacity-80 hover:opacity-100">
               Plans
+            </a>
+            <a
+              href="/tools/quickbooks-csv-fixer"
+              className="opacity-80 hover:opacity-100"
+            >
+              Free Tools
             </a>
             <a href="#faq" className="opacity-80 hover:opacity-100">
               Questions
@@ -2231,6 +2237,19 @@ export function StatementWorkbench() {
               className="underline decoration-white/30 underline-offset-4 hover:text-white hover:decoration-white"
             >
               OFX / QFX / QBO to CSV Converter
+            </a>
+            <span className="text-white/20">·</span>
+            <a
+              href="/privacy"
+              className="underline decoration-white/30 underline-offset-4 hover:text-white hover:decoration-white"
+            >
+              Privacy Policy
+            </a>
+            <a
+              href="/terms"
+              className="underline decoration-white/30 underline-offset-4 hover:text-white hover:decoration-white"
+            >
+              Terms of Use
             </a>
           </div>
 

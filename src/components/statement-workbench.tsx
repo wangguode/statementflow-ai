@@ -310,7 +310,7 @@ export function StatementWorkbench() {
       return DEFAULT_BILLING;
     }
   });
-  const [gateway, setGateway] = useState<"creem" | "stripe">(
+  const [gateway] = useState<"creem" | "stripe">(
     "creem"
   );
 

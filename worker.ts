@@ -20,14 +20,14 @@ interface Env {
 
 const PLAN_METADATA = {
   pro: {
-    name: "StatementFlow Pro",
-    monthlyUsd: 19,
-    description: "500 pages/mo, multi-currency Excel/CSV export & auto-reconciliation",
+    name: "StatementFlow AI Pro",
+    oneTimeUsd: 9,
+    description: "One-time lifetime unlock: unlimited batch PDFs, Vision OCR & QuickBooks/Xero CSV",
   },
   business: {
-    name: "StatementFlow Business",
-    monthlyUsd: 49,
-    description: "Unlimited pages, QuickBooks/Xero JSON schema & batch API access",
+    name: "StatementFlow Firm Pilot",
+    oneTimeUsd: 199,
+    description: "14-day boutique bookkeeping firm pilot with unlimited seats & custom bank tuning",
   },
 } as const;
 
@@ -125,7 +125,7 @@ async function handleCheckout(request: Request, env: Env): Promise<Response> {
       gateway: body.gateway === "stripe" ? "Stripe Sandbox" : "Creem.io MoR Sandbox",
       plan,
       planName: meta.name,
-      amountUsd: meta.monthlyUsd,
+      amountUsd: meta.oneTimeUsd,
       description: meta.description,
       sessionId: `sbx_${plan}_${Date.now()}`,
     });

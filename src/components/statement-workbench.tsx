@@ -2086,13 +2086,14 @@ export function StatementWorkbench() {
                   </ul>
                 </div>
 
-                <a
-                  href="mailto:zhangsanx34@gmail.com?subject=StatementFlow%20%24199%20Firm%20Pilot%20Inquiry"
-                  className="sf-btn flex min-h-16 w-full items-center justify-between bg-[#1d2230] px-8 text-base font-semibold text-white hover:bg-[#0066cc]"
+                <button
+                  type="button"
+                  onClick={() => setCheckoutPlan("business")}
+                  className="sf-btn flex min-h-16 w-full items-center justify-between bg-[#1d2230] px-8 text-base font-semibold text-white hover:bg-[#0066cc] cursor-pointer"
                 >
                   <span>Start Firm Pilot</span>
                   <span className="tabular-nums">$199</span>
-                </a>
+                </button>
               </div>
             </div>
 

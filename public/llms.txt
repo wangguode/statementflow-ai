@@ -1,0 +1,27 @@
+# StatementFlow AI (https://statementflow.win)
+
+> Deterministic PDF bank statement, scanned statement, and tax invoice converter to zero-warning native Excel (.xlsx), QuickBooks Online 3-column CSV, and Xero 5-column CSV with $0.00 double-entry reconciliation.
+
+## Core Capabilities
+- **100% Browser-Local Batch Multi-PDF Parsing**: Uses client-side `pdfjs-dist` so digital bank statement PDFs are parsed locally in the browser tab without persistent server uploads.
+- **Multi-Month PDF Concurrent Merge**: Drop 2 to 12 monthly PDF statements at once to merge into one chronological ledger.
+- **Vision OCR for Scanned PDFs & Photos**: Extracts transactions from scanned bank statements and checks `Opening Balance + Total Credits - Total Debits = Closing Balance` to `$0.00` using deterministic integer-cent arithmetic (never relies on LLM math).
+- **Zero-Warning Native `.xlsx` + Accounting CSVs**: Exports multi-sheet OOXML `.xlsx` (Transactions + Reconciliation tabs), QuickBooks 3-col CSV (`Date,Description,Amount`), and Xero 5-col CSV (`*Date,*Amount,Payee,Description,Reference`) with formula-injection protection.
+
+## Free Browser-Local Accounting Utilities (No Signup, Zero Upload)
+- [QuickBooks & Xero CSV Import Fixer](https://statementflow.win/tools/quickbooks-csv-fixer): Fixes invalid dates (MM/DD/YYYY vs DD/MM/YYYY), merges split Debit/Credit columns, strips currency symbols & accounting parentheses, removes exact duplicates, and flips credit card signs.
+- [OFX / QFX / QBO to CSV Converter](https://statementflow.win/tools/ofx-qbo-to-csv): Parses OFX 1.x (SGML) and OFX 2.x (XML) bank Web Connect files locally to fix QuickBooks Error -16802 and export clean CSVs.
+
+## Supported Banks & Formats (105+ Dedicated Converters)
+- US: JPMorgan Chase, Bank of America, Wells Fargo, Citibank, Capital One, Amex, Mercury, Relay, Brex, Ramp, PNC, US Bank, TD Bank.
+- UK & EU: Barclays, HSBC, Lloyds, NatWest, Santander, Monzo, Starling, Revolut, Wise, Deutsche Bank, Qonto, ING.
+- Canada, Australia & NZ: RBC, TD Canada Trust, BMO, Scotiabank, CIBC, CommBank, ANZ, NAB, Westpac, ASB, BNZ.
+- Accounting Software: QuickBooks Online, Xero, Wave, Sage, NetSuite, FreshBooks, Zoho Books, Actual Budget, Firefly III.
+
+## Pricing & Contact
+- Free Preview + Unlimited Free CSV/OFX Utilities
+- Pro Lifetime Unlock: $9 one-time (no recurring subscription) via Creem.io
+- Bookkeeping Firm Pilot (14-Day, Unlimited Seats): $199 one-time
+- Self-Hosted Air-Gapped Docker: $999
+- Contact: hello@statementflow.win
+- GitHub: https://github.com/wangguode/statementflow-ai

@@ -6,5 +6,12 @@
   "assets": {
     "directory": "./out",
     "binding": "ASSETS"
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "launchpulse-db",
+      "database_id": "b087ef3a-0f4a-463c-975d-51a7f2fb6075"
+    }
+  ]
 }

@@ -1,13 +1,28 @@
 /**
- * Cloudflare Workers 边缘入口：
- * 1. 处理 /api/checkout（调用 Creem.io Checkout API 生成实时美元结账链接）
- * 2. 处理 /api/webhook（校验 Creem Webhook HMAC-SHA256 签名）
- * 3. 其余全部静态页面与资源交给 Cloudflare Assets 托管
+ * StatementFlow AI Cloudflare Workers 边缘入口（安全限流 + D1 漏斗与订单持久化版）：
+ * 1. POST /api/extract         — 双层速率限制 + 同源保护 + 千问文本/视觉平账提取
+ * 2. POST /api/checkout        — 直连 Creem.io 实时收银（$9 Pro / $199 Firm Pilot）
+ * 3. GET  /api/verify-checkout — 核验 Creem 结账单并幂等写入 D1 sf_orders
+ * 4. POST /api/webhook         — 校验 Creem HMAC-SHA256 签名并写入 D1 sf_orders
+ * 5. POST /api/event & GET /api/stats — 隐私友好匿名转化漏斗持久化与聚合看板
  */
+
+interface D1Prepared {
+  bind: (...args: unknown[]) => {
+    run: () => Promise<unknown>;
+    first: <T = Record<string, unknown>>() => Promise<T | null>;
+    all: <T = Record<string, unknown>>() => Promise<{ results?: T[] }>;
+  };
+  run: () => Promise<unknown>;
+  all: <T = Record<string, unknown>>() => Promise<{ results?: T[] }>;
+}
 
 interface Env {
   ASSETS: {
     fetch: (request: Request) => Promise<Response>;
+  };
+  DB?: {
+    prepare: (sql: string) => D1Prepared;
   };
   CREEM_API_KEY?: string;
   CREEM_PRODUCT_ID_PRO?: string;
@@ -31,13 +46,78 @@ const PLAN_METADATA = {
   },
 } as const;
 
+const SECURITY_HEADERS: Record<string, string> = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "SAMEORIGIN",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+};
+
+// 边缘内存双窗口速率限制器（防恶意脚本刷空大模型 API 余额）
+const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+
+function checkEdgeRateLimit(ip: string, scope: string, maxRequests: number, windowMs: number): boolean {
+  const now = Date.now();
+  if (rateBuckets.size > 4000) {
+    for (const [k, v] of rateBuckets) {
+      if (v.resetAt <= now) rateBuckets.delete(k);
+    }
+  }
+  const key = `${scope}:${ip}`;
+  const bucket = rateBuckets.get(key);
+  if (!bucket || bucket.resetAt <= now) {
+    rateBuckets.set(key, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  if (bucket.count >= maxRequests) return false;
+  bucket.count += 1;
+  return true;
+}
+
+function getClientIp(request: Request): string {
+  return (
+    request.headers.get("cf-connecting-ip") ||
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "0.0.0.0"
+  );
+}
+
+let schemaReady = false;
+async function ensureSfTables(env: Env): Promise<void> {
+  if (schemaReady || !env.DB) return;
+  try {
+    await env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS sf_funnel_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event TEXT NOT NULL,
+        country TEXT NOT NULL DEFAULT 'XX',
+        meta_json TEXT NOT NULL DEFAULT '{}',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )`
+    ).run();
+    await env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS sf_orders (
+        order_id TEXT PRIMARY KEY,
+        customer_email TEXT NOT NULL DEFAULT '',
+        plan TEXT NOT NULL DEFAULT 'pro',
+        amount_usd INTEGER NOT NULL DEFAULT 9,
+        status TEXT NOT NULL DEFAULT 'completed',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )`
+    ).run();
+    schemaReady = true;
+  } catch {
+    // 降级不阻塞主流程
+  }
+}
+
 function jsonResponse(payload: unknown, status = 200): Response {
   return new Response(JSON.stringify(payload), {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      "X-Content-Type-Options": "nosniff",
-      "Referrer-Policy": "strict-origin-when-cross-origin",
+      ...SECURITY_HEADERS,
     },
   });
 }
@@ -71,9 +151,6 @@ function isSafeExternalHttpsUrl(rawUrl: string): boolean {
   }
 }
 
-/**
- * 常量时间比对十六进制签名，避免时序侧信道泄露
- */
 function timingSafeEqualHex(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
@@ -104,6 +181,10 @@ async function verifyCreemSignature(
 }
 
 async function handleCheckout(request: Request, env: Env): Promise<Response> {
+  const ip = getClientIp(request);
+  if (!checkEdgeRateLimit(ip, "checkout", 15, 60_000)) {
+    return jsonResponse({ error: "Too many checkout requests. Please wait a moment." }, 429);
+  }
   try {
     const body = (await request.json()) as {
       plan?: string;
@@ -193,10 +274,39 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
     return jsonResponse({ error: "Invalid webhook signature" }, 401);
   }
 
-  const event = JSON.parse(rawBody) as { eventType?: string; id?: string };
-  console.info(
-    `[webhook/creem] verified event=${event.eventType || "unknown"} id=${event.id || "n/a"}`
-  );
+  const event = JSON.parse(rawBody) as {
+    eventType?: string;
+    id?: string;
+    object?: {
+      id?: string;
+      customer?: { email?: string };
+      metadata?: { plan?: string };
+      order?: { amount?: number };
+    };
+  };
+
+  if (env.DB) {
+    await ensureSfTables(env);
+    try {
+      const obj = event.object || {};
+      const orderId = obj.id || event.id || `sf_ord_${Date.now()}`;
+      const email = (obj.customer?.email || "").trim().toLowerCase();
+      const plan = obj.metadata?.plan === "business" ? "business" : "pro";
+      const amountUsd = Math.round((obj.order?.amount || (plan === "business" ? 19900 : 900)) / 100);
+      const evt = (event.eventType || "").toLowerCase();
+      const status = /refund|cancel|dispute/.test(evt) ? "refunded" : "completed";
+      await env.DB.prepare(
+        `INSERT INTO sf_orders (order_id, customer_email, plan, amount_usd, status)
+         VALUES (?1, ?2, ?3, ?4, ?5)
+         ON CONFLICT(order_id) DO UPDATE SET status = ?5`
+      )
+        .bind(orderId, email, plan, amountUsd, status)
+        .run();
+    } catch {
+      // 不阻断 Webhook 200 返回
+    }
+  }
+
   return jsonResponse({
     received: true,
     provider: "creem",
@@ -223,14 +333,35 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
     const data = (await res.json()) as {
       id?: string;
       status?: string;
+      customer?: { email?: string };
       metadata?: { plan?: string };
     };
     const verified = data.status === "completed";
+    const plan = data.metadata?.plan === "business" ? "business" : "pro";
+    if (verified && env.DB && data.id) {
+      await ensureSfTables(env);
+      try {
+        await env.DB.prepare(
+          `INSERT INTO sf_orders (order_id, customer_email, plan, amount_usd, status)
+           VALUES (?1, ?2, ?3, ?4, 'completed')
+           ON CONFLICT(order_id) DO NOTHING`
+        )
+          .bind(
+            data.id,
+            (data.customer?.email || "").trim().toLowerCase(),
+            plan,
+            plan === "business" ? 199 : 9
+          )
+          .run();
+      } catch {
+        // ignore
+      }
+    }
     return jsonResponse({
       verified,
       status: data.status || "unknown",
       checkoutId: data.id,
-      plan: data.metadata?.plan || "pro",
+      plan,
     });
   } catch {
     return jsonResponse({ verified: false, error: "Verification failed" }, 500);
@@ -239,6 +370,19 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
 
 async function handleExtract(request: Request, env: Env): Promise<Response> {
   const startTime = Date.now();
+  const ip = getClientIp(request);
+
+  // 双窗口边缘限流：单 IP 每分钟最多 8 次、每小时最多 35 次，彻底阻断盗刷脚本
+  if (
+    !checkEdgeRateLimit(ip, "extract_min", 8, 60_000) ||
+    !checkEdgeRateLimit(ip, "extract_hr", 35, 3_600_000)
+  ) {
+    return jsonResponse(
+      { error: "Rate limit exceeded. Please wait a minute or unlock Pro / BYOK mode." },
+      429
+    );
+  }
+
   try {
     const body = (await request.json()) as {
       rawText?: string;
@@ -251,6 +395,19 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
         model?: string;
       };
     };
+
+    const userProvidedKey =
+      body.aiConfig?.provider === "openai_compatible"
+        ? body.aiConfig.apiKey?.trim() || ""
+        : "";
+
+    // 使用平台托管大模型密钥时，校验同源 Origin / Referer 防外部脚本直接白嫖
+    if (!userProvidedKey) {
+      const originHeader = (request.headers.get("origin") || request.headers.get("referer") || "").toLowerCase();
+      if (originHeader && !originHeader.includes("statementflow.win") && !originHeader.includes("localhost")) {
+        return jsonResponse({ error: "Cross-origin API usage is not permitted." }, 403);
+      }
+    }
 
     const rawText = (body.rawText || "").trim();
     const pageImages = Array.isArray(body.pageImages)
@@ -271,21 +428,13 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
       );
     }
 
-    // 仅当用户自带 API Key 时才允许自定义 Base URL，严禁将服务端密钥发往外部自定义域名
-    const userProvidedKey =
-      body.aiConfig?.provider === "openai_compatible"
-        ? body.aiConfig.apiKey?.trim() || ""
-        : "";
     const userProvidedBaseUrl =
       body.aiConfig?.provider === "openai_compatible"
         ? body.aiConfig.baseUrl?.trim() || ""
         : "";
 
     if (userProvidedBaseUrl && !userProvidedKey) {
-      return jsonResponse(
-        { error: "Custom API Base URL requires your own API key." },
-        400
-      );
+      return jsonResponse({ error: "Custom API Base URL requires your own API key." }, 400);
     }
     if (userProvidedBaseUrl && !isSafeExternalHttpsUrl(userProvidedBaseUrl)) {
       return jsonResponse(
@@ -312,10 +461,7 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
         ).trim();
 
     if (!effectiveKey) {
-      return jsonResponse(
-        { error: "Cloud AI Engine is not configured on this worker." },
-        503
-      );
+      return jsonResponse({ error: "Cloud AI Engine is not configured on this worker." }, 503);
     }
 
     const systemPrompt = `You are a deterministic financial statement extraction engine.
@@ -388,10 +534,7 @@ Rules:
     }
 
     if (!llmRes.ok) {
-      return jsonResponse(
-        { error: `AI provider returned HTTP ${llmRes.status}` },
-        502
-      );
+      return jsonResponse({ error: `AI provider returned HTTP ${llmRes.status}` }, 502);
     }
 
     const llmJson = (await llmRes.json()) as {
@@ -431,8 +574,24 @@ Rules:
       else debitsCents += Math.round(tx.amount * 100);
     }
     const calculatedClosingCents = openingCents + creditsCents - debitsCents;
-    // 与前端 schema.ts 保持一致：discrepancy = closingBalance - calculatedClosing
     const discrepancyCents = closingCents - calculatedClosingCents;
+
+    if (env.DB) {
+      await ensureSfTables(env);
+      try {
+        await env.DB.prepare(
+          `INSERT INTO sf_funnel_events (event, country, meta_json) VALUES (?1, ?2, ?3)`
+        )
+          .bind(
+            Math.abs(discrepancyCents) === 0 ? "api_extract_balanced" : "api_extract_unbalanced",
+            request.headers.get("cf-ipcountry") || "XX",
+            JSON.stringify({ txCount: transactions.length, vision: isVisionMode })
+          )
+          .run();
+      } catch {
+        // ignore
+      }
+    }
 
     const result = {
       documentTitle: String(parsed.documentTitle || fileName),
@@ -470,7 +629,11 @@ Rules:
   }
 }
 
-async function handleEvent(request: Request): Promise<Response> {
+async function handleEvent(request: Request, env: Env): Promise<Response> {
+  const ip = getClientIp(request);
+  if (!checkEdgeRateLimit(ip, "event", 60, 60_000)) {
+    return jsonResponse({ ok: true, throttled: true });
+  }
   try {
     const body = (await request.json()) as {
       event?: string;
@@ -478,20 +641,37 @@ async function handleEvent(request: Request): Promise<Response> {
     };
     const eventName = String(body.event || "unknown").slice(0, 48);
     const country = request.headers.get("cf-ipcountry") || "XX";
-    // 仅记录匿名漏斗事件与国家码，绝不记录 IP、邮箱或任何财务文件内容
-    console.log(
-      JSON.stringify({
-        tag: "funnel",
-        event: eventName,
-        country,
-        meta: body.meta || {},
-        ts: new Date().toISOString(),
-      })
-    );
+    if (env.DB) {
+      await ensureSfTables(env);
+      await env.DB.prepare(
+        `INSERT INTO sf_funnel_events (event, country, meta_json) VALUES (?1, ?2, ?3)`
+      )
+        .bind(eventName, country, JSON.stringify(body.meta || {}).slice(0, 300))
+        .run();
+    }
     return jsonResponse({ ok: true });
   } catch {
     return jsonResponse({ ok: false }, 400);
   }
+}
+
+async function handleStats(env: Env): Promise<Response> {
+  if (!env.DB) return jsonResponse({ ok: false, error: "DB not bound" }, 503);
+  await ensureSfTables(env);
+  const [funnelRes, ordersRes] = await Promise.all([
+    env.DB.prepare(
+      `SELECT event, COUNT(*) AS cnt FROM sf_funnel_events GROUP BY event ORDER BY cnt DESC`
+    ).all<{ event: string; cnt: number }>(),
+    env.DB.prepare(
+      `SELECT plan, COUNT(*) AS orders, COALESCE(SUM(amount_usd), 0) AS revenue_usd
+       FROM sf_orders WHERE status = 'completed' GROUP BY plan`
+    ).all<{ plan: string; orders: number; revenue_usd: number }>(),
+  ]);
+  return jsonResponse({
+    ok: true,
+    funnel: funnelRes.results || [],
+    orders: ordersRes.results || [],
+  });
 }
 
 const worker = {
@@ -499,7 +679,11 @@ const worker = {
     const { pathname } = new URL(request.url);
 
     if (pathname === "/api/event" && request.method === "POST") {
-      return handleEvent(request);
+      return handleEvent(request, env);
+    }
+
+    if (pathname === "/api/stats" && request.method === "GET") {
+      return handleStats(env);
     }
 
     if (pathname === "/api/extract" && request.method === "POST") {
@@ -518,7 +702,12 @@ const worker = {
       return handleWebhook(request, env);
     }
 
-    return env.ASSETS.fetch(request);
+    const assetRes = await env.ASSETS.fetch(request);
+    const hdrs = new Headers(assetRes.headers);
+    for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
+      hdrs.set(k, v);
+    }
+    return new Response(assetRes.body, { status: assetRes.status, headers: hdrs });
   },
 };
 

@@ -502,6 +502,10 @@ export function StatementWorkbench() {
     };
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
+    trackFunnelEvent("page_view", {
+      path: window.location.pathname,
+      ref: (document.referrer || "direct").slice(0, 100),
+    });
 
     return () => {
       revealObserver.disconnect();
@@ -547,6 +551,7 @@ export function StatementWorkbench() {
   function handleSelectSample(sampleId: string) {
     const preset = SAMPLE_PRESETS.find((s) => s.id === sampleId);
     if (!preset) return;
+    trackFunnelEvent("sample_try", { sampleId });
     setSelectedSampleId(sampleId);
     setInputMode("sample");
     setCustomRawText(preset.rawPreviewText);
@@ -569,6 +574,7 @@ export function StatementWorkbench() {
   // 处理本地单文件或多文件批量上传 (.pdf, .csv, .txt)，全部在浏览器端 100% 本地提取
   async function processUploadedFiles(fileList: File[]) {
     if (fileList.length === 0) return;
+    trackFunnelEvent("pdf_upload", { count: fileList.length });
 
     const batchLabel =
       fileList.length === 1
@@ -1144,6 +1150,16 @@ export function StatementWorkbench() {
               <a href="#faq" className="opacity-75 transition-opacity hover:opacity-100">
                 FAQ
               </a>
+              <a
+                href="https://github.com/wangguode/statementflow-ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackFunnelEvent("github_click")}
+                className="opacity-75 transition-opacity hover:opacity-100 inline-flex items-center gap-1"
+              >
+                <span>GitHub</span>
+                <ArrowUpRight className="size-3.5" />
+              </a>
             </nav>
 
             <div className="flex items-center gap-2">
@@ -1181,7 +1197,10 @@ export function StatementWorkbench() {
 
               <button
                 type="button"
-                onClick={() => setCheckoutPlan("pro")}
+                onClick={() => {
+                  trackFunnelEvent("checkout_open", { plan: "pro", source: "topbar" });
+                  setCheckoutPlan("pro");
+                }}
                 className="sf-btn inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[#0066cc] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#0058b3] cursor-pointer"
               >
                 <span>

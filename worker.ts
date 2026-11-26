@@ -28,6 +28,8 @@ interface Env {
   CREEM_PRODUCT_ID_PRO?: string;
   CREEM_PRODUCT_ID_BUSINESS?: string;
   CREEM_WEBHOOK_SECRET?: string;
+  RESEND_API_KEY?: string;
+  RESEND_FROM_EMAIL?: string;
   AI_API_KEY?: string;
   AI_BASE_URL?: string;
   AI_MODEL?: string;
@@ -49,6 +51,7 @@ const PLAN_METADATA = {
 const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "SAMEORIGIN",
+  "Content-Security-Policy": "frame-ancestors 'self'",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
@@ -103,9 +106,17 @@ async function ensureSfTables(env: Env): Promise<void> {
         plan TEXT NOT NULL DEFAULT 'pro',
         amount_usd INTEGER NOT NULL DEFAULT 9,
         status TEXT NOT NULL DEFAULT 'completed',
+        restore_token TEXT NOT NULL DEFAULT '',
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       )`
     ).run();
+    try {
+      await env.DB.prepare(
+        `ALTER TABLE sf_orders ADD COLUMN restore_token TEXT NOT NULL DEFAULT ''`
+      ).run();
+    } catch {
+      // 列已存在时安全忽略
+    }
     schemaReady = true;
   } catch {
     // 降级不阻塞主流程
@@ -295,13 +306,47 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
       const amountUsd = Math.round((obj.order?.amount || (plan === "business" ? 19900 : 900)) / 100);
       const evt = (event.eventType || "").toLowerCase();
       const status = /refund|cancel|dispute/.test(evt) ? "refunded" : "completed";
+      const restoreToken = `sf_lic_${crypto.randomUUID().replace(/-/g, "")}`;
       await env.DB.prepare(
-        `INSERT INTO sf_orders (order_id, customer_email, plan, amount_usd, status)
-         VALUES (?1, ?2, ?3, ?4, ?5)
+        `INSERT INTO sf_orders (order_id, customer_email, plan, amount_usd, status, restore_token)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6)
          ON CONFLICT(order_id) DO UPDATE SET status = ?5`
       )
-        .bind(orderId, email, plan, amountUsd, status)
+        .bind(orderId, email, plan, amountUsd, status, restoreToken)
         .run();
+
+      // 首次付款确认时，通过已认证 DKIM 子域自动向买家发送跨设备/多席位一键恢复链接
+      if (status === "completed" && email) {
+        const saved = await env.DB.prepare(
+          `SELECT restore_token FROM sf_orders WHERE order_id = ?1 LIMIT 1`
+        )
+          .bind(orderId)
+          .first<{ restore_token: string }>();
+        const activeToken = saved?.restore_token || restoreToken;
+        const activateUrl = `https://statementflow.win/?restore_token=${encodeURIComponent(activeToken)}`;
+        await sendSfEmail(env, {
+          to: email,
+          subject:
+            plan === "business"
+              ? "Your StatementFlow Firm Pilot ($199) License & Team Activation Link"
+              : "Your StatementFlow AI Pro ($9) Lifetime License & Multi-Device Link",
+          text: [
+            "Thank you for choosing StatementFlow AI!",
+            "",
+            `Plan Unlocked: ${plan === "business" ? "14-Day Boutique Firm Pilot (Unlimited Team Seats)" : "StatementFlow AI Pro (Lifetime Unlimited)"}`,
+            `Order Reference: ${orderId}`,
+            "",
+            "Bookmark or share this 1-click activation link to unlock StatementFlow on any browser, new computer, or team workstation:",
+            activateUrl,
+            "",
+            plan === "business"
+              ? "Firm Pilot Concierge: Reply directly to this email (hello@statementflow.win) with any tricky scanned or regional bank PDFs and we will tune custom QBO/Xero presets within 24 hours."
+              : "Need help at any time? Simply reply to this email (hello@statementflow.win).",
+            "",
+            "— StatementFlow Financial Engineering",
+          ].join("\n"),
+        });
+      }
     } catch {
       // 不阻断 Webhook 200 返回
     }
@@ -312,6 +357,158 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
     provider: "creem",
     eventType: event.eventType || "unknown",
   });
+}
+
+async function sendSfEmail(
+  env: Env,
+  params: { to: string; subject: string; text: string }
+): Promise<boolean> {
+  const apiKey = env.RESEND_API_KEY?.trim();
+  if (!apiKey || !params.to) return false;
+  const rawFrom =
+    env.RESEND_FROM_EMAIL?.trim() || "StatementFlow AI <hello@mail.statementflow.win>";
+  const from = rawFrom.replace(/@statementflow\.win\b/i, "@mail.statementflow.win");
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        reply_to: "hello@statementflow.win",
+        to: [params.to],
+        subject: params.subject,
+        text: params.text,
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function handleRestoreLicense(request: Request, env: Env): Promise<Response> {
+  const ip = getClientIp(request);
+  if (!checkEdgeRateLimit(ip, "restore", 12, 60_000)) {
+    return jsonResponse({ ok: false, error: "Too many restore attempts. Please wait 60s." }, 429);
+  }
+  if (!env.DB) {
+    return jsonResponse({ ok: false, error: "License service unavailable." }, 503);
+  }
+  await ensureSfTables(env);
+  try {
+    const body = (await request.json()) as {
+      token?: string;
+      email?: string;
+      orderRef?: string;
+    };
+    const token = (body.token || "").trim();
+    const email = (body.email || "").trim().toLowerCase();
+    const orderRef = (body.orderRef || "").trim();
+
+    // 路径 1：凭加密 restore_token 直接跨设备/多席位激活
+    if (token && token.length >= 10) {
+      const row = await env.DB.prepare(
+        `SELECT order_id, customer_email, plan FROM sf_orders
+         WHERE restore_token = ?1 AND status = 'completed' LIMIT 1`
+      )
+        .bind(token)
+        .first<{ order_id: string; customer_email: string; plan: string }>();
+      if (!row) {
+        return jsonResponse(
+          { ok: false, restored: false, error: "Invalid or expired activation link." },
+          404
+        );
+      }
+      return jsonResponse({
+        ok: true,
+        restored: true,
+        plan: row.plan === "business" ? "business" : "pro",
+        email: row.customer_email,
+        orderId: row.order_id,
+      });
+    }
+
+    // 路径 2：凭购买邮箱 + Creem 订单号（至少 6 位）即时双因子核验解锁
+    if (email && email.includes("@") && orderRef.length >= 6) {
+      const rows = await env.DB.prepare(
+        `SELECT order_id, customer_email, plan, restore_token FROM sf_orders
+         WHERE customer_email = ?1 AND status = 'completed'`
+      )
+        .bind(email)
+        .all<{ order_id: string; customer_email: string; plan: string; restore_token: string }>();
+      const matched = (rows.results || []).find(
+        (r) =>
+          r.order_id.toLowerCase().includes(orderRef.toLowerCase()) ||
+          (r.restore_token && r.restore_token.toLowerCase() === orderRef.toLowerCase())
+      );
+      if (!matched) {
+        return jsonResponse(
+          {
+            ok: false,
+            restored: false,
+            error: "No matching active order found for this email and order reference.",
+          },
+          404
+        );
+      }
+      return jsonResponse({
+        ok: true,
+        restored: true,
+        plan: matched.plan === "business" ? "business" : "pro",
+        email: matched.customer_email,
+        orderId: matched.order_id,
+      });
+    }
+
+    // 路径 3：仅输入购买邮箱 -> 发送免密激活链接至本人收件箱（严格防撞库枚举）
+    if (email && email.includes("@")) {
+      const existing = await env.DB.prepare(
+        `SELECT order_id, plan, restore_token FROM sf_orders
+         WHERE customer_email = ?1 AND status = 'completed' ORDER BY created_at DESC LIMIT 1`
+      )
+        .bind(email)
+        .first<{ order_id: string; plan: string; restore_token: string }>();
+      if (existing) {
+        let activeTok = existing.restore_token;
+        if (!activeTok) {
+          activeTok = `sf_lic_${crypto.randomUUID().replace(/-/g, "")}`;
+          await env.DB.prepare(
+            `UPDATE sf_orders SET restore_token = ?1 WHERE order_id = ?2`
+          )
+            .bind(activeTok, existing.order_id)
+            .run();
+        }
+        const activateUrl = `https://statementflow.win/?restore_token=${encodeURIComponent(activeTok)}`;
+        await sendSfEmail(env, {
+          to: email,
+          subject: "Your StatementFlow AI Instant Activation Link",
+          text: [
+            "Click the link below to restore your StatementFlow AI license on this device:",
+            "",
+            activateUrl,
+            "",
+            `Order Reference: ${existing.order_id}`,
+            "",
+            "— StatementFlow AI",
+          ].join("\n"),
+        });
+      }
+      return jsonResponse({
+        ok: true,
+        restored: false,
+        magicLinkSent: true,
+        message:
+          "If an active paid license exists for this email, we just sent a 1-click activation link to your inbox.",
+      });
+    }
+
+    return jsonResponse({ ok: false, error: "Please enter your checkout email address." }, 400);
+  } catch {
+    return jsonResponse({ ok: false, error: "Invalid restore request." }, 400);
+  }
 }
 
 async function handleVerifyCheckout(request: Request, env: Env): Promise<Response> {
@@ -338,21 +535,31 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
     };
     const verified = data.status === "completed";
     const plan = data.metadata?.plan === "business" ? "business" : "pro";
+    const email = (data.customer?.email || "").trim().toLowerCase();
+    let restoreToken = "";
     if (verified && env.DB && data.id) {
       await ensureSfTables(env);
       try {
+        const freshToken = `sf_lic_${crypto.randomUUID().replace(/-/g, "")}`;
         await env.DB.prepare(
-          `INSERT INTO sf_orders (order_id, customer_email, plan, amount_usd, status)
-           VALUES (?1, ?2, ?3, ?4, 'completed')
+          `INSERT INTO sf_orders (order_id, customer_email, plan, amount_usd, status, restore_token)
+           VALUES (?1, ?2, ?3, ?4, 'completed', ?5)
            ON CONFLICT(order_id) DO NOTHING`
         )
           .bind(
             data.id,
-            (data.customer?.email || "").trim().toLowerCase(),
+            email,
             plan,
-            plan === "business" ? 199 : 9
+            plan === "business" ? 199 : 9,
+            freshToken
           )
           .run();
+        const saved = await env.DB.prepare(
+          `SELECT restore_token FROM sf_orders WHERE order_id = ?1 LIMIT 1`
+        )
+          .bind(data.id)
+          .first<{ restore_token: string }>();
+        restoreToken = saved?.restore_token || freshToken;
       } catch {
         // ignore
       }
@@ -362,6 +569,8 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
       status: data.status || "unknown",
       checkoutId: data.id,
       plan,
+      email,
+      restoreToken,
     });
   } catch {
     return jsonResponse({ verified: false, error: "Verification failed" }, 500);
@@ -677,6 +886,14 @@ async function handleStats(env: Env): Promise<Response> {
 const worker = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const { pathname } = new URL(request.url);
+
+    if (pathname === "/api/health" && request.method === "GET") {
+      return jsonResponse({ ok: true, service: "statementflow-ai" });
+    }
+
+    if (pathname === "/api/license/restore" && request.method === "POST") {
+      return handleRestoreLicense(request, env);
+    }
 
     if (pathname === "/api/event" && request.method === "POST") {
       return handleEvent(request, env);

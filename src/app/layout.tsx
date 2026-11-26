@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   title: "StatementFlow AI — Bank Statements & Invoices to Verified Excel (.xlsx)",
   description:
     "Convert PDF bank statements, scanned statements, and VAT invoices into $0.00-reconciled native .xlsx Excel, QuickBooks 3-col CSV, and Xero 5-col CSV. 100% browser-local PDF extraction.",
+  alternates: {
+    canonical: "https://statementflow.win",
+  },
   openGraph: {
     title: "StatementFlow AI — Bank Statements to $0.00-Verified Excel & QuickBooks CSV",
     description:
@@ -35,6 +38,61 @@ export const metadata: Metadata = {
   },
 };
 
+const ROOT_JSON_LD = [
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "StatementFlow AI",
+    url: "https://statementflow.win",
+    applicationCategory: "FinanceApplication",
+    operatingSystem: "Web",
+    description:
+      "Deterministic client-side PDF bank statement and VAT invoice converter with $0.00 balance verification and native QuickBooks, Xero, and multi-sheet Excel (.xlsx) export.",
+    offers: [
+      {
+        "@type": "Offer",
+        name: "Free Preview",
+        price: "0.00",
+        priceCurrency: "USD",
+      },
+      {
+        "@type": "Offer",
+        name: "StatementFlow Pro Lifetime Unlock",
+        price: "9.00",
+        priceCurrency: "USD",
+      },
+      {
+        "@type": "Offer",
+        name: "Boutique Bookkeeping Firm Pilot",
+        price: "199.00",
+        priceCurrency: "USD",
+      },
+    ],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "How does StatementFlow prevent AI arithmetic hallucinations?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Language models only structure line-item text. Every subtotal and closing discrepancy is verified deterministically in TypeScript using cent-rounded math: Opening + Credits - Debits = Calculated Closing.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Are uploaded bank statements stored on a server?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "No. Digital PDFs are parsed locally in your browser via pdf.js, and ephemeral Vision OCR buffers are discarded immediately without database storage.",
+        },
+      },
+    ],
+  },
+];
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -51,8 +109,12 @@ export default function RootLayout({
         />
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Stack+Sans+Headline:wght@300;600&family=Stack+Sans+Text:wght@400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Stack+Sans+Headline:wght@500;600&family=Stack+Sans+Text:wght@400;500;600&display=swap"
           rel="stylesheet"
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(ROOT_JSON_LD) }}
         />
       </head>
       <body className="antialiased">{children}</body>

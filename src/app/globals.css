@@ -7,8 +7,9 @@
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--ink);
-  --font-sans: "Stack Sans Text", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-  --font-heading: "Stack Sans Headline", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "Plus Jakarta Sans", "Stack Sans Text", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-heading: "Stack Sans Headline", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --color-ring: var(--accent);
   --color-input: var(--surface);
   --color-border: var(--surface);
@@ -29,8 +30,9 @@
 
 :root {
   /* Type system dealt by tasteskill v2 (Stack Sans Headline / Stack Sans Text) + Apple SF Pro fallback */
-  --font-display: "Stack Sans Headline", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
-  --font-text: "Stack Sans Text", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Stack Sans Headline", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Arial, sans-serif;
+  --font-text: "Plus Jakarta Sans", "Stack Sans Text", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* Strict 5-step type scale */
   --step-small: 0.875rem;
@@ -178,28 +180,82 @@
   transition: transform 900ms var(--ease-soft);
 }
 
+/* V8 光学磨砂玻璃层（对齐 LaunchPulse 旗舰质感，杜绝平铺死灰） */
+.sf-hero-aura {
+  background-image:
+    radial-gradient(64% 58% at 16% 8%, rgba(0, 102, 204, 0.085), transparent 70%),
+    radial-gradient(54% 50% at 86% 18%, rgba(16, 185, 129, 0.065), transparent 72%),
+    linear-gradient(180deg, #f8f9fc 0%, #f3f4f8 100%);
+}
+
+.sf-frosted-topbar {
+  backdrop-filter: blur(22px) saturate(185%);
+  -webkit-backdrop-filter: blur(22px) saturate(185%);
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(17, 18, 21, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    0 10px 30px -12px rgba(15, 23, 42, 0.1);
+}
+
+.sf-frosted-topbar-dark {
+  backdrop-filter: blur(22px) saturate(185%);
+  -webkit-backdrop-filter: blur(22px) saturate(185%);
+  background: rgba(14, 17, 24, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 14px 34px -12px rgba(0, 0, 0, 0.52);
+}
+
+.sf-frosted-card {
+  backdrop-filter: blur(20px) saturate(175%);
+  -webkit-backdrop-filter: blur(20px) saturate(175%);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(15, 23, 42, 0.085);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 18px 40px -18px rgba(15, 23, 42, 0.12);
+}
+
+.sf-frosted-modal {
+  backdrop-filter: blur(26px) saturate(190%);
+  -webkit-backdrop-filter: blur(26px) saturate(190%);
+  background: rgba(250, 251, 253, 0.92);
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 28px 64px -16px rgba(10, 12, 18, 0.42);
+}
+
 /* Interactive software interface fragment [data-ui] */
 [data-ui] {
   font-variant-numeric: tabular-nums;
 }
 
 [data-ui] .ui-surface {
-  background-color: #161922;
+  background: linear-gradient(180deg, rgba(24, 28, 39, 0.95) 0%, rgba(19, 22, 31, 0.96) 100%);
+  color: #f5f5f7;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 20px 44px -20px rgba(0, 0, 0, 0.55);
+  border-radius: 16px;
+}
+
+[data-ui] .ui-tile {
+  background-color: rgba(33, 39, 54, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   color: #f5f5f7;
   border-radius: 12px;
 }
 
-[data-ui] .ui-tile {
-  background-color: #1f2430;
-  color: #f5f5f7;
-  border-radius: 10px;
-}
-
 [data-ui] .ui-input {
-  background-color: #11131a;
+  background-color: #0f1219;
   color: #f5f5f7;
-  border: 1px solid #2d3343;
-  border-radius: 8px;
+  border: 1px solid #2d3446;
+  border-radius: 10px;
+  font-family: var(--font-text);
 }
 
 [data-ui] .ui-table th,
@@ -207,29 +263,24 @@
   border-bottom: 1px solid #262b38;
 }
 
-/* Choreographed load & scroll motion layer */
+/* 非阻塞式入场动效：严禁将下方章节设为 opacity: 0，确保快速滚动、爬虫与全屏截图 100% 可见 */
 @media (prefers-reduced-motion: no-preference) {
   .js [data-load] {
-    opacity: 0;
-    transform: translateY(18px);
-    animation: sf-load-rise 780ms var(--ease-expo) forwards;
-    animation-delay: var(--d, 80ms);
+    animation: sf-load-rise 520ms var(--ease-expo) both;
+    animation-delay: var(--d, 40ms);
   }
   .js [data-reveal] {
-    opacity: 0;
-    transform: translateY(24px);
-    transition:
-      opacity 720ms var(--ease-expo),
-      transform 860ms var(--ease-expo);
-    transition-delay: var(--delay, 0ms);
-  }
-  .js [data-reveal].is-in {
     opacity: 1;
-    transform: none;
+    transform: translateY(0);
+    transition: transform 520ms var(--ease-expo);
   }
 }
 
 @keyframes sf-load-rise {
+  from {
+    opacity: 0.01;
+    transform: translateY(10px);
+  }
   to {
     opacity: 1;
     transform: none;

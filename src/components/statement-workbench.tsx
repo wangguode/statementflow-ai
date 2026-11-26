@@ -14,6 +14,7 @@ import {
   FileText,
   Plus,
   RefreshCw,
+  RotateCcw,
   Search,
   Settings2,
   ShieldCheck,
@@ -32,7 +33,11 @@ import {
   buildXeroCsvContent,
   triggerBrowserDownload,
 } from "@/lib/export-utils";
-import { AISettingsModal, CheckoutModal } from "@/components/modals";
+import {
+  AISettingsModal,
+  CheckoutModal,
+  RestoreLicenseModal,
+} from "@/components/modals";
 import type {
   AIConfigSettings,
   BillingState,
@@ -316,6 +321,7 @@ export function StatementWorkbench() {
 
   // 弹窗与交互反馈状态
   const [aiModalOpen, setAiModalOpen] = useState(false);
+  const [restoreModalOpen, setRestoreModalOpen] = useState(false);
   const [checkoutPlan, setCheckoutPlan] = useState<Exclude<
     PlanTier,
     "free"
@@ -337,10 +343,57 @@ export function StatementWorkbench() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const pressVideoRef = useRef<HTMLVideoElement | null>(null);
 
-  // Creem 支付成功回跳时，通过服务端 /api/verify-checkout 核验订单真实性后再持久解锁
+  // Creem 支付成功回跳或点击邮件跨设备激活链接（?restore_token=...）时自动服务端核验并持久解锁
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const checkoutId = params.get("checkout_id");
+    const restoreToken = params.get("restore_token")?.trim();
+    const checkoutId = params.get("checkout_id")?.trim();
+
+    if (restoreToken) {
+      let cancelled = false;
+      (async () => {
+        try {
+          const res = await fetch("/api/license/restore", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: restoreToken }),
+          });
+          if (!res.ok || cancelled) return;
+          const data = (await res.json()) as {
+            restored?: boolean;
+            plan?: Exclude<PlanTier, "free">;
+            email?: string;
+          };
+          if (data.restored && data.plan && !cancelled) {
+            const next: BillingState = {
+              plan: data.plan,
+              creditsUsed: 0,
+              creditsLimit: 999999,
+              customerEmail: data.email,
+              activatedAt: new Date().toISOString(),
+            };
+            setBilling(next);
+            localStorage.setItem(STORAGE_KEY_BILLING, JSON.stringify(next));
+            setStatusNotice(
+              `License restored (${data.plan.toUpperCase()}) for ${data.email || "your workspace"} — unlimited conversions unlocked.`
+            );
+            params.delete("restore_token");
+            const qs = params.toString();
+            window.history.replaceState(
+              {},
+              "",
+              qs ? `${window.location.pathname}?${qs}` : window.location.pathname
+            );
+          }
+        } catch {
+          // ignore
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
+
     if (params.get("checkout") !== "success" || !checkoutId) return;
 
     let cancelled = false;
@@ -353,6 +406,7 @@ export function StatementWorkbench() {
         const data = (await res.json()) as {
           verified?: boolean;
           plan?: string;
+          email?: string;
         };
         if (data.verified && !cancelled) {
           const unlockedPlan: PlanTier =
@@ -361,6 +415,9 @@ export function StatementWorkbench() {
             const next: BillingState = {
               ...prev,
               plan: unlockedPlan,
+              creditsLimit: 999999,
+              customerEmail: data.email || prev.customerEmail,
+              activatedAt: new Date().toISOString(),
             };
             localStorage.setItem(STORAGE_KEY_BILLING, JSON.stringify(next));
             return next;
@@ -1033,97 +1090,121 @@ export function StatementWorkbench() {
 
   return (
     <div className="min-h-svh overflow-x-clip bg-[#f5f5f7] text-[#111215]">
-      {/* 顶栏：与 .sf-wrap 严格同宽对齐，随滚动章节切换深浅色 */}
-      <header
-        className={`sticky top-0 z-40 overflow-x-clip transition-colors duration-300 ${
-          navDark
-            ? "bg-[#0a0b0e]/95 text-[#f5f5f7]"
-            : "bg-[#f5f5f7]/95 text-[#111215]"
-        }`}
-      >
-        <div className="sf-wrap flex min-h-16 items-center justify-between gap-4 py-3">
-          <a
-            href="#top"
-            className="inline-flex items-center gap-2.5 text-base font-semibold tracking-tight"
-          >
-            <span className="inline-flex size-7 items-center justify-center rounded-md bg-[#0066cc] text-sm font-semibold text-white">
-              S
-            </span>
-            <span>StatementFlow</span>
-          </a>
-
-          <nav
-            aria-label="Primary Navigation"
-            className="hidden items-center gap-8 text-base font-medium lg:flex"
-          >
-            <a href="#workbench" className="opacity-80 hover:opacity-100">
-              Studio
-            </a>
-            <a href="#how-it-works" className="opacity-80 hover:opacity-100">
-              Method
-            </a>
-            <a href="#archival-proof" className="opacity-80 hover:opacity-100">
-              Archive
-            </a>
-            <a href="#pricing" className="opacity-80 hover:opacity-100">
-              Plans
-            </a>
+      {/* V8 悬浮光学磨砂胶囊顶栏：随滚动章节自适应亮暗玻璃态 */}
+      <div className="sticky top-3 z-40 px-3 sm:px-6">
+        <header
+          className={`mx-auto max-w-[1680px] rounded-2xl transition-all duration-300 ${
+            navDark
+              ? "sf-frosted-topbar-dark text-[#f5f5f7]"
+              : "sf-frosted-topbar text-[#111215]"
+          }`}
+        >
+          <div className="flex min-h-14 items-center justify-between gap-4 px-4 py-2 sm:px-5">
             <a
-              href="/tools/quickbooks-csv-fixer"
-              className="opacity-80 hover:opacity-100"
+              href="#top"
+              className="inline-flex items-center gap-2.5 text-[15px] font-semibold tracking-tight"
             >
-              Free Tools
-            </a>
-            <a href="#faq" className="opacity-80 hover:opacity-100">
-              Questions
-            </a>
-          </nav>
-
-          <div className="flex items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => setAiModalOpen(true)}
-              className={`sf-btn hidden min-h-11 items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium sm:inline-flex ${
-                navDark
-                  ? "bg-[#1a1d26] text-[#f5f5f7]"
-                  : "bg-[#e8e8ed] text-[#111215]"
-              }`}
-            >
-              <Settings2 className="size-4 text-[#0066cc]" />
-              <span>
-                {aiConfig.provider === "openai_compatible"
-                  ? "Live LLM"
-                  : "AI Engine"}
+              <span className="inline-flex size-8 items-center justify-center rounded-[10px] bg-gradient-to-b from-[#0a74e6] to-[#0058b3] text-sm font-semibold text-white shadow-sm">
+                S
               </span>
-            </button>
+              <span>StatementFlow</span>
+            </a>
 
-            <button
-              type="button"
-              onClick={() => setCheckoutPlan("pro")}
-              className="sf-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#0066cc] px-4 py-2 text-sm font-semibold text-white"
+            <nav
+              aria-label="Primary Navigation"
+              className="hidden items-center gap-7 text-sm font-medium lg:flex"
             >
-              <span>
-                {billing.plan === "free"
-                  ? "Upgrade"
-                  : `${billing.plan.toUpperCase()} Active`}
-              </span>
-              <ArrowUpRight className="size-4" />
-            </button>
+              <a href="#workbench" className="opacity-75 transition-opacity hover:opacity-100">
+                Live Studio
+              </a>
+              <a href="#how-it-works" className="opacity-75 transition-opacity hover:opacity-100">
+                Verification
+              </a>
+              <a href="#pricing" className="opacity-75 transition-opacity hover:opacity-100">
+                Pricing
+              </a>
+              <a
+                href="/tools/quickbooks-csv-fixer"
+                className="opacity-75 transition-opacity hover:opacity-100"
+              >
+                CSV Fixer
+              </a>
+              <a
+                href="/tools/ofx-qbo-to-csv"
+                className="opacity-75 transition-opacity hover:opacity-100"
+              >
+                OFX Converter
+              </a>
+              <a href="#faq" className="opacity-75 transition-opacity hover:opacity-100">
+                FAQ
+              </a>
+            </nav>
+
+            <div className="flex items-center gap-2">
+              {billing.plan === "free" && (
+                <button
+                  type="button"
+                  onClick={() => setRestoreModalOpen(true)}
+                  className={`sf-btn hidden min-h-9 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold md:inline-flex cursor-pointer ${
+                    navDark
+                      ? "border border-white/12 bg-white/6 text-[#f5f5f7] hover:bg-white/12"
+                      : "border border-black/8 bg-white/80 text-[#111215] hover:bg-white"
+                  }`}
+                >
+                  <RotateCcw className="size-3.5 text-[#0066cc]" />
+                  <span>Restore License</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setAiModalOpen(true)}
+                className={`sf-btn hidden min-h-9 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold sm:inline-flex cursor-pointer ${
+                  navDark
+                    ? "border border-white/12 bg-white/6 text-[#f5f5f7] hover:bg-white/12"
+                    : "border border-black/8 bg-white/80 text-[#111215] hover:bg-white"
+                }`}
+              >
+                <Settings2 className="size-3.5 text-[#0066cc]" />
+                <span>
+                  {aiConfig.provider === "openai_compatible"
+                    ? "BYOK Live"
+                    : "AI Engine"}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCheckoutPlan("pro")}
+                className="sf-btn inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[#0066cc] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#0058b3] cursor-pointer"
+              >
+                <span>
+                  {billing.plan === "free"
+                    ? "Unlock Pro · $9"
+                    : `${billing.plan.toUpperCase()} Active`}
+                </span>
+                <ArrowUpRight className="size-3.5" />
+              </button>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      </div>
 
       <main id="top" className="overflow-x-clip">
         {/* =====================================================================
-            CHAPTER 1: APPLE FLAGSHIP HERO - TITANIUM ALABASTER INTO OBSIDIAN
+            CHAPTER 1: OPTICAL FROSTED HERO + INSTANT ABOVE-THE-FOLD PDF DROPZONE
             ===================================================================== */}
-        <section className="bg-[#f5f5f7] pt-12 pb-16 text-[#111215] lg:pt-20 lg:pb-24">
+        <section className="sf-hero-aura pt-10 pb-16 text-[#111215] lg:pt-16 lg:pb-22">
           <div className="sf-wrap">
-            <div className="grid grid-cols-1 items-end gap-10 lg:grid-cols-12">
-              <div className="lg:col-span-8">
+            <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12">
+              <div className="lg:col-span-7">
+                <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-black/8 bg-white/75 px-3.5 py-1 text-xs font-semibold text-[#31343b] backdrop-blur-md">
+                  <span className="size-2 rounded-full bg-emerald-500" />
+                  <span>100% Browser-Local PDF Parsing · Vision OCR · QuickBooks &amp; Xero Native</span>
+                </div>
                 <h1
                   data-load
-                  style={{ "--d": "60ms" } as React.CSSProperties}
+                  style={{ "--d": "40ms" } as React.CSSProperties}
                   className="sf-display text-[#111215]"
                 >
                   Every statement,
@@ -1132,52 +1213,111 @@ export function StatementWorkbench() {
                 </h1>
                 <p
                   data-load
-                  style={{ "--d": "150ms" } as React.CSSProperties}
+                  style={{ "--d": "110ms" } as React.CSSProperties}
                   className="sf-lead mt-6 text-[#494b52]"
                 >
-                  Upload multi-page PDF bank statements, Stripe tax invoices, or
-                  UK VAT receipts. Deterministic cent-level math checks every
-                  transaction before exporting to Excel, CSV, or QuickBooks.
+                  Drop multi-page PDF bank statements, scanned statements, or VAT
+                  invoices. Deterministic cent-level math verifies{" "}
+                  <span className="font-semibold text-[#111215]">
+                    Opening + Credits − Debits = Closing
+                  </span>{" "}
+                  before exporting clean Excel (.xlsx), QuickBooks, or Xero CSV.
                 </p>
                 <div
                   data-load
-                  style={{ "--d": "240ms" } as React.CSSProperties}
-                  className="mt-8 flex flex-wrap items-center gap-4"
+                  style={{ "--d": "170ms" } as React.CSSProperties}
+                  className="mt-8 flex flex-wrap items-center gap-3.5"
                 >
-                  <a
-                    href="#workbench"
-                    className="sf-btn inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#0066cc] px-6 py-3 text-base font-semibold text-white"
-                  >
-                    <span>Open live studio</span>
-                    <ArrowUpRight className="size-4" />
-                  </a>
                   <button
                     type="button"
-                    onClick={() => setAiModalOpen(true)}
-                    className="sf-btn inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#e8e8ed] px-5 py-3 text-base font-medium text-[#111215]"
+                    onClick={() => {
+                      fileInputRef.current?.click();
+                    }}
+                    className="sf-btn inline-flex min-h-12 items-center gap-2 rounded-xl bg-[#0066cc] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#0058b3] cursor-pointer"
                   >
-                    <Sparkles className="size-4 text-[#0066cc]" />
-                    <span>Configure AI endpoint</span>
+                    <Upload className="size-4" />
+                    <span>Upload Bank PDF / CSV Free</span>
                   </button>
+                  <a
+                    href="#workbench"
+                    className="sf-btn inline-flex min-h-12 items-center gap-2 rounded-xl border border-black/10 bg-white/80 px-5 py-3 text-sm font-semibold text-[#111215] backdrop-blur-md hover:bg-white"
+                  >
+                    <span>Explore Reconciled Demo</span>
+                    <ArrowUpRight className="size-4 text-[#0066cc]" />
+                  </a>
                 </div>
               </div>
 
+              {/* 首屏即用光学磨砂拖拽舱：会计师进站无需滚屏即可直接拖入 PDF 并直达对账台 */}
               <div
                 data-load
-                style={{ "--d": "310ms" } as React.CSSProperties}
-                className="rounded-xl bg-[#e8e8ed] p-6 lg:col-span-4"
+                style={{ "--d": "220ms" } as React.CSSProperties}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (!isDraggingFile) setIsDraggingFile(true);
+                }}
+                onDragLeave={(e) => {
+                  if (e.currentTarget === e.target) setIsDraggingFile(false);
+                }}
+                onDrop={async (e) => {
+                  await handleWorkbenchDrop(e);
+                  document
+                    .getElementById("workbench")
+                    ?.scrollIntoView({ behavior: "smooth" });
+                }}
+                className={`sf-frosted-card rounded-2xl p-6 transition-all lg:col-span-5 ${
+                  isDraggingFile ? "ring-2 ring-[#0066cc] bg-white" : ""
+                }`}
               >
-                <div className="flex items-center justify-between gap-2 text-sm font-medium text-[#494b52]">
-                  <span>Active Verification Formula</span>
-                  <span className="tabular-nums text-[#111215]">100% Exact</span>
+                <div className="flex items-center justify-between gap-2 text-xs font-semibold text-[#494b52]">
+                  <span className="inline-flex items-center gap-1.5 text-[#111215]">
+                    <ShieldCheck className="size-4 text-emerald-600" />
+                    Zero-Retention Instant Dropzone
+                  </span>
+                  <span className="rounded-full bg-emerald-500/12 px-2.5 py-0.5 font-mono text-[11px] font-semibold text-emerald-800">
+                    3 Free Runs · No Signup
+                  </span>
                 </div>
-                <div className="sf-lead mt-2 font-semibold tabular-nums text-[#111215]">
-                  Opening + Credits - Debits = Closing
+
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mt-4 flex w-full flex-col items-center justify-center rounded-xl border-2 border-dashed border-[#0066cc]/30 bg-white/75 px-5 py-8 text-center transition-colors hover:border-[#0066cc] hover:bg-white cursor-pointer"
+                >
+                  <span className="flex size-11 items-center justify-center rounded-xl bg-[#0066cc]/10 text-[#0066cc]">
+                    <Upload className="size-5" />
+                  </span>
+                  <span className="mt-3 text-base font-semibold text-[#111215]">
+                    Drop bank statement PDF(s) or scanned image
+                  </span>
+                  <span className="mt-1 text-xs text-[#494b52]">
+                    Supports multi-month PDF merge, PNG/JPG scans, CSV &amp; TXT
+                  </span>
+                </button>
+
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center justify-between text-xs text-[#494b52]">
+                    <span>Or test 1-click verified sample ledgers:</span>
+                    <span className="font-mono text-[11px] text-[#111215]">$0.00 drift</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {SAMPLE_PRESETS.map((sample) => (
+                      <button
+                        key={sample.id}
+                        type="button"
+                        onClick={() => {
+                          handleSelectSample(sample.id);
+                          document
+                            .getElementById("workbench")
+                            ?.scrollIntoView({ behavior: "smooth" });
+                        }}
+                        className="sf-btn rounded-lg border border-black/8 bg-white/90 px-2.5 py-1.5 text-xs font-medium text-[#111215] hover:border-[#0066cc] hover:text-[#0066cc] cursor-pointer"
+                      >
+                        {sample.name}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <p className="mt-3 text-sm text-[#494b52]">
-                  Zero tolerance for floating-point drift. Every row edit
-                  recalculates the ledger balance in real time.
-                </p>
               </div>
             </div>
           </div>
@@ -2280,13 +2420,20 @@ export function StatementWorkbench() {
                     </a>
                   </li>
                   <li>
-                    <a
-                      href="https://www.creem.io/affiliates/statementflow"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex min-h-8 items-center text-[#66b3ff] hover:text-white"
+                    <button
+                      type="button"
+                      onClick={() => setRestoreModalOpen(true)}
+                      className="inline-flex min-h-8 items-center text-[#66b3ff] hover:text-white cursor-pointer"
                     >
-                      Affiliates (30% Commission)
+                      Restore Purchased License
+                    </button>
+                  </li>
+                  <li>
+                    <a
+                      href="mailto:hello@statementflow.win?subject=StatementFlow%20Accounting%20Partner%20Inquiry"
+                      className="inline-flex min-h-8 items-center hover:text-white"
+                    >
+                      Accounting Partner Program
                     </a>
                   </li>
                 </ul>
@@ -2533,8 +2680,15 @@ export function StatementWorkbench() {
           gateway={gateway}
           onClose={() => setCheckoutPlan(null)}
           onSuccessActivate={handleActivatePlan}
+          onOpenRestore={() => setRestoreModalOpen(true)}
         />
       )}
+
+      <RestoreLicenseModal
+        open={restoreModalOpen}
+        onClose={() => setRestoreModalOpen(false)}
+        onRestored={handleActivatePlan}
+      />
     </div>
   );
 }

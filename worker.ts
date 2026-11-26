@@ -28,6 +28,7 @@ interface Env {
   CREEM_PRODUCT_ID_PRO?: string;
   CREEM_PRODUCT_ID_BUSINESS?: string;
   CREEM_WEBHOOK_SECRET?: string;
+  ADMIN_API_KEY?: string;
   RESEND_API_KEY?: string;
   RESEND_FROM_EMAIL?: string;
   AI_API_KEY?: string;
@@ -113,6 +114,13 @@ async function ensureSfTables(env: Env): Promise<void> {
     try {
       await env.DB.prepare(
         `ALTER TABLE sf_orders ADD COLUMN restore_token TEXT NOT NULL DEFAULT ''`
+      ).run();
+    } catch {
+      // 列已存在时安全忽略
+    }
+    try {
+      await env.DB.prepare(
+        `ALTER TABLE sf_orders ADD COLUMN email_sent INTEGER NOT NULL DEFAULT 0`
       ).run();
     } catch {
       // 列已存在时安全忽略
@@ -337,50 +345,55 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
         .bind(orderId, email, plan, amountUsd, status, restoreToken)
         .run();
 
-      // 首次付款确认时，通过已认证 DKIM 子域自动向买家发送跨设备/多席位一键恢复链接
+      // 首次付款确认时，幂等检查 email_sent 防止 Creem 多事件重推导致重复发信，并读取库内真实 restore_token
       if (status === "completed" && email) {
         const saved = await env.DB.prepare(
-          `SELECT restore_token FROM sf_orders WHERE order_id = ?1 LIMIT 1`
+          `SELECT restore_token, email_sent FROM sf_orders WHERE order_id = ?1 LIMIT 1`
         )
           .bind(orderId)
-          .first<{ restore_token: string }>();
-        const activeToken = saved?.restore_token || restoreToken;
-        const activateUrl = `https://statementflow.win/?restore_token=${encodeURIComponent(activeToken)}`;
-        await sendSfEmail(env, {
-          to: email,
-          subject:
-            plan === "business"
-              ? "Your StatementFlow Firm Pilot ($199) License & Team Activation Link"
-              : "Your StatementFlow AI Pro ($9) Lifetime License & Multi-Device Link",
-          text: [
-            "Thank you for choosing StatementFlow AI!",
-            "",
-            `Plan Unlocked: ${plan === "business" ? "14-Day Boutique Firm Pilot (Unlimited Team Seats)" : "StatementFlow AI Pro (Lifetime Unlimited)"}`,
-            `Order Reference: ${orderId}`,
-            "",
-            "Bookmark or share this 1-click activation link to unlock StatementFlow on any browser, new computer, or team workstation:",
-            activateUrl,
-            "",
-            plan === "business"
-              ? "Firm Pilot Concierge: Reply directly to this email (hello@statementflow.win) with any tricky scanned or regional bank PDFs and we will tune custom QBO/Xero presets within 24 hours."
-              : "Need help at any time? Simply reply to this email (hello@statementflow.win).",
-            "",
-            "— StatementFlow Financial Engineering",
-          ].join("\n"),
-        });
+          .first<{ restore_token: string; email_sent?: number }>();
+        if (!saved || Number(saved.email_sent || 0) === 0) {
+          await env.DB.prepare(`UPDATE sf_orders SET email_sent = 1 WHERE order_id = ?1`)
+            .bind(orderId)
+            .run();
+          const activeToken = saved?.restore_token || restoreToken;
+          const activateUrl = `https://statementflow.win/?restore_token=${encodeURIComponent(activeToken)}`;
+          await sendSfEmail(env, {
+            to: email,
+            subject:
+              plan === "business"
+                ? "Your StatementFlow Firm Pilot ($199) License & Team Activation Link"
+                : "Your StatementFlow AI Pro ($9) Lifetime License & Multi-Device Link",
+            text: [
+              "Thank you for choosing StatementFlow AI!",
+              "",
+              `Plan Unlocked: ${plan === "business" ? "14-Day Boutique Firm Pilot (Unlimited Team Seats)" : "StatementFlow AI Pro (Lifetime Unlimited)"}`,
+              `Order Reference: ${orderId}`,
+              "",
+              "Bookmark or share this 1-click activation link to unlock StatementFlow on any browser, new computer, or team workstation:",
+              activateUrl,
+              "",
+              plan === "business"
+                ? "Firm Pilot Concierge: Reply directly to this email (hello@statementflow.win) with any tricky scanned or regional bank PDFs and we will tune custom QBO/Xero presets within 24 hours."
+                : "Need help at any time? Simply reply to this email (hello@statementflow.win).",
+              "",
+              "— StatementFlow Financial Engineering",
+            ].join("\n"),
+          });
 
-        // 同步向创始人邮箱发送实时入账与交付通知
-        await sendSfEmail(env, {
-          to: "hello@statementflow.win",
-          subject: `💰 [StatementFlow Paid] $${amountUsd} (${plan.toUpperCase()}) from ${email}`,
-          text: [
-            `New Paid Order on StatementFlow AI!`,
-            `- Order ID: ${orderId}`,
-            `- Customer: ${email}`,
-            `- Plan: ${plan.toUpperCase()} ($${amountUsd})`,
-            `- Activation Link Sent: ${activateUrl}`,
-          ].join("\n"),
-        });
+          // 同步向创始人邮箱发送实时入账与交付通知
+          await sendSfEmail(env, {
+            to: "hello@statementflow.win",
+            subject: `💰 [StatementFlow Paid] $${amountUsd} (${plan.toUpperCase()}) from ${email}`,
+            text: [
+              `New Paid Order on StatementFlow AI!`,
+              `- Order ID: ${orderId}`,
+              `- Customer: ${email}`,
+              `- Plan: ${plan.toUpperCase()} ($${amountUsd})`,
+              `- Activation Link Sent: ${activateUrl}`,
+            ].join("\n"),
+          });
+        }
       }
     } catch {
       // 不阻断 Webhook 200 返回
@@ -435,7 +448,7 @@ async function sendSfEmail(
       )
         .bind(params.to, params.subject, params.text)
         .run();
-      fetch("https://pulse.statementflow.win/api/internal/flush-outbox", {
+      await fetch("https://pulse.statementflow.win/api/internal/flush-outbox", {
         method: "POST",
       }).catch(() => {});
       return true;
@@ -921,7 +934,12 @@ async function handleEvent(request: Request, env: Env): Promise<Response> {
   }
 }
 
-async function handleStats(env: Env): Promise<Response> {
+async function handleStats(request: Request, env: Env): Promise<Response> {
+  const adminKey = env.ADMIN_API_KEY?.trim() || "";
+  const provided = (request.headers.get("x-admin-key") || "").trim();
+  if (!adminKey || !provided || !timingSafeEqualHex(provided, adminKey)) {
+    return jsonResponse({ error: "Unauthorized" }, 401);
+  }
   if (!env.DB) return jsonResponse({ ok: false, error: "DB not bound" }, 503);
   await ensureSfTables(env);
   const [funnelRes, ordersRes] = await Promise.all([
@@ -1000,7 +1018,7 @@ const worker = {
     }
 
     if (pathname === "/api/stats" && request.method === "GET") {
-      return handleStats(env);
+      return handleStats(request, env);
     }
 
     if (pathname === "/api/extract" && request.method === "POST") {

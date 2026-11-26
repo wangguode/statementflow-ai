@@ -955,22 +955,35 @@ const worker = {
       }
       try {
         const body = (await request.json()) as { email?: string; bankName?: string; notes?: string };
-        const email = (body.email || "").trim().slice(0, 120);
+        const email = (body.email || "").trim().toLowerCase().slice(0, 120);
         const bankName = (body.bankName || "").trim().slice(0, 120);
         const notes = (body.notes || "").trim().slice(0, 800);
-        if (!bankName) return jsonResponse({ ok: false, error: "Please enter bank/institution name." }, 400);
-        if (env.DB) {
-          await ensureSfTables(env);
-          await env.DB.prepare(
-            `INSERT INTO sf_pilot_requests (customer_email, bank_name, notes) VALUES (?1, ?2, ?3)`
-          )
-            .bind(email, bankName, notes)
-            .run();
+        if (!email || !email.includes("@")) {
+          return jsonResponse({ ok: false, error: "Please provide your Firm Pilot checkout email." }, 400);
         }
+        if (!bankName) return jsonResponse({ ok: false, error: "Please enter bank/institution name." }, 400);
+        if (!env.DB) return jsonResponse({ ok: false, error: "Database unavailable." }, 503);
+        await ensureSfTables(env);
+        const paidPilot = await env.DB.prepare(
+          `SELECT order_id FROM sf_orders WHERE LOWER(customer_email) = ?1 AND plan = 'business' AND status = 'completed' LIMIT 1`
+        )
+          .bind(email)
+          .first<{ order_id: string }>();
+        if (!paidPilot) {
+          return jsonResponse(
+            { ok: false, error: "Active $199 Firm Pilot license required for custom bank tuning." },
+            403
+          );
+        }
+        await env.DB.prepare(
+          `INSERT INTO sf_pilot_requests (customer_email, bank_name, notes) VALUES (?1, ?2, ?3)`
+        )
+          .bind(email, bankName, notes)
+          .run();
         await sendSfEmail(env, {
           to: "hello@statementflow.win",
-          subject: `🏦 [Firm Pilot Custom Bank Request] ${bankName} (${email || "Firm User"})`,
-          text: `Customer: ${email}\nBank / Institution: ${bankName}\nNotes / Column Preset Request:\n${notes}`,
+          subject: `🏦 [Firm Pilot Custom Bank Request] ${bankName} (${email})`,
+          text: `Order: ${paidPilot.order_id}\nCustomer: ${email}\nBank / Institution: ${bankName}\nNotes / Column Preset Request:\n${notes}`,
         });
         return jsonResponse({ ok: true });
       } catch {

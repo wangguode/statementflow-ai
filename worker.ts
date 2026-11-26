@@ -117,6 +117,28 @@ async function ensureSfTables(env: Env): Promise<void> {
     } catch {
       // 列已存在时安全忽略
     }
+    await env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS email_outbox (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        from_label TEXT NOT NULL DEFAULT 'StatementFlow AI',
+        to_email TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        body_text TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        attempts INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        sent_at TEXT NOT NULL DEFAULT ''
+      )`
+    ).run();
+    await env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS sf_pilot_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        customer_email TEXT NOT NULL DEFAULT '',
+        bank_name TEXT NOT NULL DEFAULT '',
+        notes TEXT NOT NULL DEFAULT '',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )`
+    ).run();
     schemaReady = true;
   } catch {
     // 降级不阻塞主流程
@@ -346,6 +368,19 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
             "— StatementFlow Financial Engineering",
           ].join("\n"),
         });
+
+        // 同步向创始人邮箱发送实时入账与交付通知
+        await sendSfEmail(env, {
+          to: "hello@statementflow.win",
+          subject: `💰 [StatementFlow Paid] $${amountUsd} (${plan.toUpperCase()}) from ${email}`,
+          text: [
+            `New Paid Order on StatementFlow AI!`,
+            `- Order ID: ${orderId}`,
+            `- Customer: ${email}`,
+            `- Plan: ${plan.toUpperCase()} ($${amountUsd})`,
+            `- Activation Link Sent: ${activateUrl}`,
+          ].join("\n"),
+        });
       }
     } catch {
       // 不阻断 Webhook 200 返回
@@ -363,30 +398,52 @@ async function sendSfEmail(
   env: Env,
   params: { to: string; subject: string; text: string }
 ): Promise<boolean> {
+  if (!params.to) return false;
   const apiKey = env.RESEND_API_KEY?.trim();
-  if (!apiKey || !params.to) return false;
-  const rawFrom =
-    env.RESEND_FROM_EMAIL?.trim() || "StatementFlow AI <hello@mail.statementflow.win>";
-  const from = rawFrom.replace(/@statementflow\.win\b/i, "@mail.statementflow.win");
-  try {
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from,
-        reply_to: "hello@statementflow.win",
-        to: [params.to],
-        subject: params.subject,
-        text: params.text,
-      }),
-    });
-    return res.ok;
-  } catch {
-    return false;
+  if (apiKey) {
+    const rawFrom =
+      env.RESEND_FROM_EMAIL?.trim() || "StatementFlow AI <hello@mail.statementflow.win>";
+    const from = rawFrom.replace(/@statementflow\.win\b/i, "@mail.statementflow.win");
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from,
+          reply_to: "hello@statementflow.win",
+          to: [params.to],
+          subject: params.subject,
+          text: params.text,
+        }),
+      });
+      if (res.ok) return true;
+    } catch {
+      // fallback to shared D1 outbox
+    }
   }
+
+  // 无独立密钥时自动写入与 LaunchPulse 共享的 D1 email_outbox 并触发即时投递
+  if (env.DB) {
+    try {
+      await ensureSfTables(env);
+      await env.DB.prepare(
+        `INSERT INTO email_outbox (from_label, to_email, subject, body_text, status)
+         VALUES ('StatementFlow AI', ?1, ?2, ?3, 'pending')`
+      )
+        .bind(params.to, params.subject, params.text)
+        .run();
+      fetch("https://pulse.statementflow.win/api/internal/flush-outbox", {
+        method: "POST",
+      }).catch(() => {});
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return false;
 }
 
 async function handleRestoreLicense(request: Request, env: Env): Promise<Response> {
@@ -889,6 +946,36 @@ const worker = {
 
     if (pathname === "/api/health" && request.method === "GET") {
       return jsonResponse({ ok: true, service: "statementflow-ai" });
+    }
+
+    if (pathname === "/api/pilot-intake" && request.method === "POST") {
+      const ip = getClientIp(request);
+      if (!checkEdgeRateLimit(ip, "pilot_intake", 8, 60_000)) {
+        return jsonResponse({ ok: false, error: "Too many submissions." }, 429);
+      }
+      try {
+        const body = (await request.json()) as { email?: string; bankName?: string; notes?: string };
+        const email = (body.email || "").trim().slice(0, 120);
+        const bankName = (body.bankName || "").trim().slice(0, 120);
+        const notes = (body.notes || "").trim().slice(0, 800);
+        if (!bankName) return jsonResponse({ ok: false, error: "Please enter bank/institution name." }, 400);
+        if (env.DB) {
+          await ensureSfTables(env);
+          await env.DB.prepare(
+            `INSERT INTO sf_pilot_requests (customer_email, bank_name, notes) VALUES (?1, ?2, ?3)`
+          )
+            .bind(email, bankName, notes)
+            .run();
+        }
+        await sendSfEmail(env, {
+          to: "hello@statementflow.win",
+          subject: `🏦 [Firm Pilot Custom Bank Request] ${bankName} (${email || "Firm User"})`,
+          text: `Customer: ${email}\nBank / Institution: ${bankName}\nNotes / Column Preset Request:\n${notes}`,
+        });
+        return jsonResponse({ ok: true });
+      } catch {
+        return jsonResponse({ ok: false }, 400);
+      }
     }
 
     if (pathname === "/api/license/restore" && request.method === "POST") {

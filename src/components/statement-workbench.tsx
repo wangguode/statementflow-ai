@@ -425,6 +425,12 @@ export function StatementWorkbench() {
           setStatusNotice(
             `Payment verified via Creem.io — ${unlockedPlan.toUpperCase()} license is now active.`
           );
+          try {
+            const w = window as Window & { lpConvert?: (ev: string, val: number) => void };
+            w.lpConvert?.("purchase", unlockedPlan === "business" ? 199 : 9);
+          } catch {
+            // ignore
+          }
           params.delete("checkout");
           params.delete("checkout_id");
           params.delete("plan");
@@ -1573,6 +1579,57 @@ export function StatementWorkbench() {
                     ? `Free quota: ${billing.creditsUsed}/${billing.creditsLimit} runs`
                     : "Unlimited Pro License"}
                 </span>
+              </div>
+            )}
+
+            {/* $199 Firm Pilot 专属自助交付舱：一键提交疑难银行定制模板需求 & 多席位激活指引 */}
+            {billing.plan === "business" && (
+              <div className="mt-4 rounded-xl border border-[#0066cc]/40 bg-[#121929] p-4 text-xs text-[#d5d9e2]">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="font-semibold text-white">
+                      Boutique Firm Pilot Concierge Active (Unlimited Team Seats)
+                    </div>
+                    <div className="mt-0.5 text-[#9ca3b5]">
+                      Share your email activation link from your inbox with any colleague, or submit a tricky regional bank / custom QBO column request below for 24h tuning:
+                    </div>
+                  </div>
+                  <form
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const fd = new FormData(e.currentTarget);
+                      const bankName = String(fd.get("bankName") || "").trim();
+                      if (!bankName) return;
+                      const formEl = e.currentTarget;
+                      await fetch("/api/pilot-intake", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          email: billing.customerEmail || "",
+                          bankName,
+                          notes: "Submitted from Firm Pilot Workbench",
+                        }),
+                      }).catch(() => {});
+                      formEl.reset();
+                      setStatusNotice(`Priority bank tuning queued for "${bankName}" — we will email ${billing.customerEmail || "your team"} within 24h.`);
+                    }}
+                    className="flex items-center gap-2 shrink-0"
+                  >
+                    <input
+                      name="bankName"
+                      type="text"
+                      required
+                      placeholder="Bank name & QBO/Xero format..."
+                      className="ui-input px-3 py-2 text-xs w-56"
+                    />
+                    <button
+                      type="submit"
+                      className="sf-btn rounded-lg bg-[#0066cc] px-3.5 py-2 font-semibold text-white cursor-pointer"
+                    >
+                      Queue 24h Tuning
+                    </button>
+                  </form>
+                </div>
               </div>
             )}
 

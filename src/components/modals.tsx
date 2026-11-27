@@ -262,11 +262,11 @@ export function CheckoutModal({
 
   if (!open) return null;
 
-  const amount = plan === "business" ? 199 : 9;
+  const amount = plan === "business" ? 199 : 29;
   const planTitle =
     plan === "business"
       ? "Boutique Firm Pilot (14-Day · Unlimited Seats)"
-      : "StatementFlow AI Pro (Lifetime Unlock)";
+      : "StatementFlow AI Pro (Lifetime Unlimited)";
 
   async function handleConfirmCheckout(e: React.FormEvent) {
     e.preventDefault();
@@ -375,8 +375,8 @@ export function CheckoutModal({
               </div>
               <div className="text-xs text-[#494b52]">
                 {plan === "business"
-                  ? "Unlimited firm seats · Saves $600+/yr vs Dext per-seat"
-                  : "No recurring subscription · Saves $459/yr vs $39/mo tools"}
+                  ? "Unlimited firm seats · Saves $989+/yr vs Dext per-seat"
+                  : "No monthly subscription · Saves $439/yr vs $39/mo tools"}
               </div>
             </div>
             <div className="text-2xl font-bold tabular-nums text-[#111215]">
@@ -397,16 +397,15 @@ export function CheckoutModal({
               htmlFor="checkout-email"
               className="block text-xs font-semibold text-[#111215]"
             >
-              Work Email (Receives Instant Multi-Device License &amp; VAT Receipt)
+              Optional: Work Email (Pre-fills Creem Checkout &amp; Multi-Device Link)
             </label>
             <input
               id="checkout-email"
               type="email"
-              required
-              placeholder="accounting@yourfirm.com"
+              placeholder="accounting@yourfirm.com (optional — or enter on checkout)"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1.5 block w-full rounded-xl border border-black/15 bg-white px-3.5 py-2.5 text-base text-[#111215] focus:border-[#0066cc] focus:outline-none"
+              className="mt-1.5 block w-full rounded-xl border border-black/15 bg-white px-3.5 py-2.5 text-base text-[#111215] focus:border-[#0066cc] focus:outline-none sm:text-sm"
             />
           </div>
 

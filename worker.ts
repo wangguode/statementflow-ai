@@ -39,7 +39,7 @@ interface Env {
 const PLAN_METADATA = {
   pro: {
     name: "StatementFlow AI Pro",
-    oneTimeUsd: 9,
+    oneTimeUsd: 29,
     description: "One-time lifetime unlock: unlimited batch PDFs, Vision OCR & QuickBooks/Xero CSV",
   },
   business: {
@@ -255,10 +255,25 @@ async function handleCheckout(request: Request, env: Env): Promise<Response> {
     const origin = request.headers.get("origin") || new URL(request.url).origin;
 
     const creemApiKey = env.CREEM_API_KEY?.trim();
-    const productId =
+    let productId =
       plan === "business"
         ? env.CREEM_PRODUCT_ID_BUSINESS?.trim()
         : env.CREEM_PRODUCT_ID_PRO?.trim();
+
+    if (env.DB) {
+      try {
+        const overrideRow = await env.DB.prepare(
+          `SELECT product_id FROM creem_sku_overrides WHERE app_key = 'sf' AND plan_key = ?1 LIMIT 1`
+        )
+          .bind(plan)
+          .first<{ product_id: string }>();
+        if (overrideRow?.product_id) {
+          productId = overrideRow.product_id;
+        }
+      } catch {
+        // 表尚未初始化时安全降级读取环境变量
+      }
+    }
 
     if (plan === "business" && !productId) {
       return jsonResponse({
@@ -350,7 +365,7 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
       const orderId = obj.id || event.id || `sf_ord_${Date.now()}`;
       const email = (obj.customer?.email || "").trim().toLowerCase();
       const plan = obj.metadata?.plan === "business" ? "business" : "pro";
-      const amountUsd = Math.round((obj.order?.amount || (plan === "business" ? 19900 : 900)) / 100);
+      const amountUsd = Math.round((obj.order?.amount || (plan === "business" ? 19900 : 2900)) / 100);
       const evt = (event.eventType || "").toLowerCase();
       const status = /refund|cancel|dispute/.test(evt) ? "refunded" : "completed";
       const restoreToken = `sf_lic_${crypto.randomUUID().replace(/-/g, "")}`;
@@ -380,7 +395,7 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
             subject:
               plan === "business"
                 ? "Your StatementFlow Firm Pilot ($199) License & Team Activation Link"
-                : "Your StatementFlow AI Pro ($9) Lifetime License & Multi-Device Link",
+                : "Your StatementFlow AI Pro ($29) Lifetime License & Multi-Device Link",
             text: [
               "Thank you for choosing StatementFlow AI!",
               "",
@@ -646,7 +661,7 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
             data.id,
             email,
             plan,
-            plan === "business" ? 199 : 9,
+            plan === "business" ? 199 : 29,
             freshToken
           )
           .run();
@@ -748,12 +763,12 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
 
     const isVisionMode = pageImages.length > 0 && rawText.length < 40;
 
-    // 商业防白嫖硬门槛 1：扫描件多模态 Vision OCR 仅对 $9 Pro / $199 Firm 授权或 BYOK 用户开放
+    // 商业防白嫖硬门槛 1：扫描件多模态 Vision OCR 仅对 $29 Pro / $199 Firm 授权或 BYOK 用户开放
     if (isVisionMode && !hasPaidLicense && !userProvidedKey) {
       return jsonResponse(
         {
           error:
-            "Scanned PDF & Photo Vision AI OCR requires StatementFlow Pro ($9 one-time lifetime unlock).",
+            "Scanned PDF & Photo Vision AI OCR requires StatementFlow Pro ($29 one-time lifetime unlock).",
           code: "PRO_REQUIRED",
         },
         402
@@ -781,7 +796,7 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
         return jsonResponse(
           {
             error:
-              "Free preview limit reached (2/2 single-PDF runs). Unlock StatementFlow Pro ($9 once, no subscription) for unlimited extractions.",
+              "Free Cloud AI preview limit reached (2/2 runs). Local Zero-Upload mode remains free, or unlock StatementFlow Pro ($29 once, no subscription) for unlimited Cloud AI & exports.",
             code: "PRO_REQUIRED",
           },
           402
@@ -868,7 +883,7 @@ Rules:
       : `File: ${fileName}\n\nStatement Text:\n${rawText.slice(0, 48000)}`;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), 42000);
 
     let llmRes: Response;
     try {
@@ -1070,10 +1085,17 @@ const worker = {
           email?: string;
           firmOrBank?: string;
           notes?: string;
+          sampleFileName?: string;
+          sampleSnippet?: string;
         };
         const email = (body.email || "").trim().toLowerCase().slice(0, 120);
         const firmOrBank = (body.firmOrBank || "").trim().slice(0, 160);
-        const notes = (body.notes || "").trim().slice(0, 600);
+        const sampleFileName = (body.sampleFileName || "").trim().slice(0, 120);
+        const sampleSnippet = (body.sampleSnippet || "").trim().slice(0, 14000);
+        const rawNotes = (body.notes || "").trim().slice(0, 600);
+        const notes = sampleFileName
+          ? `${rawNotes} [Attached: ${sampleFileName}, ${sampleSnippet.length} chars]`.slice(0, 1000)
+          : rawNotes;
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           return jsonResponse({ ok: false, error: "Please enter a valid work email address." }, 400);
         }
@@ -1091,41 +1113,46 @@ const worker = {
           await env.DB.prepare(
             `INSERT INTO sf_funnel_events (event, country, meta_json) VALUES ('pre_pilot_lead', ?1, ?2)`
           )
-            .bind(country, JSON.stringify({ firmOrBank }).slice(0, 240))
+            .bind(country, JSON.stringify({ firmOrBank, hasFile: Boolean(sampleFileName) }).slice(0, 240))
             .run();
         }
         await sendSfEmail(env, {
           to: "hello@statementflow.win",
-          subject: `🎯 [StatementFlow B2B Lead] ${email} (${firmOrBank})`,
+          subject: `🎯 [StatementFlow B2B Sample Lead] ${email} (${firmOrBank})`,
           text: [
-            "New Pre-Pilot Sample Test / B2B Inquiry on StatementFlow AI:",
+            "New Pre-Pilot 4h Sample Proof Lead on StatementFlow AI:",
             `- Work Email: ${email}`,
             `- Target Bank / ERP: ${firmOrBank}`,
             `- Country: ${country}`,
-            `- Notes: ${notes || "(none)"}`,
-          ].join("\n"),
+            `- Attached File: ${sampleFileName || "(none — awaiting reply)"}`,
+            `- Notes: ${rawNotes || "(none)"}`,
+            sampleSnippet ? `\n--- EXTRACTED SAMPLE STREAM (FIRST 14KB) ---\n${sampleSnippet}` : "",
+          ]
+            .filter(Boolean)
+            .join("\n"),
         });
         await sendSfEmail(env, {
           to: email,
-          subject: "StatementFlow Firm Pilot — Free 4h Sample PDF Proof Ready",
+          subject: sampleFileName
+            ? `Received "${sampleFileName}" — Your 4h Reconciled QBO/Xero Proof Is Queued`
+            : "StatementFlow Firm Pilot — Free 4h Sample PDF Proof Ready",
           text: [
             "Hi there,",
             "",
-            `We received your StatementFlow Firm Pilot pre-check request for: ${firmOrBank}.`,
+            sampleFileName
+              ? `We received your sample file (${sampleFileName}) for ${firmOrBank}. Our financial engineering team is running $0.00 cent-level verification and will email back the ready-to-import QuickBooks / Xero CSV + multi-sheet Audit Excel within 4 business hours.`
+              : `We received your StatementFlow Firm Pilot pre-check request for: ${firmOrBank}. Simply reply to this email (hello@statementflow.win) with 1 redacted or tricky client bank PDF and we will return the $0.00-reconciled QBO/Xero CSV + Excel proof within 4 business hours.`,
             "",
-            "How to run your free 4-hour sample proof:",
-            "1. Simply reply to this email (hello@statementflow.win) with 1 redacted or tricky client bank PDF (scanned or multi-month).",
-            "2. Within 4 business hours, our financial engineering team will return the exact $0.00-reconciled QuickBooks / Xero CSV + multi-sheet Excel workbook so your partners can verify 100% accuracy before starting the $199 Unlimited-Seat Pilot.",
-            "",
-            "Ready to unlock unlimited team seats right away? You can activate the 14-day Firm Pilot anytime at https://statementflow.win/#pricing (backed by our 14-day 100% refund guarantee).",
+            "Ready to unlock unlimited team seats right away? Activate the 14-day Firm Pilot anytime at https://statementflow.win/#pricing (backed by our 14-day 100% refund guarantee).",
             "",
             "— StatementFlow Financial Engineering",
           ].join("\n"),
         });
         return jsonResponse({
           ok: true,
-          message:
-            "Sample proof ticket created! Check your inbox — reply with 1 redacted PDF for a free 4h QBO/Xero proof.",
+          message: sampleFileName
+            ? `Received "${sampleFileName}"! Your $0.00-reconciled QBO/Xero & Excel proof will arrive at ${email} within 4 hours.`
+            : "Sample proof ticket created! Check your inbox — reply with 1 redacted PDF for a free 4h QBO/Xero proof.",
         });
       } catch {
         return jsonResponse({ ok: false, error: "Unable to submit request right now." }, 400);

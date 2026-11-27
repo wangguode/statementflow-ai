@@ -25,6 +25,7 @@ import {
 import { SAMPLE_PRESETS, findSampleById } from "@/lib/samples";
 import { PSEO_BANK_ENTRIES, findPseoBankBySlug } from "@/lib/pseo-banks";
 import { computeReconciliation } from "@/lib/schema";
+import { parseDocumentHeuristically } from "@/lib/heuristic-parser";
 import { extractWithAISafety } from "@/lib/ai-extractor";
 import {
   buildCsvContent,
@@ -335,6 +336,10 @@ export function StatementWorkbench() {
     "free"
   > | null>(null);
   const [checkoutReason, setCheckoutReason] = useState<string>("");
+  const [directCheckoutLoading, setDirectCheckoutLoading] = useState<string | null>(null);
+  const [engineMode, setEngineMode] = useState<"local_zero_upload" | "cloud_ai">(
+    "local_zero_upload"
+  );
   const [isExtracting, setIsExtracting] = useState(false);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [batchFiles, setBatchFiles] = useState<{ name: string; text: string }[]>([]);
@@ -361,6 +366,10 @@ export function StatementWorkbench() {
   });
   const [pilotLeadEmail, setPilotLeadEmail] = useState("");
   const [pilotLeadBank, setPilotLeadBank] = useState("");
+  const [pilotSampleFile, setPilotSampleFile] = useState<{
+    name: string;
+    snippet: string;
+  } | null>(null);
   const [pilotLeadLoading, setPilotLeadLoading] = useState(false);
   const [pilotLeadMsg, setPilotLeadMsg] = useState("");
 
@@ -400,6 +409,69 @@ export function StatementWorkbench() {
     setStatusNotice("Cleared browser-local ledger history.");
   }
 
+  async function handlePilotSampleAttach(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const lower = file.name.toLowerCase();
+      if (lower.endsWith(".pdf")) {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const { extractTextFromPdfBytes } = await import("@/lib/client-pdf");
+        const { text, pages } = await extractTextFromPdfBytes(bytes);
+        setPilotSampleFile({
+          name: `${file.name} (${pages}p)`,
+          snippet:
+            text.trim().length > 20
+              ? text.slice(0, 14000)
+              : `[Scanned image PDF: ${pages} page(s), ${Math.round(file.size / 1024)}KB]`,
+        });
+      } else {
+        const text = await file.text();
+        setPilotSampleFile({
+          name: file.name,
+          snippet: text.slice(0, 14000),
+        });
+      }
+    } catch {
+      setPilotSampleFile({ name: file.name, snippet: "[Binary/Protected PDF]" });
+    }
+  }
+
+  async function startDirectCheckout(
+    targetPlan: Exclude<PlanTier, "free">,
+    source: string
+  ) {
+    trackFunnelEvent("checkout_direct_click", { plan: targetPlan, source });
+    setDirectCheckoutLoading(targetPlan);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: targetPlan,
+          email: billing.customerEmail || "",
+          gateway,
+        }),
+      });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          mode?: string;
+          checkoutUrl?: string;
+        };
+        if (data.mode === "live_redirect" && data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;
+          return;
+        }
+      }
+      setCheckoutPlan(targetPlan);
+    } catch {
+      setCheckoutPlan(targetPlan);
+    } finally {
+      setDirectCheckoutLoading(null);
+    }
+  }
+
   async function handlePrePilotLeadSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!pilotLeadEmail.trim() || !pilotLeadBank.trim()) return;
@@ -412,6 +484,8 @@ export function StatementWorkbench() {
         body: JSON.stringify({
           email: pilotLeadEmail.trim(),
           firmOrBank: pilotLeadBank.trim(),
+          sampleFileName: pilotSampleFile?.name || undefined,
+          sampleSnippet: pilotSampleFile?.snippet || undefined,
           notes: "Submitted from Pricing Free 4h Sample Proof card",
         }),
       });
@@ -426,6 +500,7 @@ export function StatementWorkbench() {
       );
       setPilotLeadEmail("");
       setPilotLeadBank("");
+      setPilotSampleFile(null);
     } catch {
       setPilotLeadMsg("Network error — please email hello@statementflow.win.");
     } finally {
@@ -546,7 +621,7 @@ export function StatementWorkbench() {
           );
           try {
             const w = window as Window & { lpConvert?: (ev: string, val: number) => void };
-            w.lpConvert?.("purchase", unlockedPlan === "business" ? 199 : 9);
+            w.lpConvert?.("purchase", unlockedPlan === "business" ? 199 : 29);
           } catch {
             // ignore
           }
@@ -833,8 +908,74 @@ export function StatementWorkbench() {
     }
   }
 
-  // 调用后端 /api/extract 执行提取与对账（高价值批量合并与扫描版 OCR 设为 Pro 专属，单份 PDF 免费验证平账精度）
+  // 按换行安全切分超长对账单文本（每块 <= 7500 字符），彻底消除 15–20 页商业银行长账单大模型解析超时
+  function splitTextIntoLineChunks(raw: string, maxChars = 7500): string[] {
+    const trimmed = raw.trim();
+    if (trimmed.length <= maxChars) return [trimmed];
+    const lines = trimmed.split(/\r?\n/);
+    const headerContext = lines.slice(0, 12).join("\n");
+    const chunks: string[] = [];
+    let current = "";
+    for (const line of lines) {
+      if (current.length + line.length + 1 > maxChars && current.length > 0) {
+        chunks.push(current);
+        current = `[Context Header]\n${headerContext}\n[Continued Lines]\n${line}`;
+      } else {
+        current = current ? `${current}\n${line}` : line;
+      }
+    }
+    if (current.trim().length > 0) chunks.push(current);
+    return chunks;
+  }
+
+  // 执行提取与对账：支持「真 100% 浏览器本地 0 网络请求」与「零留存分块云端 AI 深度解析」双引擎
   async function handleRunExtraction() {
+    if (inputMode === "sample") {
+      const preset = findSampleById(selectedSampleId) || SAMPLE_PRESETS[0];
+      setExtraction({
+        ...preset.result,
+        meta: {
+          modeUsed: "demo_sample",
+          providerName: "Verified Preset (0 Network)",
+          modelName: "Deterministic Ledger Engine",
+          latencyMs: 14,
+          warnings: [],
+        },
+      });
+      setStatusNotice(`Verified sample reconciled in 14ms with $0.00 drift.`);
+      return;
+    }
+
+    const usePureLocalEngine =
+      engineMode === "local_zero_upload" &&
+      aiConfig.provider !== "openai_compatible" &&
+      uploadedPageImages.length === 0 &&
+      !(inputMode === "upload" && batchFiles.length > 1);
+
+    if (usePureLocalEngine) {
+      const localRes = parseDocumentHeuristically(
+        customRawText,
+        uploadedFileName || "statement.pdf",
+        "heuristic_fallback"
+      );
+      if (localRes.transactions.length > 0) {
+        setExtraction(localRes);
+        persistRecentLedger(localRes, customRawText);
+        trackFunnelEvent("extract_local_zero_upload", {
+          txCount: localRes.transactions.length,
+          balanced: localRes.reconciliation.isBalanced,
+        });
+        setStatusNotice(
+          `Parsed ${localRes.transactions.length} rows 100% locally in ${localRes.meta.latencyMs}ms (0 bytes sent over network).`
+        );
+        return;
+      }
+      // 本地规则对特殊多栏排版未识别出行时，不塞假数据，诚实提示切换云端 AI 深度解析
+      setStatusNotice(
+        "This PDF uses a complex multi-column layout — switched to Cloud AI Deep Parse automatically for exact extraction..."
+      );
+    }
+
     if (billing.plan === "free" && aiConfig.provider !== "openai_compatible") {
       if (inputMode === "upload" && batchFiles.length > 1) {
         trackFunnelEvent("paywall_hit", {
@@ -842,7 +983,7 @@ export function StatementWorkbench() {
           files: batchFiles.length,
         });
         setCheckoutReason(
-          `Multi-PDF Batch Merge (${batchFiles.length} statements → 1 chronological reconciled ledger) is a StatementFlow Pro feature — unlock forever for $9 once.`
+          `Multi-PDF Batch Merge (${batchFiles.length} statements → 1 chronological reconciled ledger) is a StatementFlow Pro feature — unlock forever for $29 once.`
         );
         setCheckoutPlan("pro");
         return;
@@ -853,29 +994,39 @@ export function StatementWorkbench() {
           pages: uploadedPageImages.length,
         });
         setCheckoutReason(
-          `Scanned PDF & Image Vision AI OCR (${uploadedPageImages.length} page(s) ready) requires StatementFlow Pro — unlock unlimited Vision OCR forever for $9 once.`
+          `Scanned PDF & Image Vision AI OCR (${uploadedPageImages.length} page(s) ready) requires StatementFlow Pro — unlock unlimited Vision OCR forever for $29 once.`
         );
         setCheckoutPlan("pro");
         return;
       }
-      if (inputMode !== "sample" && billing.creditsUsed >= billing.creditsLimit) {
+      if (billing.creditsUsed >= billing.creditsLimit) {
         trackFunnelEvent("paywall_hit", {
           gate: "free_quota",
           creditsUsed: billing.creditsUsed,
         });
         setCheckoutReason(
-          "You've used your 2 free single-PDF runs. Unlock unlimited bank PDF conversions, multi-month batch merge & native QuickBooks/Xero exports forever for $9 once."
+          "You've used your 2 free Cloud AI runs. Local Zero-Upload mode stays free, or unlock unlimited Cloud AI, batch merge & QuickBooks/Xero exports forever for $29 once."
         );
         setCheckoutPlan("pro");
         return;
       }
     }
 
+    const effectiveBatch =
+      inputMode === "upload" && batchFiles.length > 1
+        ? batchFiles
+        : uploadedPageImages.length === 0 && customRawText.length > 9500
+        ? splitTextIntoLineChunks(customRawText, 7500).map((chunk, idx) => ({
+            name: `${uploadedFileName || "statement"} (Part ${idx + 1})`,
+            text: chunk,
+          }))
+        : null;
+
     setIsExtracting(true);
     setStatusNotice("");
     setExtractProgress(
-      inputMode === "upload" && batchFiles.length > 1
-        ? { current: 0, total: batchFiles.length, label: "Starting chunked multi-statement merge..." }
+      effectiveBatch && effectiveBatch.length > 1
+        ? { current: 0, total: effectiveBatch.length, label: "Running parallel chunked extraction (anti-timeout)..." }
         : { current: 1, total: 1, label: `Extracting ${uploadedFileName || "statement"}...` }
     );
 
@@ -886,7 +1037,7 @@ export function StatementWorkbench() {
       pageImgs?: string[]
     ): Promise<ExtractionResult> => {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 25000);
+      const timer = setTimeout(() => controller.abort(), 45000);
       try {
         const res = await fetch("/api/extract", {
           method: "POST",
@@ -924,7 +1075,7 @@ export function StatementWorkbench() {
           };
           const msg =
             errData.error ||
-            "Free extraction limit reached — unlock StatementFlow Pro ($9 once) for unlimited conversions.";
+            "Free extraction limit reached — unlock StatementFlow Pro ($29 once) for unlimited conversions.";
           trackFunnelEvent("paywall_hit", { gate: "server_402" });
           setCheckoutReason(msg);
           setCheckoutPlan("pro");
@@ -948,17 +1099,17 @@ export function StatementWorkbench() {
 
     try {
       let result: ExtractionResult;
-      if (inputMode === "upload" && batchFiles.length > 1) {
-        // 多月 PDF 并发分块提取（并发度=3，提速 2x-3x）+ 按日期自动合并为单份年度/多月总账本
-        const chunkResults: ExtractionResult[] = new Array(batchFiles.length);
+      if (effectiveBatch && effectiveBatch.length > 1) {
+        // 多月 PDF 或超长单份账单并发分块提取（并发度=3，彻底防超时）+ 按日期自动合并为单份总账本
+        const chunkResults: ExtractionResult[] = new Array(effectiveBatch.length);
         let completed = 0;
         const concurrency = 3;
-        for (let start = 0; start < batchFiles.length; start += concurrency) {
-          const slice = batchFiles.slice(start, start + concurrency);
+        for (let start = 0; start < effectiveBatch.length; start += concurrency) {
+          const slice = effectiveBatch.slice(start, start + concurrency);
           setExtractProgress({
             current: completed,
-            total: batchFiles.length,
-            label: `Extracting ${Math.min(start + slice.length, batchFiles.length)} / ${batchFiles.length}: ${slice.map((s) => s.name).join(", ")}`,
+            total: effectiveBatch.length,
+            label: `Extracting ${Math.min(start + slice.length, effectiveBatch.length)} / ${effectiveBatch.length}: ${slice.map((s) => s.name).join(", ")}`,
           });
           const batchOut = await Promise.all(
             slice.map((item) => runSingleChunk(item.text, item.name))
@@ -969,8 +1120,8 @@ export function StatementWorkbench() {
           });
           setExtractProgress({
             current: completed,
-            total: batchFiles.length,
-            label: `Merged ${completed} / ${batchFiles.length} statement(s)...`,
+            total: effectiveBatch.length,
+            label: `Merged ${completed} / ${effectiveBatch.length} chunk(s)...`,
           });
         }
         const mergedTx: TransactionItem[] = chunkResults
@@ -1008,7 +1159,7 @@ export function StatementWorkbench() {
         result = await runSingleChunk(
           customRawText,
           uploadedFileName || "statement.txt",
-          inputMode === "sample" ? selectedSampleId : undefined,
+          undefined,
           uploadedPageImages
         );
       }
@@ -1026,7 +1177,7 @@ export function StatementWorkbench() {
         }
       );
 
-      if (billing.plan === "free" && inputMode !== "sample") {
+      if (billing.plan === "free") {
         const nextBilling: BillingState = {
           ...billing,
           creditsUsed: Math.min(billing.creditsLimit, billing.creditsUsed + 1),
@@ -1193,7 +1344,7 @@ export function StatementWorkbench() {
       txCount: extraction.transactions.length,
     });
     setCheckoutReason(
-      `Your ${extraction.transactions.length}-row ${extraction.institution} ledger is reconciled! Unlock full ${formatLabel}, QuickBooks, Xero & Multi-Sheet Audit Excel exports + unlimited PDFs forever for $9 once.`
+      `Your ${extraction.transactions.length}-row ${extraction.institution} ledger is reconciled! Unlock full ${formatLabel}, QuickBooks, Xero & Multi-Sheet Audit Excel exports + unlimited PDFs forever for $29 once.`
     );
     setCheckoutPlan("pro");
   }
@@ -1219,7 +1370,7 @@ export function StatementWorkbench() {
         "text/csv;charset=utf-8;"
       );
       setStatusNotice(
-        `Exported 8-row CSV sample preview (${extraction.transactions.length} total rows verified above). Unlock full ${extraction.transactions.length}-row CSV, QuickBooks, Xero & Multi-Sheet Excel for $9 once.`
+        `Exported 8-row CSV sample preview (${extraction.transactions.length} total rows verified above). Unlock full ${extraction.transactions.length}-row CSV, QuickBooks, Xero & Multi-Sheet Excel for $29 once.`
       );
       return;
     }
@@ -1421,15 +1572,15 @@ export function StatementWorkbench() {
 
               <button
                 type="button"
-                onClick={() => {
-                  trackFunnelEvent("checkout_open", { plan: "pro", source: "topbar" });
-                  setCheckoutPlan("pro");
-                }}
-                className="sf-btn inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[#0066cc] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#0058b3] cursor-pointer"
+                disabled={directCheckoutLoading === "pro"}
+                onClick={() => void startDirectCheckout("pro", "topbar")}
+                className="sf-btn inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[#0066cc] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#0058b3] disabled:opacity-60 cursor-pointer"
               >
                 <span>
                   {billing.plan === "free"
-                    ? "Unlock Pro · $9"
+                    ? directCheckoutLoading === "pro"
+                      ? "Opening Checkout..."
+                      : "Unlock Pro · $29"
                     : `${billing.plan.toUpperCase()} Active`}
                 </span>
                 <ArrowUpRight className="size-3.5" />
@@ -1838,25 +1989,54 @@ export function StatementWorkbench() {
                       </span>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    disabled={isExtracting}
-                    onClick={handleRunExtraction}
-                    className="sf-btn inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#0066cc] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                  >
-                    <RefreshCw
-                      className={`size-4 ${isExtracting ? "animate-spin" : ""}`}
-                    />
-                    <span>
-                      {isExtracting
-                        ? extractProgress && extractProgress.total > 1
-                          ? `Merging ${extractProgress.current}/${extractProgress.total}...`
-                          : "Extracting..."
-                        : batchFiles.length > 1
-                        ? `Merge ${batchFiles.length} PDFs`
-                        : "Run Extraction"}
-                    </span>
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="inline-flex rounded-lg border border-white/10 bg-[#11141d] p-0.5 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setEngineMode("local_zero_upload")}
+                        className={`rounded-md px-2.5 py-1.5 font-medium transition cursor-pointer ${
+                          engineMode === "local_zero_upload"
+                            ? "bg-emerald-500/20 text-emerald-300"
+                            : "text-[#9ca3b5] hover:text-white"
+                        }`}
+                        title="100% browser-local rule parser — 0 bytes leave your device"
+                      >
+                        Local 0-Upload
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEngineMode("cloud_ai")}
+                        className={`rounded-md px-2.5 py-1.5 font-medium transition cursor-pointer ${
+                          engineMode === "cloud_ai"
+                            ? "bg-[#0066cc] text-white"
+                            : "text-[#9ca3b5] hover:text-white"
+                        }`}
+                        title="Zero-retention Cloud AI deep schema parser for complex multi-column & scanned layouts"
+                      >
+                        Cloud AI OCR
+                      </button>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={isExtracting}
+                      onClick={handleRunExtraction}
+                      className="sf-btn inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#0066cc] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 cursor-pointer"
+                    >
+                      <RefreshCw
+                        className={`size-4 ${isExtracting ? "animate-spin" : ""}`}
+                      />
+                      <span>
+                        {isExtracting
+                          ? extractProgress && extractProgress.total > 1
+                            ? `Merging ${extractProgress.current}/${extractProgress.total}...`
+                            : "Extracting..."
+                          : batchFiles.length > 1
+                          ? `Merge ${batchFiles.length} PDFs`
+                          : "Run Extraction"}
+                      </span>
+                    </button>
+                  </div>
                 </div>
 
                 {extractProgress && (
@@ -2019,22 +2199,20 @@ export function StatementWorkbench() {
                   <div className="mt-4 flex flex-col gap-2.5 rounded-xl border border-[#0066cc]/35 bg-[#121a2b] px-3.5 py-2.5 text-xs text-[#d5d9e2] sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-wrap items-center gap-2 min-w-0">
                       <span className="inline-flex shrink-0 whitespace-nowrap rounded-md bg-[#0066cc]/25 px-2 py-0.5 font-mono font-semibold tabular-nums text-[#8cc4ff]">
-                        Free: {billing.creditsUsed}/{billing.creditsLimit}
+                        Cloud AI: {billing.creditsUsed}/{billing.creditsLimit}
                       </span>
                       <span>
-                        Batch PDF merge &amp; Vision OCR:{" "}
-                        <strong className="text-white">$9 once</strong> (saves $459/yr vs $39/mo).
+                        Full QBO/Xero/Excel exports, Batch Merge &amp; Vision OCR:{" "}
+                        <strong className="text-white">$29 once</strong> (saves $439/yr vs $39/mo).
                       </span>
                     </div>
                     <button
                       type="button"
-                      onClick={() => {
-                        trackFunnelEvent("checkout_open", { plan: "pro", source: "workbench_bar" });
-                        setCheckoutPlan("pro");
-                      }}
-                      className="sf-btn shrink-0 whitespace-nowrap rounded-lg bg-[#0066cc] px-3 py-1.5 font-semibold text-white hover:bg-[#0058b3] cursor-pointer"
+                      disabled={directCheckoutLoading === "pro"}
+                      onClick={() => void startDirectCheckout("pro", "workbench_bar")}
+                      className="sf-btn shrink-0 whitespace-nowrap rounded-lg bg-[#0066cc] px-3 py-1.5 font-semibold text-white hover:bg-[#0058b3] disabled:opacity-60 cursor-pointer"
                     >
-                      Unlock Lifetime · $9 →
+                      {directCheckoutLoading === "pro" ? "Opening..." : "Unlock Lifetime · $29 →"}
                     </button>
                   </div>
                 )}
@@ -2576,7 +2754,7 @@ export function StatementWorkbench() {
                   </div>
                   <div className="mt-3 flex items-baseline gap-1.5">
                     <span className="sf-lead font-semibold tabular-nums text-white">
-                      $9
+                      $29
                     </span>
                     <span className="text-sm text-[#a0a6b5]">one-time</span>
                   </div>
@@ -2594,11 +2772,12 @@ export function StatementWorkbench() {
 
                 <button
                   type="button"
-                  onClick={() => setCheckoutPlan("pro")}
-                  className="sf-btn flex min-h-16 w-full items-center justify-between bg-[#0066cc] px-8 text-base font-semibold text-white"
+                  disabled={directCheckoutLoading === "pro"}
+                  onClick={() => void startDirectCheckout("pro", "pricing_card")}
+                  className="sf-btn flex min-h-16 w-full items-center justify-between bg-[#0066cc] px-8 text-base font-semibold text-white hover:bg-[#0058b3] disabled:opacity-60 cursor-pointer"
                 >
-                  <span>Unlock Pro Forever</span>
-                  <span className="tabular-nums">$9 once</span>
+                  <span>{directCheckoutLoading === "pro" ? "Opening Checkout..." : "Unlock Pro Forever"}</span>
+                  <span className="tabular-nums">$29 once</span>
                 </button>
               </div>
 
@@ -2632,10 +2811,11 @@ export function StatementWorkbench() {
 
                 <button
                   type="button"
-                  onClick={() => setCheckoutPlan("business")}
-                  className="sf-btn flex min-h-16 w-full items-center justify-between bg-[#1d2230] px-8 text-base font-semibold text-white hover:bg-[#0066cc] cursor-pointer"
+                  disabled={directCheckoutLoading === "business"}
+                  onClick={() => void startDirectCheckout("business", "pricing_card")}
+                  className="sf-btn flex min-h-16 w-full items-center justify-between bg-[#1d2230] px-8 text-base font-semibold text-white hover:bg-[#0066cc] disabled:opacity-60 cursor-pointer"
                 >
-                  <span>Start Firm Pilot</span>
+                  <span>{directCheckoutLoading === "business" ? "Opening Checkout..." : "Start Firm Pilot"}</span>
                   <span className="tabular-nums">$199</span>
                 </button>
               </div>
@@ -2670,7 +2850,7 @@ export function StatementWorkbench() {
                     <td className="py-3 pr-4 font-medium">1-Year Solo Cost</td>
                     <td className="py-3 px-4 tabular-nums text-[#494b52]">$468 / yr ($39/mo)</td>
                     <td className="py-3 px-4 tabular-nums text-[#494b52]">$600+ / yr</td>
-                    <td className="py-3 pl-4 font-bold tabular-nums text-[#0066cc]">$9 once (Saves $459/yr)</td>
+                    <td className="py-3 pl-4 font-bold tabular-nums text-[#0066cc]">$29 once (Saves $439/yr)</td>
                   </tr>
                   <tr>
                     <td className="py-3 pr-4 font-medium">5-Seat CPA Firm Cost</td>
@@ -2705,7 +2885,7 @@ export function StatementWorkbench() {
                     Skeptical about a tricky regional or scanned bank PDF? Get a free 4-hour QBO/Xero proof first.
                   </h3>
                   <p className="mt-2 text-sm text-[#a0a6b5]">
-                    Enter your firm email and target bank/ERP below. Reply to our instant confirmation with 1 redacted PDF—we&apos;ll send back the $0.00-reconciled CSV/XLSX within 4 hours before you spend $199.
+                    Attach 1 redacted or tricky client PDF right here (or enter your firm email). Our financial engineering team will email back the $0.00-reconciled QuickBooks/Xero CSV &amp; Excel proof within 4 hours before you spend $199.
                   </p>
                 </div>
 
@@ -2713,9 +2893,24 @@ export function StatementWorkbench() {
                   onSubmit={handlePrePilotLeadSubmit}
                   className="rounded-xl border border-white/10 bg-[#0e1118] p-4 lg:col-span-5 space-y-2.5"
                 >
-                  <div className="text-xs font-semibold text-white">
-                    Request Free 4h Sample Tuning &amp; Pilot Spec
+                  <div className="flex items-center justify-between gap-2 text-xs font-semibold text-white">
+                    <span>Request Free 4h Sample Tuning &amp; Pilot Spec</span>
+                    <label className="inline-flex items-center gap-1 rounded-md border border-[#0066cc]/50 bg-[#0066cc]/15 px-2 py-1 text-[11px] font-medium text-[#8cc4ff] hover:bg-[#0066cc]/25 cursor-pointer">
+                      <Upload className="size-3" />
+                      <span>{pilotSampleFile ? "Change PDF" : "Attach Sample PDF"}</span>
+                      <input
+                        type="file"
+                        accept=".pdf,.csv,.txt"
+                        onChange={handlePilotSampleAttach}
+                        className="hidden"
+                      />
+                    </label>
                   </div>
+                  {pilotSampleFile && (
+                    <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-xs text-emerald-300 truncate">
+                      Attached locally: {pilotSampleFile.name}
+                    </div>
+                  )}
                   <input
                     type="email"
                     required

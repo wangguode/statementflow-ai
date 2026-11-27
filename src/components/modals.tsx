@@ -160,7 +160,7 @@ export function AISettingsModal({
                     setDraft({ ...draft, baseUrl: e.target.value })
                   }
                   placeholder="https://api.openai.com/v1"
-                  className="mt-1 block w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-[#111215]"
+                  className="mt-1 block min-h-11 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-base text-[#111215] sm:text-sm"
                 />
               </div>
 
@@ -179,7 +179,7 @@ export function AISettingsModal({
                     setDraft({ ...draft, model: e.target.value })
                   }
                   placeholder="gpt-4o-mini"
-                  className="mt-1 block w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-[#111215]"
+                  className="mt-1 block min-h-11 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-base text-[#111215] sm:text-sm"
                 />
               </div>
 
@@ -199,7 +199,7 @@ export function AISettingsModal({
                   }
                   placeholder="sk-..."
                   autoComplete="off"
-                  className="mt-1 block w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-[#111215]"
+                  className="mt-1 block min-h-11 w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-base text-[#111215] sm:text-sm"
                 />
               </div>
             </div>
@@ -366,13 +366,22 @@ export function CheckoutModal({
                 {plan === "business" ? "14-Day Guided Firm Pilot" : "One-time lifetime license"}
               </div>
               <div className="text-xs text-[#494b52]">
-                No recurring subscription · Multi-device activation link
+                {plan === "business"
+                  ? "Unlimited firm seats · Saves $600+/yr vs Dext per-seat"
+                  : "No recurring subscription · Saves $459/yr vs $39/mo tools"}
               </div>
             </div>
             <div className="text-2xl font-bold tabular-nums text-[#111215]">
               ${amount}
               <span className="text-xs font-medium text-[#494b52]"> once</span>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 rounded-xl border border-emerald-600/20 bg-emerald-500/10 px-3.5 py-2.5 text-xs font-medium text-emerald-950">
+            <ShieldCheck className="size-4 shrink-0 text-emerald-700" />
+            <span>
+              <strong>14-Day 100% Money-Back Guarantee:</strong> If any client bank PDF fails $0.00 reconciliation, reply to your receipt for an instant full refund.
+            </span>
           </div>
 
           <div>
@@ -589,7 +598,7 @@ export function RestoreLicenseModal({
               placeholder="e.g. ch_... or ord_... (leave blank to receive email link)"
               value={orderRef}
               onChange={(e) => setOrderRef(e.target.value)}
-              className="mt-1 block w-full rounded-xl border border-black/15 bg-white px-3.5 py-2 text-sm font-mono text-[#111215] focus:border-[#0066cc] focus:outline-none"
+              className="mt-1 block min-h-11 w-full rounded-xl border border-black/15 bg-white px-3.5 py-2 text-base font-mono text-[#111215] focus:border-[#0066cc] focus:outline-none sm:text-sm"
             />
           </div>
 

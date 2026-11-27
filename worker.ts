@@ -147,6 +147,16 @@ async function ensureSfTables(env: Env): Promise<void> {
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       )`
     ).run();
+    await env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS sf_leads (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        work_email TEXT NOT NULL DEFAULT '',
+        firm_or_bank TEXT NOT NULL DEFAULT '',
+        notes TEXT NOT NULL DEFAULT '',
+        country TEXT NOT NULL DEFAULT 'XX',
+        created_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )`
+    ).run();
     schemaReady = true;
   } catch {
     // 降级不阻塞主流程
@@ -942,7 +952,7 @@ async function handleStats(request: Request, env: Env): Promise<Response> {
   }
   if (!env.DB) return jsonResponse({ ok: false, error: "DB not bound" }, 503);
   await ensureSfTables(env);
-  const [funnelRes, ordersRes] = await Promise.all([
+  const [funnelRes, ordersRes, leadsRes] = await Promise.all([
     env.DB.prepare(
       `SELECT event, COUNT(*) AS cnt FROM sf_funnel_events GROUP BY event ORDER BY cnt DESC`
     ).all<{ event: string; cnt: number }>(),
@@ -950,11 +960,15 @@ async function handleStats(request: Request, env: Env): Promise<Response> {
       `SELECT plan, COUNT(*) AS orders, COALESCE(SUM(amount_usd), 0) AS revenue_usd
        FROM sf_orders WHERE status = 'completed' GROUP BY plan`
     ).all<{ plan: string; orders: number; revenue_usd: number }>(),
+    env.DB.prepare(
+      `SELECT id, work_email, firm_or_bank, country, created_at FROM sf_leads ORDER BY id DESC LIMIT 25`
+    ).all<{ id: number; work_email: string; firm_or_bank: string; country: string; created_at: string }>(),
   ]);
   return jsonResponse({
     ok: true,
     funnel: funnelRes.results || [],
     orders: ordersRes.results || [],
+    leads: leadsRes.results || [],
   });
 }
 
@@ -964,6 +978,78 @@ const worker = {
 
     if (pathname === "/api/health" && request.method === "GET") {
       return jsonResponse({ ok: true, service: "statementflow-ai" });
+    }
+
+    if (pathname === "/api/pre-pilot-lead" && request.method === "POST") {
+      const ip = getClientIp(request);
+      if (!checkEdgeRateLimit(ip, "pre_pilot_lead", 6, 60_000)) {
+        return jsonResponse({ ok: false, error: "Too many requests. Please wait a minute." }, 429);
+      }
+      try {
+        const body = (await request.json()) as {
+          email?: string;
+          firmOrBank?: string;
+          notes?: string;
+        };
+        const email = (body.email || "").trim().toLowerCase().slice(0, 120);
+        const firmOrBank = (body.firmOrBank || "").trim().slice(0, 160);
+        const notes = (body.notes || "").trim().slice(0, 600);
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          return jsonResponse({ ok: false, error: "Please enter a valid work email address." }, 400);
+        }
+        if (!firmOrBank) {
+          return jsonResponse({ ok: false, error: "Please specify your target bank or accounting software." }, 400);
+        }
+        const country = request.headers.get("cf-ipcountry") || "XX";
+        if (env.DB) {
+          await ensureSfTables(env);
+          await env.DB.prepare(
+            `INSERT INTO sf_leads (work_email, firm_or_bank, notes, country) VALUES (?1, ?2, ?3, ?4)`
+          )
+            .bind(email, firmOrBank, notes, country)
+            .run();
+          await env.DB.prepare(
+            `INSERT INTO sf_funnel_events (event, country, meta_json) VALUES ('pre_pilot_lead', ?1, ?2)`
+          )
+            .bind(country, JSON.stringify({ firmOrBank }).slice(0, 240))
+            .run();
+        }
+        await sendSfEmail(env, {
+          to: "hello@statementflow.win",
+          subject: `🎯 [StatementFlow B2B Lead] ${email} (${firmOrBank})`,
+          text: [
+            "New Pre-Pilot Sample Test / B2B Inquiry on StatementFlow AI:",
+            `- Work Email: ${email}`,
+            `- Target Bank / ERP: ${firmOrBank}`,
+            `- Country: ${country}`,
+            `- Notes: ${notes || "(none)"}`,
+          ].join("\n"),
+        });
+        await sendSfEmail(env, {
+          to: email,
+          subject: "StatementFlow Firm Pilot — Free 4h Sample PDF Proof Ready",
+          text: [
+            "Hi there,",
+            "",
+            `We received your StatementFlow Firm Pilot pre-check request for: ${firmOrBank}.`,
+            "",
+            "How to run your free 4-hour sample proof:",
+            "1. Simply reply to this email (hello@statementflow.win) with 1 redacted or tricky client bank PDF (scanned or multi-month).",
+            "2. Within 4 business hours, our financial engineering team will return the exact $0.00-reconciled QuickBooks / Xero CSV + multi-sheet Excel workbook so your partners can verify 100% accuracy before starting the $199 Unlimited-Seat Pilot.",
+            "",
+            "Ready to unlock unlimited team seats right away? You can activate the 14-day Firm Pilot anytime at https://statementflow.win/#pricing (backed by our 14-day 100% refund guarantee).",
+            "",
+            "— StatementFlow Financial Engineering",
+          ].join("\n"),
+        });
+        return jsonResponse({
+          ok: true,
+          message:
+            "Sample proof ticket created! Check your inbox — reply with 1 redacted PDF for a free 4h QBO/Xero proof.",
+        });
+      } catch {
+        return jsonResponse({ ok: false, error: "Unable to submit request right now." }, 400);
+      }
     }
 
     if (pathname === "/api/pilot-intake" && request.method === "POST") {

@@ -49,6 +49,14 @@ import type {
 
 const STORAGE_KEY_AI = "statementflow_ai_config_v1";
 const STORAGE_KEY_BILLING = "statementflow_billing_v1";
+const STORAGE_KEY_RECENT = "statementflow_recent_ledgers_v1";
+
+interface RecentLedgerItem {
+  id: string;
+  savedAt: string;
+  rawText: string;
+  result: ExtractionResult;
+}
 
 const DEFAULT_AI_CONFIG: AIConfigSettings = {
   provider: "demo",
@@ -339,6 +347,90 @@ export function StatementWorkbench() {
   );
   const [copiedJson, setCopiedJson] = useState(false);
   const [navDark, setNavDark] = useState(false);
+  const [recentLedgers, setRecentLedgers] = useState<RecentLedgerItem[]>(() => {
+    if (typeof window === "undefined") return [];
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY_RECENT);
+      if (!raw) return [];
+      const parsed = JSON.parse(raw) as RecentLedgerItem[];
+      return Array.isArray(parsed) ? parsed.slice(0, 8) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [pilotLeadEmail, setPilotLeadEmail] = useState("");
+  const [pilotLeadBank, setPilotLeadBank] = useState("");
+  const [pilotLeadLoading, setPilotLeadLoading] = useState(false);
+  const [pilotLeadMsg, setPilotLeadMsg] = useState("");
+
+  function persistRecentLedger(res: ExtractionResult, rawStream: string) {
+    try {
+      const keyId = `${res.institution}-${res.accountOrInvoiceNumber}-${res.statementPeriod}`
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, "-")
+        .slice(0, 80);
+      const entry: RecentLedgerItem = {
+        id: keyId || `ledger-${Date.now()}`,
+        savedAt: new Date().toISOString(),
+        rawText: rawStream.slice(0, 24000),
+        result: res,
+      };
+      setRecentLedgers((prev) => {
+        const next = [entry, ...prev.filter((item) => item.id !== entry.id)].slice(0, 8);
+        try {
+          window.localStorage.setItem(STORAGE_KEY_RECENT, JSON.stringify(next));
+        } catch {
+          // 忽略浏览器配额溢出
+        }
+        return next;
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  function handleClearRecentLedgers() {
+    setRecentLedgers([]);
+    try {
+      window.localStorage.removeItem(STORAGE_KEY_RECENT);
+    } catch {
+      // ignore
+    }
+    setStatusNotice("Cleared browser-local ledger history.");
+  }
+
+  async function handlePrePilotLeadSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!pilotLeadEmail.trim() || !pilotLeadBank.trim()) return;
+    setPilotLeadLoading(true);
+    setPilotLeadMsg("");
+    try {
+      const res = await fetch("/api/pre-pilot-lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: pilotLeadEmail.trim(),
+          firmOrBank: pilotLeadBank.trim(),
+          notes: "Submitted from Pricing Free 4h Sample Proof card",
+        }),
+      });
+      const data = (await res.json()) as { ok?: boolean; message?: string; error?: string };
+      if (!res.ok || !data.ok) {
+        setPilotLeadMsg(data.error || "Could not submit right now. Email hello@statementflow.win directly.");
+        return;
+      }
+      setPilotLeadMsg(
+        data.message ||
+          "Check your inbox! Reply with 1 redacted PDF for your free 4h QBO/Xero proof."
+      );
+      setPilotLeadEmail("");
+      setPilotLeadBank("");
+    } catch {
+      setPilotLeadMsg("Network error — please email hello@statementflow.win.");
+    } finally {
+      setPilotLeadLoading(false);
+    }
+  }
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const pressVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -849,6 +941,7 @@ export function StatementWorkbench() {
       }
 
       setExtraction(result);
+      persistRecentLedger(result, customRawText);
       trackFunnelEvent(
         result.reconciliation.isBalanced
           ? "extract_balanced"
@@ -975,11 +1068,15 @@ export function StatementWorkbench() {
     const chosenEntry = useCredit ? creditEntry : debitEntry;
     const chosenRec = useCredit ? recCredit : recDebit;
 
-    setExtraction((prev) => ({
-      ...prev,
-      transactions: [chosenEntry, ...prev.transactions],
-      reconciliation: chosenRec,
-    }));
+    setExtraction((prev) => {
+      const nextState = {
+        ...prev,
+        transactions: [chosenEntry, ...prev.transactions],
+        reconciliation: chosenRec,
+      };
+      persistRecentLedger(nextState, customRawText);
+      return nextState;
+    });
     setStatusNotice(`Added balancing entry (${amount.toFixed(2)}) — ledger reconciled to 0.00.`);
   }
 
@@ -1348,101 +1445,9 @@ export function StatementWorkbench() {
           </div>
         </section>
 
-        {/* 色彩章节无缝切换：深空黑馆藏视觉与高速票据印刷机实拍流（左右齐平外边距） */}
-        <section className="bg-[#0a0b0e] py-16 text-[#f5f5f7] lg:py-24">
-          <div className="sf-wrap">
-            <div className="grid grid-cols-1 items-stretch gap-8 lg:grid-cols-12">
-              <figure
-                data-reveal
-                style={{ "--delay": "0ms" } as React.CSSProperties}
-                className="flex flex-col justify-between lg:col-span-7"
-              >
-                <div className="overflow-hidden rounded-xl bg-[#141720]">
-                  <Image
-                    src="/assets/blythe-house-ledger-room-1924.jpg"
-                    alt="Clerks reconciling bound bank ledgers at the Post Office Savings Bank in Blythe House, London, 1924"
-                    width={1920}
-                    height={1440}
-                    priority
-                    unoptimized
-                    className="sf-archival-img aspect-[4/3] w-full"
-                  />
-                </div>
-                <figcaption className="mt-4 flex flex-wrap items-baseline justify-between gap-2 text-sm text-[#a0a6b5]">
-                  <span>
-                    Post Office Savings Bank ledger hall, Blythe House, London,
-                    1924.
-                  </span>
-                  <span className="tabular-nums text-[#f5f5f7]">
-                    100 years of balance verification
-                  </span>
-                </figcaption>
-              </figure>
-
-              <div
-                data-reveal
-                style={{ "--delay": "90ms" } as React.CSSProperties}
-                className="flex flex-col justify-between gap-6 lg:col-span-5"
-              >
-                <div>
-                  <div className="overflow-hidden rounded-xl bg-[#141720]">
-                    <video
-                      ref={pressVideoRef}
-                      src="/assets/the-910-ton-printing-presses-at-the.webm"
-                      poster="/assets/the-910-ton-printing-presses-at-the-poster.jpg"
-                      width={854}
-                      height={480}
-                      muted
-                      loop
-                      playsInline
-                      preload="metadata"
-                      className="aspect-video w-full object-cover"
-                    />
-                  </div>
-                  <div className="mt-4 flex flex-wrap items-baseline justify-between gap-2 text-sm text-[#a0a6b5]">
-                    <span>
-                      High-speed web press stream converted into verified
-                      ledgers.
-                    </span>
-                    <span className="tabular-nums text-[#f5f5f7]">
-                      60 fps stream
-                    </span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-4 pt-2">
-                  <div>
-                    <div className="sf-lead font-semibold tabular-nums text-white">
-                      $0.00
-                    </div>
-                    <div className="mt-1 text-sm text-[#a0a6b5]">
-                      Allowed drift
-                    </div>
-                  </div>
-                  <div>
-                    <div className="sf-lead font-semibold tabular-nums text-white">
-                      1.4s
-                    </div>
-                    <div className="mt-1 text-sm text-[#a0a6b5]">
-                      Median parse
-                    </div>
-                  </div>
-                  <div>
-                    <div className="sf-lead font-semibold tabular-nums text-white">
-                      3 tabs
-                    </div>
-                    <div className="mt-1 text-sm text-[#a0a6b5]">
-                      XLS, CSV, JSON
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* =====================================================================
             CHAPTER 2: LIVE STUDIO WORKBENCH - OBSIDIAN SLATE (#101216)
+            紧接首屏拖拽区，零滚屏障碍直达交互式平账工作台与本地历史账本保险箱
             ===================================================================== */}
         <section
           id="workbench"
@@ -1454,36 +1459,11 @@ export function StatementWorkbench() {
             if (e.currentTarget === e.target) setIsDraggingFile(false);
           }}
           onDrop={handleWorkbenchDrop}
-          className={`bg-[#101216] py-16 text-[#f5f5f7] lg:py-24 transition-colors ${
+          className={`bg-[#101216] py-16 text-[#f5f5f7] lg:py-22 transition-colors ${
             isDraggingFile ? "ring-4 ring-inset ring-[#3b82f6]/70 bg-[#121826]" : ""
           }`}
         >
           <div className="sf-wrap">
-            {/* 35 秒真实操作演示视频（零剪辑实机录屏，拉满陌生访客首屏信任度） */}
-            <div className="mb-14 overflow-hidden rounded-2xl border border-[#242a38] bg-[#0b0d12] shadow-2xl">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1d2230] px-5 py-3 text-xs text-[#9ca3b5]">
-                <div className="flex items-center gap-2 font-medium text-white">
-                  <span className="inline-block size-2 rounded-full bg-[#34d399]" />
-                  <span>
-                    35s Live Product Walkthrough · Multi-PDF Batch → $0.00
-                    Balance Proof → QuickBooks / Xero CSV
-                  </span>
-                </div>
-                <span className="font-mono text-[#66b3ff]">
-                  100% Browser-Local + Vision OCR
-                </span>
-              </div>
-              <video
-                src="/demo/statementflow-demo.mp4"
-                autoPlay
-                loop
-                muted
-                playsInline
-                controls
-                className="aspect-video w-full bg-[#0a0b0e] object-cover"
-              />
-            </div>
-
             {/* 章节标题与输入源切换 */}
             <div
               data-reveal
@@ -1546,6 +1526,64 @@ export function StatementWorkbench() {
                 />
               </div>
             </div>
+
+            {/* 本地浏览器零上传账本留存保险箱（防止刷新丢失，支持 1 键恢复与 1 键隐私擦除） */}
+            {recentLedgers.length > 0 && (
+              <div
+                data-ui="recent-vault"
+                className="mt-6 rounded-xl border border-white/10 bg-[#151924] p-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-[#c5cad6]">
+                    <ShieldCheck className="size-4 text-emerald-400" />
+                    <span>
+                      Recent Reconciled Ledgers (Saved 100% Locally in This Browser · Never Uploaded)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClearRecentLedgers}
+                    className="sf-btn inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-[#9ca3b5] hover:text-white cursor-pointer"
+                  >
+                    <Trash2 className="size-3.5" />
+                    <span>Clear Local Vault</span>
+                  </button>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {recentLedgers.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => {
+                        setExtraction(item.result);
+                        if (item.rawText) setCustomRawText(item.rawText);
+                        setInputMode("paste");
+                        setStatusNotice(
+                          `Restored local ledger: ${item.result.institution} (${item.result.statementPeriod})`
+                        );
+                      }}
+                      className="sf-btn inline-flex min-h-10 items-center gap-2 rounded-lg border border-white/10 bg-[#1c2231] px-3 py-1.5 text-xs font-medium text-white hover:border-[#3b82f6] cursor-pointer"
+                    >
+                      <span className="truncate max-w-[180px] font-semibold">
+                        {item.result.institution}
+                      </span>
+                      <span className="font-mono text-[#9ca3b5] tabular-nums">
+                        {item.result.transactions.length} tx
+                      </span>
+                      <span
+                        className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-bold ${
+                          item.result.reconciliation.isBalanced
+                            ? "bg-emerald-500/20 text-emerald-300"
+                            : "bg-amber-500/20 text-amber-300"
+                        }`}
+                      >
+                        {item.result.reconciliation.isBalanced ? "$0.00" : "Edit"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* 预设样本选择栏（标记 data-ui 作为工作台顶部控件） */}
             <div
@@ -1849,6 +1887,31 @@ export function StatementWorkbench() {
                   </div>
                 </div>
 
+                {/* 免费额度进度与 $9 一次性买断高信噪比提示条（紧贴导出栏，消除订阅恐惧） */}
+                {billing.plan === "free" && (
+                  <div className="mt-4 flex flex-col gap-2.5 rounded-xl border border-[#0066cc]/35 bg-[#121a2b] px-3.5 py-2.5 text-xs text-[#d5d9e2] sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center gap-2 min-w-0">
+                      <span className="inline-flex shrink-0 whitespace-nowrap rounded-md bg-[#0066cc]/25 px-2 py-0.5 font-mono font-semibold tabular-nums text-[#8cc4ff]">
+                        Free: {billing.creditsUsed}/{billing.creditsLimit}
+                      </span>
+                      <span>
+                        Batch PDF merge &amp; Vision OCR:{" "}
+                        <strong className="text-white">$9 once</strong> (saves $459/yr vs $39/mo).
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        trackFunnelEvent("checkout_open", { plan: "pro", source: "workbench_bar" });
+                        setCheckoutPlan("pro");
+                      }}
+                      className="sf-btn shrink-0 whitespace-nowrap rounded-lg bg-[#0066cc] px-3 py-1.5 font-semibold text-white hover:bg-[#0058b3] cursor-pointer"
+                    >
+                      Unlock Lifetime · $9 →
+                    </button>
+                  </div>
+                )}
+
                 {/* 搜索过滤与导出工具栏 */}
                 <div className="mt-4 flex flex-wrap items-center justify-between gap-2.5">
                   <div className="flex flex-wrap items-center gap-2">
@@ -2060,6 +2123,124 @@ export function StatementWorkbench() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            </div>
+
+            {/* 35 秒真实操作演示视频（移至交互工作台正下方，既保留实机证据又不遮挡核心平账表） */}
+            <div className="mt-12 overflow-hidden rounded-2xl border border-[#242a38] bg-[#0b0d12] shadow-2xl">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#1d2230] px-5 py-3 text-xs text-[#9ca3b5]">
+                <div className="flex items-center gap-2 font-medium text-white">
+                  <span className="inline-block size-2 rounded-full bg-[#34d399]" />
+                  <span>
+                    35s Live Product Walkthrough · Multi-PDF Batch → $0.00
+                    Balance Proof → QuickBooks / Xero CSV
+                  </span>
+                </div>
+                <span className="font-mono text-[#66b3ff]">
+                  100% Browser-Local + Vision OCR
+                </span>
+              </div>
+              <video
+                src="/demo/statementflow-demo.mp4"
+                loop
+                muted
+                playsInline
+                controls
+                preload="metadata"
+                className="aspect-video w-full bg-[#0a0b0e] object-cover"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* 深空黑馆藏视觉与高速票据印刷机实拍流（下沉至品牌历史背书层，不阻挡首屏用工具） */}
+        <section className="bg-[#0a0b0e] py-16 text-[#f5f5f7] lg:py-22">
+          <div className="sf-wrap">
+            <div className="grid grid-cols-1 items-stretch gap-8 lg:grid-cols-12">
+              <figure
+                data-reveal
+                style={{ "--delay": "0ms" } as React.CSSProperties}
+                className="flex flex-col justify-between lg:col-span-7"
+              >
+                <div className="overflow-hidden rounded-xl bg-[#141720]">
+                  <Image
+                    src="/assets/blythe-house-ledger-room-1924.jpg"
+                    alt="Clerks reconciling bound bank ledgers at the Post Office Savings Bank in Blythe House, London, 1924"
+                    width={1920}
+                    height={1440}
+                    loading="lazy"
+                    unoptimized
+                    className="sf-archival-img aspect-[4/3] w-full"
+                  />
+                </div>
+                <figcaption className="mt-4 flex flex-wrap items-baseline justify-between gap-2 text-sm text-[#a0a6b5]">
+                  <span>
+                    Post Office Savings Bank ledger hall, Blythe House, London,
+                    1924.
+                  </span>
+                  <span className="tabular-nums text-[#f5f5f7]">
+                    100 years of balance verification
+                  </span>
+                </figcaption>
+              </figure>
+
+              <div
+                data-reveal
+                style={{ "--delay": "90ms" } as React.CSSProperties}
+                className="flex flex-col justify-between gap-6 lg:col-span-5"
+              >
+                <div>
+                  <div className="overflow-hidden rounded-xl bg-[#141720]">
+                    <video
+                      ref={pressVideoRef}
+                      src="/assets/the-910-ton-printing-presses-at-the.webm"
+                      poster="/assets/the-910-ton-printing-presses-at-the-poster.jpg"
+                      width={854}
+                      height={480}
+                      muted
+                      loop
+                      playsInline
+                      preload="metadata"
+                      className="aspect-video w-full object-cover"
+                    />
+                  </div>
+                  <div className="mt-4 flex flex-wrap items-baseline justify-between gap-2 text-sm text-[#a0a6b5]">
+                    <span>
+                      High-speed web press stream converted into verified
+                      ledgers.
+                    </span>
+                    <span className="tabular-nums text-[#f5f5f7]">
+                      60 fps stream
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4 pt-2">
+                  <div>
+                    <div className="sf-lead font-semibold tabular-nums text-white">
+                      $0.00
+                    </div>
+                    <div className="mt-1 text-sm text-[#a0a6b5]">
+                      Allowed drift
+                    </div>
+                  </div>
+                  <div>
+                    <div className="sf-lead font-semibold tabular-nums text-white">
+                      1.4s
+                    </div>
+                    <div className="mt-1 text-sm text-[#a0a6b5]">
+                      Median parse
+                    </div>
+                  </div>
+                  <div>
+                    <div className="sf-lead font-semibold tabular-nums text-white">
+                      3 tabs
+                    </div>
+                    <div className="mt-1 text-sm text-[#a0a6b5]">
+                      XLS, CSV, JSON
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2313,28 +2494,114 @@ export function StatementWorkbench() {
               </div>
             </div>
 
-            {/* B2B 三阶务实破冰与企业内网私有化部署方案 */}
-            <div className="mt-10 rounded-2xl border border-[#2a3142] bg-[#141720] p-8">
-              <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-                <div className="max-w-2xl">
+            {/* 竞品年费与数据隐私硬核对比矩阵（建立明确 ROI 锚点，放大 $9 买断与 $199 无限席位超值感） */}
+            <div className="mt-10 overflow-x-auto rounded-2xl border border-black/8 bg-[#f8f9fc] p-5 sm:p-6">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-4">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-wider text-[#0066cc]">
+                    Annual Total Cost &amp; Client Privacy Benchmark
+                  </div>
+                  <div className="mt-0.5 text-base font-semibold text-[#111215]">
+                    Why 1,000+ bookkeepers &amp; founders ditch $39/mo cloud PDF subscriptions
+                  </div>
+                </div>
+                <span className="rounded-full bg-emerald-500/12 px-3 py-1 text-xs font-semibold text-emerald-800">
+                  14-Day 100% Money-Back Guarantee
+                </span>
+              </div>
+              <table className="w-full min-w-[600px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-black/10 text-xs uppercase tracking-wider text-[#494b52]">
+                    <th className="py-2.5 pr-4 font-semibold">Dimension</th>
+                    <th className="py-2.5 px-4 font-semibold">DocuClipper</th>
+                    <th className="py-2.5 px-4 font-semibold">Dext Prepare</th>
+                    <th className="py-2.5 pl-4 font-semibold text-[#0066cc]">StatementFlow AI</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/6 text-[#111215]">
+                  <tr>
+                    <td className="py-3 pr-4 font-medium">1-Year Solo Cost</td>
+                    <td className="py-3 px-4 tabular-nums text-[#494b52]">$468 / yr ($39/mo)</td>
+                    <td className="py-3 px-4 tabular-nums text-[#494b52]">$600+ / yr</td>
+                    <td className="py-3 pl-4 font-bold tabular-nums text-[#0066cc]">$9 once (Saves $459/yr)</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 pr-4 font-medium">5-Seat CPA Firm Cost</td>
+                    <td className="py-3 px-4 tabular-nums text-[#494b52]">$1,188+ / yr</td>
+                    <td className="py-3 px-4 tabular-nums text-[#494b52]">$2,400+ / yr (seat tax)</td>
+                    <td className="py-3 pl-4 font-bold tabular-nums text-[#0066cc]">$199 Pilot · Unlimited Seats</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 pr-4 font-medium">Client PDF Storage</td>
+                    <td className="py-3 px-4 text-[#494b52]">Uploaded to vendor cloud</td>
+                    <td className="py-3 px-4 text-[#494b52]">Stored in vendor cloud</td>
+                    <td className="py-3 pl-4 font-semibold text-emerald-700">100% Browser-Local / Zero Retention</td>
+                  </tr>
+                  <tr>
+                    <td className="py-3 pr-4 font-medium">Balance Math Guard</td>
+                    <td className="py-3 px-4 text-[#494b52]">Manual spot check</td>
+                    <td className="py-3 px-4 text-[#494b52]">OCR invoice focus</td>
+                    <td className="py-3 pl-4 font-semibold text-[#111215]">Deterministic $0.00 Cent Proof</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* B2B 三阶务实破冰与免费 4 小时脱敏样本预审通道（彻底消除 $199 首单顾虑） */}
+            <div className="mt-10 rounded-2xl border border-[#2a3142] bg-[#141720] p-6 sm:p-8">
+              <div className="grid grid-cols-1 items-center gap-6 lg:grid-cols-12">
+                <div className="lg:col-span-7">
                   <div className="text-xs font-semibold uppercase tracking-wider text-[#66b3ff]">
-                    For Bookkeeping Firms & Accounting Teams · Pilot from $199
+                    For Bookkeeping Firms &amp; Accounting Teams · Zero-Risk Pre-Pilot Proof
                   </div>
                   <h3 className="mt-1.5 text-xl font-semibold text-white">
-                    Start with a zero-risk 14-day firm pilot, then scale to
-                    air-gapped Docker self-hosting.
+                    Skeptical about a tricky regional or scanned bank PDF? Get a free 4-hour QBO/Xero proof first.
                   </h3>
                   <p className="mt-2 text-sm text-[#a0a6b5]">
-                    No per-user seat tax. Unlimited team members, custom regional
-                    bank layout tuning, and strict local privacy compliance.
+                    Enter your firm email and target bank/ERP below. Reply to our instant confirmation with 1 redacted PDF—we&apos;ll send back the $0.00-reconciled CSV/XLSX within 4 hours before you spend $199.
                   </p>
                 </div>
-                <a
-                  href="mailto:hello@statementflow.win?subject=StatementFlow%20%24199%20Firm%20Pilot%20Inquiry"
-                  className="sf-btn inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-white px-5 text-sm font-semibold text-[#0a0b0e] hover:bg-[#e8e8ed]"
+
+                <form
+                  onSubmit={handlePrePilotLeadSubmit}
+                  className="rounded-xl border border-white/10 bg-[#0e1118] p-4 lg:col-span-5 space-y-2.5"
                 >
-                  Send 1 Free Test PDF →
-                </a>
+                  <div className="text-xs font-semibold text-white">
+                    Request Free 4h Sample Tuning &amp; Pilot Spec
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    value={pilotLeadEmail}
+                    onChange={(e) => setPilotLeadEmail(e.target.value)}
+                    placeholder="partner@yourcpafirm.com"
+                    aria-label="Firm work email"
+                    className="block min-h-11 w-full rounded-lg border border-white/15 bg-[#161b26] px-3 py-2 text-base text-white placeholder:text-[#7c8498] focus:border-[#0066cc] focus:outline-none sm:text-sm"
+                  />
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <input
+                      type="text"
+                      required
+                      value={pilotLeadBank}
+                      onChange={(e) => setPilotLeadBank(e.target.value)}
+                      placeholder="e.g. Wells Fargo / Barclays → QBO"
+                      aria-label="Target bank and accounting format"
+                      className="block min-h-11 flex-1 rounded-lg border border-white/15 bg-[#161b26] px-3 py-2 text-base text-white placeholder:text-[#7c8498] focus:border-[#0066cc] focus:outline-none sm:text-sm"
+                    />
+                    <button
+                      type="submit"
+                      disabled={pilotLeadLoading}
+                      className="sf-btn min-h-11 shrink-0 rounded-lg bg-[#0066cc] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0058b3] disabled:opacity-60 cursor-pointer"
+                    >
+                      {pilotLeadLoading ? "Sending..." : "Get 4h Proof →"}
+                    </button>
+                  </div>
+                  {pilotLeadMsg && (
+                    <p className="text-xs font-medium text-emerald-400">
+                      {pilotLeadMsg}
+                    </p>
+                  )}
+                </form>
               </div>
 
               <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">

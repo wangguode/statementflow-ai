@@ -68,7 +68,7 @@ const DEFAULT_AI_CONFIG: AIConfigSettings = {
 const DEFAULT_BILLING: BillingState = {
   plan: "free",
   creditsUsed: 0,
-  creditsLimit: 3,
+  creditsLimit: 2,
 };
 
 /**
@@ -334,6 +334,7 @@ export function StatementWorkbench() {
     PlanTier,
     "free"
   > | null>(null);
+  const [checkoutReason, setCheckoutReason] = useState<string>("");
   const [isExtracting, setIsExtracting] = useState(false);
   const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [batchFiles, setBatchFiles] = useState<{ name: string; text: string }[]>([]);
@@ -435,6 +436,28 @@ export function StatementWorkbench() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const pressVideoRef = useRef<HTMLVideoElement | null>(null);
 
+  // 承接 /convert/[slug] 银行专页首屏本地直传过来的 PDF 文本流，无缝回填进工作台
+  useEffect(() => {
+    try {
+      const rawPending = window.sessionStorage.getItem("sf_pending_upload_v1");
+      if (!rawPending) return;
+      window.sessionStorage.removeItem("sf_pending_upload_v1");
+      const parsed = JSON.parse(rawPending) as { fileName?: string; text?: string };
+      if (parsed.text && parsed.text.trim().length > 0) {
+        const fname = parsed.fileName || "statement.pdf";
+        setInputMode("upload");
+        setUploadedFileName(fname);
+        setCustomRawText(parsed.text);
+        setBatchFiles([{ name: fname, text: parsed.text }]);
+        setStatusNotice(
+          `Loaded ${fname} locally from bank converter — click "Run Extraction" to verify $0.00 balance.`
+        );
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // Creem 支付成功回跳或点击邮件跨设备激活链接（?restore_token=...）时自动服务端核验并持久解锁
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -455,6 +478,7 @@ export function StatementWorkbench() {
             restored?: boolean;
             plan?: Exclude<PlanTier, "free">;
             email?: string;
+            restoreToken?: string;
           };
           if (data.restored && data.plan && !cancelled) {
             const next: BillingState = {
@@ -462,6 +486,7 @@ export function StatementWorkbench() {
               creditsUsed: 0,
               creditsLimit: 999999,
               customerEmail: data.email,
+              restoreToken: data.restoreToken || restoreToken,
               activatedAt: new Date().toISOString(),
             };
             setBilling(next);
@@ -499,6 +524,7 @@ export function StatementWorkbench() {
           verified?: boolean;
           plan?: string;
           email?: string;
+          restoreToken?: string;
         };
         if (data.verified && !cancelled) {
           const unlockedPlan: PlanTier =
@@ -509,6 +535,7 @@ export function StatementWorkbench() {
               plan: unlockedPlan,
               creditsLimit: 999999,
               customerEmail: data.email || prev.customerEmail,
+              restoreToken: data.restoreToken || prev.restoreToken,
               activatedAt: new Date().toISOString(),
             };
             localStorage.setItem(STORAGE_KEY_BILLING, JSON.stringify(next));
@@ -620,12 +647,17 @@ export function StatementWorkbench() {
     );
   }
 
-  function handleActivatePlan(plan: Exclude<PlanTier, "free">, email: string) {
+  function handleActivatePlan(
+    plan: Exclude<PlanTier, "free">,
+    email: string,
+    restoreToken?: string
+  ) {
     const nextBilling: BillingState = {
       plan,
       creditsUsed: billing.creditsUsed,
       creditsLimit: 999999,
       customerEmail: email,
+      restoreToken: restoreToken || billing.restoreToken,
       activatedAt: new Date().toISOString(),
     };
     setBilling(nextBilling);
@@ -634,8 +666,9 @@ export function StatementWorkbench() {
     } catch {
       // ignore
     }
+    setCheckoutReason("");
     setStatusNotice(
-      `${plan === "business" ? "Accounting Firm" : "StatementFlow Pro"} license activated for ${email}. Unlimited extractions unlocked.`
+      `${plan === "business" ? "Accounting Firm" : "StatementFlow Pro"} license activated for ${email}. Unlimited extractions & QBO/Xero/Excel exports unlocked.`
     );
   }
 
@@ -800,15 +833,42 @@ export function StatementWorkbench() {
     }
   }
 
-  // 调用后端 /api/extract 执行提取与对账
+  // 调用后端 /api/extract 执行提取与对账（高价值批量合并与扫描版 OCR 设为 Pro 专属，单份 PDF 免费验证平账精度）
   async function handleRunExtraction() {
-    if (
-      billing.plan === "free" &&
-      billing.creditsUsed >= billing.creditsLimit
-    ) {
-      trackFunnelEvent("paywall_hit", { creditsUsed: billing.creditsUsed });
-      setCheckoutPlan("pro");
-      return;
+    if (billing.plan === "free" && aiConfig.provider !== "openai_compatible") {
+      if (inputMode === "upload" && batchFiles.length > 1) {
+        trackFunnelEvent("paywall_hit", {
+          gate: "batch_merge",
+          files: batchFiles.length,
+        });
+        setCheckoutReason(
+          `Multi-PDF Batch Merge (${batchFiles.length} statements → 1 chronological reconciled ledger) is a StatementFlow Pro feature — unlock forever for $9 once.`
+        );
+        setCheckoutPlan("pro");
+        return;
+      }
+      if (uploadedPageImages.length > 0) {
+        trackFunnelEvent("paywall_hit", {
+          gate: "vision_ocr",
+          pages: uploadedPageImages.length,
+        });
+        setCheckoutReason(
+          `Scanned PDF & Image Vision AI OCR (${uploadedPageImages.length} page(s) ready) requires StatementFlow Pro — unlock unlimited Vision OCR forever for $9 once.`
+        );
+        setCheckoutPlan("pro");
+        return;
+      }
+      if (inputMode !== "sample" && billing.creditsUsed >= billing.creditsLimit) {
+        trackFunnelEvent("paywall_hit", {
+          gate: "free_quota",
+          creditsUsed: billing.creditsUsed,
+        });
+        setCheckoutReason(
+          "You've used your 2 free single-PDF runs. Unlock unlimited bank PDF conversions, multi-month batch merge & native QuickBooks/Xero exports forever for $9 once."
+        );
+        setCheckoutPlan("pro");
+        return;
+      }
     }
 
     setIsExtracting(true);
@@ -837,6 +897,7 @@ export function StatementWorkbench() {
             fileName: chunkFileName,
             pdfBase64: uploadedPdfBase64 || undefined,
             pageImages: pageImgs && pageImgs.length > 0 ? pageImgs : undefined,
+            licenseToken: billing.restoreToken || undefined,
             aiConfig:
               aiConfig.provider === "openai_compatible" ? aiConfig : undefined,
           }),
@@ -856,6 +917,18 @@ export function StatementWorkbench() {
                 }
               : undefined
           );
+        }
+        if (res.status === 402) {
+          const errData = (await res.json().catch(() => ({}))) as {
+            error?: string;
+          };
+          const msg =
+            errData.error ||
+            "Free extraction limit reached — unlock StatementFlow Pro ($9 once) for unlimited conversions.";
+          trackFunnelEvent("paywall_hit", { gate: "server_402" });
+          setCheckoutReason(msg);
+          setCheckoutPlan("pro");
+          throw new Error(msg);
         }
         if (!res.ok) {
           const errData = (await res.json().catch(() => ({}))) as {
@@ -953,7 +1026,7 @@ export function StatementWorkbench() {
         }
       );
 
-      if (billing.plan === "free") {
+      if (billing.plan === "free" && inputMode !== "sample") {
         const nextBilling: BillingState = {
           ...billing,
           creditsUsed: Math.min(billing.creditsLimit, billing.creditsUsed + 1),
@@ -1111,14 +1184,48 @@ export function StatementWorkbench() {
     });
   }, [extraction.transactions, categoryFilter, searchQuery]);
 
-  // 导出处理函数
+  // 导出处理函数：3 份内置样本 100% 开放全格式免费下载验格式；自有账单在界面 100% 透明展示平账明细 + 免费导出 8 行预览 CSV，全量生产级 QBO/Xero/多表 Excel 导出承接 $9 买断
+  const isCustomUnpaid = billing.plan === "free" && inputMode !== "sample";
+
+  function openCustomExportPaywall(formatLabel: string, formatKey: string) {
+    trackFunnelEvent("export_paywall_hit", {
+      format: formatKey,
+      txCount: extraction.transactions.length,
+    });
+    setCheckoutReason(
+      `Your ${extraction.transactions.length}-row ${extraction.institution} ledger is reconciled! Unlock full ${formatLabel}, QuickBooks, Xero & Multi-Sheet Audit Excel exports + unlimited PDFs forever for $9 once.`
+    );
+    setCheckoutPlan("pro");
+  }
+
   function handleExportCsv() {
-    trackFunnelEvent("export_csv", { txCount: extraction.transactions.length });
-    const csv = buildCsvContent(extraction);
     const safeName =
       extraction.accountOrInvoiceNumber
         .replace(/[^a-zA-Z0-9-]+/g, "_")
         .replace(/^_+|_+$/g, "") || "statement";
+
+    if (isCustomUnpaid && extraction.transactions.length > 8) {
+      trackFunnelEvent("export_csv_preview", {
+        txCount: extraction.transactions.length,
+      });
+      const previewExtraction: ExtractionResult = {
+        ...extraction,
+        transactions: extraction.transactions.slice(0, 8),
+      };
+      const csv = buildCsvContent(previewExtraction);
+      triggerBrowserDownload(
+        csv,
+        `StatementFlow_8RowPreview_${safeName}.csv`,
+        "text/csv;charset=utf-8;"
+      );
+      setStatusNotice(
+        `Exported 8-row CSV sample preview (${extraction.transactions.length} total rows verified above). Unlock full ${extraction.transactions.length}-row CSV, QuickBooks, Xero & Multi-Sheet Excel for $9 once.`
+      );
+      return;
+    }
+
+    trackFunnelEvent("export_csv", { txCount: extraction.transactions.length });
+    const csv = buildCsvContent(extraction);
     triggerBrowserDownload(
       csv,
       `StatementFlow_${safeName}.csv`,
@@ -1127,6 +1234,10 @@ export function StatementWorkbench() {
   }
 
   function handleExportExcel() {
+    if (isCustomUnpaid) {
+      openCustomExportPaywall("Multi-Sheet Audit Excel (.xlsx)", "excel");
+      return;
+    }
     trackFunnelEvent("export_excel", {
       txCount: extraction.transactions.length,
     });
@@ -1143,6 +1254,10 @@ export function StatementWorkbench() {
   }
 
   function handleExportQuickBooks() {
+    if (isCustomUnpaid) {
+      openCustomExportPaywall("QuickBooks Online 3-Column CSV", "quickbooks");
+      return;
+    }
     trackFunnelEvent("export_quickbooks", {
       txCount: extraction.transactions.length,
     });
@@ -1159,6 +1274,10 @@ export function StatementWorkbench() {
   }
 
   function handleExportXero() {
+    if (isCustomUnpaid) {
+      openCustomExportPaywall("Xero 5-Column Bank Feed CSV", "xero");
+      return;
+    }
     trackFunnelEvent("export_xero", { txCount: extraction.transactions.length });
     const csv = buildXeroCsvContent(extraction);
     const safeName =
@@ -1173,6 +1292,10 @@ export function StatementWorkbench() {
   }
 
   function handleExportJson() {
+    if (isCustomUnpaid) {
+      openCustomExportPaywall("Structured Audit JSON", "json");
+      return;
+    }
     const json = JSON.stringify(extraction, null, 2);
     const safeName =
       extraction.accountOrInvoiceNumber
@@ -1186,6 +1309,10 @@ export function StatementWorkbench() {
   }
 
   async function handleCopyJson() {
+    if (isCustomUnpaid) {
+      openCustomExportPaywall("Full Clipboard JSON", "copy_json");
+      return;
+    }
     try {
       await navigator.clipboard.writeText(JSON.stringify(extraction, null, 2));
       setCopiedJson(true);
@@ -1397,7 +1524,7 @@ export function StatementWorkbench() {
                     Zero-Retention Instant Dropzone
                   </span>
                   <span className="rounded-full bg-emerald-500/12 px-2.5 py-0.5 font-mono text-[11px] font-semibold text-emerald-800">
-                    3 Free Runs · No Signup
+                    2 Free Runs · No Signup
                   </span>
                 </div>
 
@@ -1967,39 +2094,58 @@ export function StatementWorkbench() {
                     <button
                       type="button"
                       onClick={handleExportExcel}
-                      className="sf-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#0066cc] px-3.5 py-2 text-sm font-semibold text-white"
+                      className="sf-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#0066cc] px-3.5 py-2 text-sm font-semibold text-white cursor-pointer"
                     >
                       <FileSpreadsheet className="size-4" />
                       <span>Excel (.xlsx)</span>
+                      {isCustomUnpaid && (
+                        <span className="rounded bg-white/20 px-1.5 py-0.5 font-mono text-[10px] font-bold">
+                          PRO
+                        </span>
+                      )}
                     </button>
                     <button
                       type="button"
                       onClick={handleExportCsv}
-                      className="sf-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#252b3b] px-3.5 py-2 text-sm font-medium text-white"
+                      className="sf-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#252b3b] px-3.5 py-2 text-sm font-medium text-white cursor-pointer"
                     >
                       <Download className="size-4" />
-                      <span>CSV</span>
+                      <span>
+                        {isCustomUnpaid && extraction.transactions.length > 8
+                          ? "CSV (8-Row Preview)"
+                          : "CSV"}
+                      </span>
                     </button>
                     <button
                       type="button"
                       onClick={handleExportQuickBooks}
-                      className="sf-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#1d3b2a] px-3.5 py-2 text-sm font-medium text-[#86efac] hover:bg-[#234a34]"
+                      className="sf-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#1d3b2a] px-3.5 py-2 text-sm font-medium text-[#86efac] hover:bg-[#234a34] cursor-pointer"
                     >
                       <Download className="size-4" />
                       <span>QuickBooks</span>
+                      {isCustomUnpaid && (
+                        <span className="rounded bg-emerald-400/20 px-1.5 py-0.5 font-mono text-[10px] font-bold text-emerald-200">
+                          PRO
+                        </span>
+                      )}
                     </button>
                     <button
                       type="button"
                       onClick={handleExportXero}
-                      className="sf-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#19324a] px-3.5 py-2 text-sm font-medium text-[#7dd3fc] hover:bg-[#1f3f5e]"
+                      className="sf-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#19324a] px-3.5 py-2 text-sm font-medium text-[#7dd3fc] hover:bg-[#1f3f5e] cursor-pointer"
                     >
                       <Download className="size-4" />
                       <span>Xero</span>
+                      {isCustomUnpaid && (
+                        <span className="rounded bg-sky-400/20 px-1.5 py-0.5 font-mono text-[10px] font-bold text-sky-200">
+                          PRO
+                        </span>
+                      )}
                     </button>
                     <button
                       type="button"
                       onClick={handleExportJson}
-                      className="sf-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#252b3b] px-3.5 py-2 text-sm font-medium text-white"
+                      className="sf-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#252b3b] px-3.5 py-2 text-sm font-medium text-white cursor-pointer"
                     >
                       <FileText className="size-4" />
                       <span>JSON</span>
@@ -2008,7 +2154,7 @@ export function StatementWorkbench() {
                       type="button"
                       onClick={handleCopyJson}
                       aria-label="Copy JSON to clipboard"
-                      className="sf-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#252b3b] px-3 py-2 text-sm font-medium text-white"
+                      className="sf-btn inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#252b3b] px-3 py-2 text-sm font-medium text-white cursor-pointer"
                     >
                       {copiedJson ? (
                         <Check className="size-4 text-[#34d399]" />
@@ -2364,8 +2510,9 @@ export function StatementWorkbench() {
               <div>
                 <h2 className="sf-head text-[#111215]">Simple, honest pricing.</h2>
                 <p className="mt-3 text-base text-[#494b52]">
-                  Test 3 extractions for free with zero signup. Upgrade once via
-                  Creem.io Merchant of Record—no recurring subscription traps.
+                  Verify $0.00 balance accuracy on your own PDF free with zero
+                  signup. Upgrade once via Creem.io Merchant of Record—no
+                  recurring subscription traps.
                 </p>
               </div>
 
@@ -2396,10 +2543,10 @@ export function StatementWorkbench() {
                     a single cent.
                   </p>
                   <ul className="mt-6 space-y-2.5 text-sm text-[#111215]">
-                    <li>3 free extraction runs included</li>
+                    <li>2 free single-PDF runs (100% UI rows visible)</li>
                     <li>100% browser-local PDF text parsing</li>
                     <li>Deterministic $0.00 balance verification</li>
-                    <li>Excel, CSV, QuickBooks & Xero export</li>
+                    <li>8-row CSV preview + full sample QBO/Xero/XLSX</li>
                   </ul>
                 </div>
 
@@ -3021,7 +3168,11 @@ export function StatementWorkbench() {
           open={Boolean(checkoutPlan)}
           plan={checkoutPlan}
           gateway={gateway}
-          onClose={() => setCheckoutPlan(null)}
+          unlockReason={checkoutReason}
+          onClose={() => {
+            setCheckoutPlan(null);
+            setCheckoutReason("");
+          }}
           onSuccessActivate={handleActivatePlan}
           onOpenRestore={() => setRestoreModalOpen(true)}
         />

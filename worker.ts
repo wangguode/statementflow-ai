@@ -157,6 +157,13 @@ async function ensureSfTables(env: Env): Promise<void> {
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       )`
     ).run();
+    await env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS sf_free_ip_usage (
+        ip_hash TEXT PRIMARY KEY,
+        runs INTEGER NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )`
+    ).run();
     schemaReady = true;
   } catch {
     // 降级不阻塞主流程
@@ -508,6 +515,7 @@ async function handleRestoreLicense(request: Request, env: Env): Promise<Respons
         plan: row.plan === "business" ? "business" : "pro",
         email: row.customer_email,
         orderId: row.order_id,
+        restoreToken: token,
       });
     }
 
@@ -534,12 +542,20 @@ async function handleRestoreLicense(request: Request, env: Env): Promise<Respons
           404
         );
       }
+      let issuedToken = matched.restore_token;
+      if (!issuedToken) {
+        issuedToken = `sf_lic_${crypto.randomUUID().replace(/-/g, "")}`;
+        await env.DB.prepare(`UPDATE sf_orders SET restore_token = ?1 WHERE order_id = ?2`)
+          .bind(issuedToken, matched.order_id)
+          .run();
+      }
       return jsonResponse({
         ok: true,
         restored: true,
         plan: matched.plan === "business" ? "business" : "pro",
         email: matched.customer_email,
         orderId: matched.order_id,
+        restoreToken: issuedToken,
       });
     }
 
@@ -677,6 +693,7 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
       rawText?: string;
       fileName?: string;
       pageImages?: string[];
+      licenseToken?: string;
       aiConfig?: {
         provider?: "demo" | "openai_compatible";
         apiKey?: string;
@@ -689,6 +706,18 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
       body.aiConfig?.provider === "openai_compatible"
         ? body.aiConfig.apiKey?.trim() || ""
         : "";
+    const licenseToken = (body.licenseToken || "").trim();
+
+    let hasPaidLicense = false;
+    if (licenseToken.length >= 10 && env.DB) {
+      await ensureSfTables(env);
+      const paidRow = await env.DB.prepare(
+        `SELECT order_id FROM sf_orders WHERE (restore_token = ?1 OR order_id = ?1) AND status = 'completed' LIMIT 1`
+      )
+        .bind(licenseToken)
+        .first<{ order_id: string }>();
+      hasPaidLicense = Boolean(paidRow);
+    }
 
     // 使用平台托管大模型密钥时，校验同源 Origin / Referer 防外部脚本直接白嫖
     if (!userProvidedKey) {
@@ -717,6 +746,49 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
       );
     }
 
+    const isVisionMode = pageImages.length > 0 && rawText.length < 40;
+
+    // 商业防白嫖硬门槛 1：扫描件多模态 Vision OCR 仅对 $9 Pro / $199 Firm 授权或 BYOK 用户开放
+    if (isVisionMode && !hasPaidLicense && !userProvidedKey) {
+      return jsonResponse(
+        {
+          error:
+            "Scanned PDF & Photo Vision AI OCR requires StatementFlow Pro ($9 one-time lifetime unlock).",
+          code: "PRO_REQUIRED",
+        },
+        402
+      );
+    }
+
+    // 商业防白嫖硬门槛 2：服务端按匿名哈希 IP 限制免费托管 AI 解析次数（最多 2 次单文件验真，阻断无痕窗口无限白嫖）
+    let callerIpHash = "";
+    if (!hasPaidLicense && !userProvidedKey && env.DB && ip !== "0.0.0.0") {
+      await ensureSfTables(env);
+      const digest = await crypto.subtle.digest(
+        "SHA-256",
+        new TextEncoder().encode(`sf_free_quota_v2:${ip}`)
+      );
+      callerIpHash = Array.from(new Uint8Array(digest))
+        .slice(0, 16)
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+      const usage = await env.DB.prepare(
+        `SELECT runs FROM sf_free_ip_usage WHERE ip_hash = ?1 LIMIT 1`
+      )
+        .bind(callerIpHash)
+        .first<{ runs: number }>();
+      if (Number(usage?.runs || 0) >= 2) {
+        return jsonResponse(
+          {
+            error:
+              "Free preview limit reached (2/2 single-PDF runs). Unlock StatementFlow Pro ($9 once, no subscription) for unlimited extractions.",
+            code: "PRO_REQUIRED",
+          },
+          402
+        );
+      }
+    }
+
     const userProvidedBaseUrl =
       body.aiConfig?.provider === "openai_compatible"
         ? body.aiConfig.baseUrl?.trim() || ""
@@ -738,7 +810,6 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
       env.AI_BASE_URL?.trim() ||
       "https://maas.qianwenaiapi.com/compatible-mode/v1"
     ).replace(/\/+$/, "");
-    const isVisionMode = pageImages.length > 0 && rawText.length < 40;
     const effectiveModel = isVisionMode
       ? "qwen-vl-plus"
       : (
@@ -874,9 +945,18 @@ Rules:
           .bind(
             Math.abs(discrepancyCents) === 0 ? "api_extract_balanced" : "api_extract_unbalanced",
             request.headers.get("cf-ipcountry") || "XX",
-            JSON.stringify({ txCount: transactions.length, vision: isVisionMode })
+            JSON.stringify({ txCount: transactions.length, vision: isVisionMode, pro: hasPaidLicense })
           )
           .run();
+        if (callerIpHash) {
+          await env.DB.prepare(
+            `INSERT INTO sf_free_ip_usage (ip_hash, runs, updated_at)
+             VALUES (?1, 1, datetime('now'))
+             ON CONFLICT(ip_hash) DO UPDATE SET runs = runs + 1, updated_at = datetime('now')`
+          )
+            .bind(callerIpHash)
+            .run();
+        }
       } catch {
         // ignore
       }

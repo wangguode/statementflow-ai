@@ -73,4 +73,5 @@ export interface BillingState {
   creditsLimit: number; // Pro / Business 下为 999999
   customerEmail?: string;
   activatedAt?: string;
+  restoreToken?: string;
 }

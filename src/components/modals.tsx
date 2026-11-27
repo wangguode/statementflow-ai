@@ -241,8 +241,9 @@ interface CheckoutModalProps {
   open: boolean;
   plan: Exclude<PlanTier, "free">;
   gateway: "creem" | "stripe";
+  unlockReason?: string;
   onClose: () => void;
-  onSuccessActivate: (plan: Exclude<PlanTier, "free">, email: string) => void;
+  onSuccessActivate: (plan: Exclude<PlanTier, "free">, email: string, restoreToken?: string) => void;
   onOpenRestore?: () => void;
 }
 
@@ -250,6 +251,7 @@ export function CheckoutModal({
   open,
   plan,
   gateway,
+  unlockReason,
   onClose,
   onSuccessActivate,
   onOpenRestore,
@@ -360,6 +362,12 @@ export function CheckoutModal({
         </div>
 
         <form onSubmit={handleConfirmCheckout} className="mt-2 space-y-4">
+          {unlockReason && (
+            <div className="rounded-xl border border-[#0066cc]/30 bg-[#0066cc]/10 px-3.5 py-2.5 text-xs font-medium text-[#004488]">
+              {unlockReason}
+            </div>
+          )}
+
           <div className="flex items-baseline justify-between rounded-xl border border-black/5 bg-[#eef0f5] px-4 py-3.5">
             <div>
               <div className="text-sm font-semibold text-[#111215]">
@@ -470,7 +478,7 @@ export function CheckoutModal({
 interface RestoreLicenseModalProps {
   open: boolean;
   onClose: () => void;
-  onRestored: (plan: Exclude<PlanTier, "free">, email: string) => void;
+  onRestored: (plan: Exclude<PlanTier, "free">, email: string, restoreToken?: string) => void;
 }
 
 export function RestoreLicenseModal({
@@ -506,6 +514,7 @@ export function RestoreLicenseModal({
         magicLinkSent?: boolean;
         plan?: Exclude<PlanTier, "free">;
         email?: string;
+        restoreToken?: string;
         message?: string;
         error?: string;
       };
@@ -514,7 +523,7 @@ export function RestoreLicenseModal({
         return;
       }
       if (data.restored && data.plan) {
-        onRestored(data.plan, data.email || email.trim());
+        onRestored(data.plan, data.email || email.trim(), data.restoreToken);
         onClose();
         return;
       }

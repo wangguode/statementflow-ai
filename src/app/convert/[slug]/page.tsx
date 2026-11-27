@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { ArrowUpRight, ShieldCheck } from "lucide-react";
 import { PSEO_BANK_ENTRIES, findPseoBankBySlug } from "@/lib/pseo-banks";
 import { findSampleById } from "@/lib/samples";
+import { BankQuickDropzone } from "@/components/bank-quick-dropzone";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -166,21 +167,11 @@ export default async function BankConverterLandingPage({ params }: PageProps) {
                 </div>
               </div>
 
-              <div className="rounded-xl bg-[#e8e8ed] p-6 lg:col-span-4">
-                <div className="flex items-center justify-between gap-2 text-sm font-medium text-[#494b52]">
-                  <span>{bank.region}</span>
-                  <span className="tabular-nums text-[#111215]">
-                    {bank.defaultCurrency} · {bank.targetFormat}
-                  </span>
-                </div>
-                <div className="sf-lead mt-2 font-semibold tabular-nums text-[#111215]">
-                  Opening + Credits - Debits = Closing
-                </div>
-                <p className="mt-3 text-sm text-[#494b52]">
-                  Every extracted {bank.institutionName} statement row is
-                  verified deterministically before export.
-                </p>
-              </div>
+              <BankQuickDropzone
+                bankSlug={bank.slug}
+                institutionName={bank.institutionName}
+                targetFormat={bank.targetFormat}
+              />
             </div>
           </div>
         </section>

@@ -5,6 +5,9 @@ export const metadata: Metadata = {
   title: "Privacy Policy & Zero-Retention Architecture | StatementFlow AI",
   description:
     "How StatementFlow AI handles bank statement PDFs locally in your browser with zero persistent storage of financial documents.",
+  alternates: {
+    canonical: "/privacy",
+  },
   robots: { index: true, follow: true },
 };
 

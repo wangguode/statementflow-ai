@@ -4,7 +4,10 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Terms of Use & Refund Policy | StatementFlow AI",
   description:
-    "Terms of service, $9 Pro one-time license, $199 Firm Pilot, and 7-day refund policy for StatementFlow AI.",
+    "Terms of service, $9 Pro one-time license, $199 Firm Pilot, and 14-day refund policy for StatementFlow AI.",
+  alternates: {
+    canonical: "/terms",
+  },
   robots: { index: true, follow: true },
 };
 
@@ -40,7 +43,7 @@ export default function TermsPage() {
 
         <section className="space-y-2.5 text-sm text-[#3d3b36]">
           <h2 className="text-base font-semibold text-[#161615]">
-            2. Pricing, Licensing &amp; 7-Day Refund Guarantee
+            2. Pricing, Licensing &amp; 14-Day Refund Guarantee
           </h2>
           <p>
             Online checkout is operated by <strong>Creem.io</strong> as our authorized

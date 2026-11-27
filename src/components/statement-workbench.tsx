@@ -511,19 +511,28 @@ export function StatementWorkbench() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const pressVideoRef = useRef<HTMLVideoElement | null>(null);
 
-  // 承接 /convert/[slug] 银行专页首屏本地直传过来的 PDF 文本流，无缝回填进工作台
+  // 承接 /convert/[slug] 银行专页首屏本地直传过来的 PDF 文本流与扫描件标记，无缝回填进工作台
   useEffect(() => {
     try {
       const rawPending = window.sessionStorage.getItem("sf_pending_upload_v1");
       if (!rawPending) return;
       window.sessionStorage.removeItem("sf_pending_upload_v1");
-      const parsed = JSON.parse(rawPending) as { fileName?: string; text?: string };
+      const parsed = JSON.parse(rawPending) as {
+        fileName?: string;
+        text?: string;
+        batchParts?: Array<{ name: string; text: string }>;
+        isScanned?: boolean;
+      };
+      const fname = parsed.fileName || "statement.pdf";
       if (parsed.text && parsed.text.trim().length > 0) {
-        const fname = parsed.fileName || "statement.pdf";
         setInputMode("upload");
         setUploadedFileName(fname);
         setCustomRawText(parsed.text);
-        setBatchFiles([{ name: fname, text: parsed.text }]);
+        setBatchFiles(
+          parsed.batchParts && parsed.batchParts.length > 0
+            ? parsed.batchParts
+            : [{ name: fname, text: parsed.text }]
+        );
         const instantLocal = parseDocumentHeuristically(
           parsed.text,
           fname,
@@ -540,6 +549,13 @@ export function StatementWorkbench() {
             `Loaded ${fname} from bank converter — click "Run Extraction" to run Cloud AI Deep Parse.`
           );
         }
+      } else if (parsed.isScanned || parsed.fileName) {
+        setInputMode("upload");
+        setUploadedFileName(fname);
+        setEngineMode("cloud_ai");
+        setStatusNotice(
+          `Detected scanned/image statement (${fname}) with no embedded text layer — drop ${fname} directly into the uploader below to run Vision AI OCR.`
+        );
       }
     } catch {
       // ignore
@@ -1082,7 +1098,10 @@ export function StatementWorkbench() {
       try {
         const res = await fetch("/api/extract", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "X-SF-Client": "workbench",
+          },
           body: JSON.stringify({
             sampleId,
             rawText: chunkText,
@@ -1142,11 +1161,22 @@ export function StatementWorkbench() {
     try {
       let result: ExtractionResult;
       if (effectiveBatch && effectiveBatch.length > 1) {
-        // 多月 PDF 或超长单份账单并发分块提取（并发度=3，彻底防超时）+ 按日期自动合并为单份总账本
+        // 先串行提交第 1 分块以在 D1 原子注册 runBatchId（防止并发多分块重复扣减免费配额），随后以并发度=3 加速剩余分块
         const chunkResults: ExtractionResult[] = new Array(effectiveBatch.length);
-        let completed = 0;
+        setExtractProgress({
+          current: 0,
+          total: effectiveBatch.length,
+          label: `Extracting 1 / ${effectiveBatch.length}: ${effectiveBatch[0].name}`,
+        });
+        chunkResults[0] = await runSingleChunk(effectiveBatch[0].text, effectiveBatch[0].name);
+        let completed = 1;
+        setExtractProgress({
+          current: completed,
+          total: effectiveBatch.length,
+          label: `Merged 1 / ${effectiveBatch.length} chunk(s)...`,
+        });
         const concurrency = 3;
-        for (let start = 0; start < effectiveBatch.length; start += concurrency) {
+        for (let start = 1; start < effectiveBatch.length; start += concurrency) {
           const slice = effectiveBatch.slice(start, start + concurrency);
           setExtractProgress({
             current: completed,
@@ -2019,15 +2049,17 @@ export function StatementWorkbench() {
                     onSubmit={async (e) => {
                       e.preventDefault();
                       const fd = new FormData(e.currentTarget);
+                      const contactEmail = String(fd.get("contactEmail") || billing.customerEmail || "").trim();
                       const bankName = String(fd.get("bankName") || "").trim();
-                      if (!bankName) return;
+                      if (!bankName || !contactEmail) return;
                       const formEl = e.currentTarget;
                       try {
                         const r = await fetch("/api/pilot-intake", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
                           body: JSON.stringify({
-                            email: billing.customerEmail || "",
+                            email: contactEmail,
+                            restoreToken: billing.restoreToken || undefined,
                             bankName,
                             notes: "Submitted from Firm Pilot Workbench",
                           }),
@@ -2038,19 +2070,27 @@ export function StatementWorkbench() {
                           return;
                         }
                         formEl.reset();
-                        setStatusNotice(`Priority bank tuning queued for "${bankName}" — we will email ${billing.customerEmail || "your team"} within 24h.`);
+                        setStatusNotice(`Priority bank tuning queued for "${bankName}" — we will email ${contactEmail} within 24h.`);
                       } catch {
                         setStatusNotice("Network error — please email hello@statementflow.win directly.");
                       }
                     }}
-                    className="flex items-center gap-2 shrink-0"
+                    className="flex flex-wrap items-center gap-2 shrink-0"
                   >
+                    <input
+                      name="contactEmail"
+                      type="email"
+                      required
+                      defaultValue={billing.customerEmail || ""}
+                      placeholder="Your firm email..."
+                      className="ui-input px-3 py-2 text-xs w-44"
+                    />
                     <input
                       name="bankName"
                       type="text"
                       required
                       placeholder="Bank name & QBO/Xero format..."
-                      className="ui-input px-3 py-2 text-xs w-56"
+                      className="ui-input px-3 py-2 text-xs w-52"
                     />
                     <button
                       type="submit"

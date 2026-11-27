@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   CheckCircle2,
   CreditCard,
@@ -48,6 +48,13 @@ export function AISettingsModal({
 }: AISettingsModalProps) {
   const [draft, setDraft] = useState<AIConfigSettings>(config);
   const [validationErr, setValidationErr] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setDraft(config);
+      setValidationErr("");
+    }
+  }, [open, config]);
 
   if (!open) return null;
 
@@ -609,7 +616,7 @@ export function RestoreLicenseModal({
             <input
               id="restore-order-ref"
               type="text"
-              placeholder="e.g. ch_... or ord_... (leave blank to receive email link)"
+              placeholder="Full ch_... / ord_... ID (leave blank to get email link)"
               value={orderRef}
               onChange={(e) => setOrderRef(e.target.value)}
               className="mt-1 block min-h-11 w-full rounded-xl border border-black/15 bg-white px-3.5 py-2 text-base font-mono text-[#111215] focus:border-[#0066cc] focus:outline-none sm:text-sm"
@@ -636,7 +643,7 @@ export function RestoreLicenseModal({
           >
             {loading && <Loader2 className="size-4 animate-spin" />}
             <span>
-              {orderRef.trim().length >= 6
+              {orderRef.trim().length >= 12
                 ? "Verify & Unlock Immediately"
                 : "Send 1-Click Activation Link"}
             </span>

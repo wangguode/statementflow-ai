@@ -93,10 +93,17 @@ export function buildQuickBooksCsvContent(data: ExtractionResult): string {
  */
 export function buildXeroCsvContent(data: ExtractionResult): string {
   const headers = ["*Date", "*Amount", "Payee", "Description", "Reference"];
+  const isUsFormat = data.currency === "USD";
   const rows = data.transactions.map((tx) => {
     const signed = tx.type === "debit" ? -tx.amount : tx.amount;
+    const parts = tx.date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const xeroDate = parts
+      ? isUsFormat
+        ? `${parts[2]}/${parts[3]}/${parts[1]}`
+        : `${parts[3]}/${parts[2]}/${parts[1]}`
+      : tx.date;
     return [
-      tx.date,
+      xeroDate,
       signed.toFixed(2),
       tx.merchant || tx.description,
       tx.description,

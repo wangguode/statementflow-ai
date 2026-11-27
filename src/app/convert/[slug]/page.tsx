@@ -45,12 +45,18 @@ export async function generateMetadata({
       url: `/convert/${bank.slug}`,
       images: [
         {
-          url: "/assets/blythe-house-ledger-room-1924.jpg",
+          url: "/og-statementflow.png",
           width: 1200,
           height: 630,
           alt: `${bank.institutionName} Statement Converter — StatementFlow AI`,
         },
       ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["/og-statementflow.png"],
     },
   };
 }

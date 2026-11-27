@@ -24,23 +24,34 @@ export function BankQuickDropzone({ bankSlug, institutionName, targetFormat }: P
     if (files.length === 0) return;
     setParsing(true);
     try {
-      const file = files[0];
-      const lower = file.name.toLowerCase();
-      let extractedText = "";
-      if (lower.endsWith(".pdf")) {
-        const bytes = new Uint8Array(await file.arrayBuffer());
-        const { extractTextFromPdfBytes } = await import("@/lib/client-pdf");
-        const out = await extractTextFromPdfBytes(bytes);
-        extractedText = out.text;
-      } else if (/\.(csv|txt|tsv)$/i.test(lower)) {
-        extractedText = await file.text();
+      const extractedParts: Array<{ name: string; text: string }> = [];
+      let scannedDetected = false;
+      for (const file of files.slice(0, 12)) {
+        const lower = file.name.toLowerCase();
+        if (lower.endsWith(".pdf")) {
+          const bytes = new Uint8Array(await file.arrayBuffer());
+          const { extractTextFromPdfBytes } = await import("@/lib/client-pdf");
+          const out = await extractTextFromPdfBytes(bytes);
+          if (out.text && out.text.trim().length > 0) {
+            extractedParts.push({ name: file.name, text: out.text });
+          } else {
+            scannedDetected = true;
+          }
+        } else if (/\.(csv|txt|tsv)$/i.test(lower)) {
+          const txt = await file.text();
+          if (txt.trim().length > 0) extractedParts.push({ name: file.name, text: txt });
+        } else if (/\.(png|jpg|jpeg|webp)$/i.test(lower)) {
+          scannedDetected = true;
+        }
       }
       if (typeof window !== "undefined") {
         window.sessionStorage.setItem(
           "sf_pending_upload_v1",
           JSON.stringify({
-            fileName: file.name,
-            text: extractedText,
+            fileName: files[0].name,
+            text: extractedParts.map((p) => p.text).join("\n\n"),
+            batchParts: extractedParts,
+            isScanned: scannedDetected && extractedParts.length === 0,
             fileCount: files.length,
           })
         );
@@ -101,7 +112,8 @@ export function BankQuickDropzone({ bankSlug, institutionName, targetFormat }: P
       <input
         ref={inputRef}
         type="file"
-        accept=".pdf,.csv,.txt"
+        multiple
+        accept=".pdf,.csv,.txt,.png,.jpg,.jpeg,.webp"
         onChange={(e) => {
           void handleFiles(Array.from(e.target.files || []));
           e.target.value = "";

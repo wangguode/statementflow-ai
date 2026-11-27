@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   fixBankCsv,
@@ -24,15 +24,38 @@ export default function CsvFixerClient() {
   const [copied, setCopied] = useState<boolean>(false);
   const [upgradeNotice, setUpgradeNotice] = useState<string>("");
   const [openingCheckout, setOpeningCheckout] = useState<boolean>(false);
-  const [isProUnlocked] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
+  const [isProUnlocked, setIsProUnlocked] = useState<boolean>(false);
+
+  useEffect(() => {
     try {
       const saved = JSON.parse(window.localStorage.getItem("statementflow_billing_v1") || "{}");
-      return saved?.plan === "pro" || saved?.plan === "business";
+      if (saved?.plan === "pro" || saved?.plan === "business") {
+        setIsProUnlocked(true);
+      }
+      const tok = new URLSearchParams(window.location.search).get("restore_token")?.trim();
+      if (tok) {
+        fetch("/api/license/restore", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: tok }),
+        })
+          .then((r) => r.json())
+          .then((d: { ok?: boolean; restored?: boolean; plan?: string; email?: string; restoreToken?: string }) => {
+            if (d?.ok && d?.restored) {
+              window.localStorage.setItem(
+                "statementflow_billing_v1",
+                JSON.stringify({ plan: d.plan || "pro", customerEmail: d.email || "", restoreToken: d.restoreToken || tok, creditsUsed: 0 })
+              );
+              setIsProUnlocked(true);
+              window.history.replaceState({}, "", window.location.pathname);
+            }
+          })
+          .catch(() => {});
+      }
     } catch {
-      return false;
+      // ignore
     }
-  });
+  }, []);
 
   const handleQuickProUpgrade = async () => {
     setOpeningCheckout(true);

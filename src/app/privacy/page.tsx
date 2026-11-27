@@ -8,6 +8,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/privacy",
   },
+  openGraph: {
+    title: "Privacy Policy & Zero-Retention Architecture | StatementFlow AI",
+    description:
+      "How StatementFlow AI handles bank statement PDFs locally in your browser with zero persistent storage of financial documents.",
+    url: "/privacy",
+    type: "website",
+  },
   robots: { index: true, follow: true },
 };
 

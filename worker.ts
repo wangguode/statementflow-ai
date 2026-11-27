@@ -133,6 +133,20 @@ async function ensureSfTables(env: Env): Promise<void> {
     } catch {
       // 列已存在时安全忽略
     }
+    try {
+      await env.DB.prepare(
+        `ALTER TABLE sf_orders ADD COLUMN founder_notified INTEGER NOT NULL DEFAULT 0`
+      ).run();
+    } catch {
+      // 列已存在时安全忽略
+    }
+    try {
+      await env.DB.prepare(
+        `ALTER TABLE sf_orders ADD COLUMN claimed_at TEXT NOT NULL DEFAULT ''`
+      ).run();
+    } catch {
+      // 列已存在时安全忽略
+    }
     await env.DB.prepare(
       `CREATE TABLE IF NOT EXISTS email_outbox (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -352,6 +366,36 @@ async function handleCheckout(request: Request, env: Env): Promise<Response> {
   }
 }
 
+async function timingSafeEqualSecret(a: string, b: string): Promise<boolean> {
+  const enc = new TextEncoder();
+  const [ha, hb] = await Promise.all([
+    crypto.subtle.digest("SHA-256", enc.encode(a)),
+    crypto.subtle.digest("SHA-256", enc.encode(b)),
+  ]);
+  const ua = new Uint8Array(ha);
+  const ub = new Uint8Array(hb);
+  let diff = 0;
+  for (let i = 0; i < ua.length; i += 1) {
+    diff |= ua[i] ^ ub[i];
+  }
+  return diff === 0;
+}
+
+function isAllowedSfOriginOrReferer(rawHeader: string): boolean {
+  try {
+    const u = new URL(rawHeader);
+    const h = u.hostname.toLowerCase();
+    return (
+      h === "statementflow.win" ||
+      h.endsWith(".statementflow.win") ||
+      h === "localhost" ||
+      h === "127.0.0.1"
+    );
+  } catch {
+    return false;
+  }
+}
+
 async function handleWebhook(request: Request, env: Env): Promise<Response> {
   const rawBody = await request.text();
   const signature = request.headers.get("creem-signature") || "";
@@ -366,66 +410,118 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
     return jsonResponse({ error: "Invalid webhook signature" }, 401);
   }
 
-  const event = JSON.parse(rawBody) as {
+  let event: {
     eventType?: string;
+    event_type?: string;
+    type?: string;
     id?: string;
     object?: {
       id?: string;
-      customer?: { email?: string };
-      metadata?: { plan?: string };
-      order?: { id?: string; amount?: number };
+      customer?: { email?: string } | string;
+      customer_email?: string;
+      metadata?: { plan?: string; email?: string };
+      order?: { id?: string; amount?: number } | string;
+      amount?: number;
     };
   };
+  try {
+    event = JSON.parse(rawBody);
+  } catch {
+    return jsonResponse({ error: "Invalid webhook JSON payload" }, 400);
+  }
+
+  const evt = String(event.eventType || event.event_type || event.type || "").trim().toLowerCase();
+  if (!evt) {
+    return jsonResponse({ received: true, ignored: true, reason: "missing_event_type" });
+  }
 
   if (env.DB) {
     await ensureSfTables(env);
     try {
       const obj = event.object || {};
-      const orderId = obj.id || event.id || `sf_ord_${Date.now()}`;
-      const orderRef = obj.order?.id || "";
-      const email = (obj.customer?.email || "").trim().toLowerCase();
+      const rawObjId = String(obj.id || event.id || "").trim();
+      const orderRef =
+        typeof obj.order === "string"
+          ? obj.order.trim()
+          : String(obj.order?.id || "").trim();
+      const orderId = rawObjId || orderRef || `sf_ord_${Date.now()}`;
+      const email = String(
+        (typeof obj.customer === "object" ? obj.customer?.email : "") ||
+          obj.customer_email ||
+          obj.metadata?.email ||
+          ""
+      )
+        .trim()
+        .toLowerCase();
       const plan = obj.metadata?.plan === "business" ? "business" : "pro";
-      const amountUsd = Math.round((obj.order?.amount || (plan === "business" ? 19900 : 2900)) / 100);
-      const evt = (event.eventType || "").toLowerCase();
+      const rawCents =
+        (typeof obj.order === "object" ? obj.order?.amount : undefined) ||
+        obj.amount ||
+        (plan === "business" ? 19900 : 2900);
+      const amountUsd = Math.round(rawCents / 100);
+
       const isRefundOrCancel = /refund|cancel|dispute|chargeback|revok/.test(evt);
       const isPositivePaid =
-        !evt || /completed|paid|succeeded|active/.test(evt);
+        !isRefundOrCancel &&
+        !/created|pending|expired|failed|past_due/.test(evt) &&
+        /completed|paid|succeeded|active/.test(evt);
 
       if (isRefundOrCancel) {
         await env.DB.prepare(
-          `UPDATE sf_orders SET status = 'refunded' WHERE order_id = ?1 OR (order_ref != '' AND order_ref = ?2)`
+          `UPDATE sf_orders SET status = 'refunded'
+           WHERE order_id = ?1 OR (order_ref != '' AND (order_ref = ?1 OR order_ref = ?2))`
         )
           .bind(orderId, orderRef || orderId)
           .run();
       } else if (isPositivePaid) {
-        const status = "completed";
-        const restoreToken = `sf_lic_${crypto.randomUUID().replace(/-/g, "")}`;
+        const existingMatch = await env.DB.prepare(
+          `SELECT order_id, restore_token, email_sent, founder_notified, customer_email
+           FROM sf_orders
+           WHERE order_id = ?1 OR (?2 != '' AND (order_id = ?2 OR order_ref = ?2 OR order_ref = ?1))
+           LIMIT 1`
+        )
+          .bind(orderId, orderRef)
+          .first<{
+            order_id: string;
+            restore_token: string;
+            email_sent?: number;
+            founder_notified?: number;
+            customer_email?: string;
+          }>();
+
+        const canonicalOrderId = existingMatch?.order_id || orderId;
+        const restoreToken =
+          existingMatch?.restore_token || `sf_lic_${crypto.randomUUID().replace(/-/g, "")}`;
+
         await env.DB.prepare(
           `INSERT INTO sf_orders (order_id, order_ref, customer_email, plan, amount_usd, status, restore_token)
-           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+           VALUES (?1, ?2, ?3, ?4, ?5, 'completed', ?6)
            ON CONFLICT(order_id) DO UPDATE SET
-             status = ?6,
+             status = 'completed',
              order_ref = COALESCE(NULLIF(?2, ''), sf_orders.order_ref),
              customer_email = COALESCE(NULLIF(?3, ''), sf_orders.customer_email)`
         )
-          .bind(orderId, orderRef, email, plan, amountUsd, status, restoreToken)
+          .bind(canonicalOrderId, orderRef, email, plan, amountUsd, restoreToken)
           .run();
 
-        // 首次付款确认时，幂等检查 email_sent 防止 Creem 多事件重推导致重复发信，并读取库内真实 restore_token
-        if (email) {
         const saved = await env.DB.prepare(
-          `SELECT restore_token, email_sent FROM sf_orders WHERE order_id = ?1 LIMIT 1`
+          `SELECT restore_token, email_sent, founder_notified, customer_email FROM sf_orders WHERE order_id = ?1 LIMIT 1`
         )
-          .bind(orderId)
-          .first<{ restore_token: string; email_sent?: number }>();
-        if (!saved || Number(saved.email_sent || 0) === 0) {
-          await env.DB.prepare(`UPDATE sf_orders SET email_sent = 1 WHERE order_id = ?1`)
-            .bind(orderId)
-            .run();
-          const activeToken = saved?.restore_token || restoreToken;
-          const activateUrl = `https://statementflow.win/?restore_token=${encodeURIComponent(activeToken)}`;
-          await sendSfEmail(env, {
-            to: email,
+          .bind(canonicalOrderId)
+          .first<{
+            restore_token: string;
+            email_sent?: number;
+            founder_notified?: number;
+            customer_email?: string;
+          }>();
+
+        const activeToken = saved?.restore_token || restoreToken;
+        const effectiveEmail = email || saved?.customer_email || "";
+        const activateUrl = `https://statementflow.win/?restore_token=${encodeURIComponent(activeToken)}`;
+
+        if (effectiveEmail && Number(saved?.email_sent || 0) === 0) {
+          const sentCustomer = await sendSfEmail(env, {
+            to: effectiveEmail,
             subject:
               plan === "business"
                 ? "Your StatementFlow Firm Pilot ($199) License & Team Activation Link"
@@ -434,7 +530,7 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
               "Thank you for choosing StatementFlow AI!",
               "",
               `Plan Unlocked: ${plan === "business" ? "14-Day Boutique Firm Pilot (Unlimited Team Seats)" : "StatementFlow AI Pro (Lifetime Unlimited)"}`,
-              `Order Reference: ${orderRef || orderId}`,
+              `Order Reference: ${orderRef || canonicalOrderId}`,
               "",
               "Bookmark or share this 1-click activation link to unlock StatementFlow on any browser, new computer, or team workstation:",
               activateUrl,
@@ -446,31 +542,41 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
               "— StatementFlow Financial Engineering",
             ].join("\n"),
           });
+          if (sentCustomer) {
+            await env.DB.prepare(`UPDATE sf_orders SET email_sent = 1 WHERE order_id = ?1`)
+              .bind(canonicalOrderId)
+              .run();
+          }
+        }
 
-          // 同步向创始人邮箱发送实时入账与交付通知
-          await sendSfEmail(env, {
+        if (Number(saved?.founder_notified || 0) === 0) {
+          const sentFounder = await sendSfEmail(env, {
             to: "hello@statementflow.win",
-            subject: `💰 [StatementFlow Paid] $${amountUsd} (${plan.toUpperCase()}) from ${email}`,
+            subject: `💰 [StatementFlow Paid] $${amountUsd} (${plan.toUpperCase()}) from ${effectiveEmail || "customer"}`,
             text: [
               `New Paid Order on StatementFlow AI!`,
-              `- Order ID: ${orderId}${orderRef ? ` (${orderRef})` : ""}`,
-              `- Customer: ${email}`,
+              `- Order ID: ${canonicalOrderId}${orderRef ? ` (${orderRef})` : ""}`,
+              `- Customer: ${effectiveEmail || "(pending email)"}`,
               `- Plan: ${plan.toUpperCase()} ($${amountUsd})`,
-              `- Activation Link Sent: ${activateUrl}`,
+              `- Activation Link: ${activateUrl}`,
             ].join("\n"),
           });
-        }
+          if (sentFounder) {
+            await env.DB.prepare(`UPDATE sf_orders SET founder_notified = 1 WHERE order_id = ?1`)
+              .bind(canonicalOrderId)
+              .run();
+          }
         }
       }
     } catch {
-      // 不阻断 Webhook 200 返回
+      return jsonResponse({ error: "Temporary database error while recording webhook" }, 500);
     }
   }
 
   return jsonResponse({
     received: true,
     provider: "creem",
-    eventType: event.eventType || "unknown",
+    eventType: evt,
   });
 }
 
@@ -569,11 +675,21 @@ async function handleRestoreLicense(request: Request, env: Env): Promise<Respons
       });
     }
 
-    // 路径 2：凭购买邮箱 + Creem 订单号/结账单号（至少 6 位）即时双因子核验解锁
-    if (email && email.includes("@") && orderRef.length >= 6) {
+    // 路径 2：凭购买邮箱 + 完整 Creem 订单号/结账单号/授权码精确双因子核验解锁（严禁子串模糊匹配防前缀枚举）
+    if (email && email.includes("@") && orderRef.length > 0) {
+      if (orderRef.length < 12) {
+        return jsonResponse(
+          {
+            ok: false,
+            restored: false,
+            error: "Please enter the full Order/Checkout ID (or leave it blank to receive an instant email activation link).",
+          },
+          400
+        );
+      }
       const rows = await env.DB.prepare(
         `SELECT order_id, order_ref, customer_email, plan, restore_token FROM sf_orders
-         WHERE customer_email = ?1 AND status = 'completed'`
+         WHERE LOWER(customer_email) = ?1 AND status = 'completed'`
       )
         .bind(email)
         .all<{
@@ -586,8 +702,8 @@ async function handleRestoreLicense(request: Request, env: Env): Promise<Respons
       const needle = orderRef.toLowerCase();
       const matched = (rows.results || []).find(
         (r) =>
-          r.order_id.toLowerCase().includes(needle) ||
-          (r.order_ref && r.order_ref.toLowerCase().includes(needle)) ||
+          r.order_id.toLowerCase() === needle ||
+          (r.order_ref && r.order_ref.toLowerCase() === needle) ||
           (r.restore_token && r.restore_token.toLowerCase() === needle)
       );
       if (!matched) {
@@ -595,7 +711,7 @@ async function handleRestoreLicense(request: Request, env: Env): Promise<Respons
           {
             ok: false,
             restored: false,
-            error: "No matching active order found for this email and order reference.",
+            error: "No matching active order found for this email and full order ID.",
           },
           404
         );
@@ -666,6 +782,10 @@ async function handleRestoreLicense(request: Request, env: Env): Promise<Respons
 }
 
 async function handleVerifyCheckout(request: Request, env: Env): Promise<Response> {
+  const ip = getClientIp(request);
+  if (!checkEdgeRateLimit(ip, "verify_checkout", 20, 60_000)) {
+    return jsonResponse({ verified: false, error: "Too many verification requests. Please wait a moment." }, 429);
+  }
   const checkoutId = new URL(request.url).searchParams.get("checkout_id")?.trim();
   const creemApiKey = env.CREEM_API_KEY?.trim();
 
@@ -677,9 +797,11 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
     type CreemVerifyPayload = {
       id?: string;
       status?: string;
-      customer?: { email?: string };
-      order?: { id?: string; amount?: number };
-      metadata?: { plan?: string };
+      customer?: { email?: string } | string;
+      customer_email?: string;
+      order?: { id?: string; amount?: number } | string;
+      amount?: number;
+      metadata?: { plan?: string; email?: string };
     };
     const fetchOnce = async (): Promise<CreemVerifyPayload | null> => {
       const r = await fetch(
@@ -700,12 +822,25 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
     }
     const verified = data.status === "completed";
     const plan = data.metadata?.plan === "business" ? "business" : "pro";
-    const email = (data.customer?.email || "").trim().toLowerCase();
-    const orderRef = data.order?.id || "";
-    const amountUsd = Math.round(
-      (data.order?.amount || (plan === "business" ? 19900 : 2900)) / 100
-    );
+    const email = String(
+      (typeof data.customer === "object" ? data.customer?.email : "") ||
+        data.customer_email ||
+        data.metadata?.email ||
+        ""
+    )
+      .trim()
+      .toLowerCase();
+    const orderRef =
+      typeof data.order === "string"
+        ? data.order.trim()
+        : String(data.order?.id || "").trim();
+    const rawCents =
+      (typeof data.order === "object" ? data.order?.amount : undefined) ||
+      data.amount ||
+      (plan === "business" ? 19900 : 2900);
+    const amountUsd = Math.round(rawCents / 100);
     let restoreToken = "";
+    let alreadyClaimed = false;
     if (verified && env.DB && data.id) {
       await ensureSfTables(env);
       try {
@@ -718,29 +853,38 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
              order_ref = COALESCE(NULLIF(?2, ''), sf_orders.order_ref),
              customer_email = COALESCE(NULLIF(?3, ''), sf_orders.customer_email)`
         )
-          .bind(
-            data.id,
-            orderRef,
-            email,
-            plan,
-            amountUsd,
-            freshToken
-          )
+          .bind(data.id, orderRef, email, plan, amountUsd, freshToken)
           .run();
         const saved = await env.DB.prepare(
-          `SELECT restore_token, email_sent FROM sf_orders WHERE order_id = ?1 LIMIT 1`
+          `SELECT restore_token, email_sent, founder_notified, claimed_at, created_at FROM sf_orders WHERE order_id = ?1 LIMIT 1`
         )
           .bind(data.id)
-          .first<{ restore_token: string; email_sent?: number }>();
-        restoreToken = saved?.restore_token || freshToken;
+          .first<{
+            restore_token: string;
+            email_sent?: number;
+            founder_notified?: number;
+            claimed_at?: string;
+            created_at?: string;
+          }>();
+        const actualToken = saved?.restore_token || freshToken;
+        const claimedAtStr = saved?.claimed_at || "";
+        const withinFreshWindow =
+          !claimedAtStr ||
+          Date.now() - new Date(claimedAtStr.replace(" ", "T") + "Z").getTime() < 15 * 60_000;
+        if (withinFreshWindow) {
+          restoreToken = actualToken;
+          if (!claimedAtStr) {
+            await env.DB.prepare(`UPDATE sf_orders SET claimed_at = datetime('now') WHERE order_id = ?1`)
+              .bind(data.id)
+              .run();
+          }
+        } else {
+          alreadyClaimed = true;
+        }
 
-        // 结账成功回跳即时补发跨设备激活邮件（与 Webhook 共享 email_sent 幂等锁，杜绝漏发或双发）
+        const activateUrl = `https://statementflow.win/?restore_token=${encodeURIComponent(actualToken)}`;
         if (email && (!saved || Number(saved.email_sent || 0) === 0)) {
-          await env.DB.prepare(`UPDATE sf_orders SET email_sent = 1 WHERE order_id = ?1`)
-            .bind(data.id)
-            .run();
-          const activateUrl = `https://statementflow.win/?restore_token=${encodeURIComponent(restoreToken)}`;
-          await sendSfEmail(env, {
+          const sentCustomer = await sendSfEmail(env, {
             to: email,
             subject:
               plan === "business"
@@ -758,6 +902,30 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
               "— StatementFlow Financial Engineering",
             ].join("\n"),
           });
+          if (sentCustomer) {
+            await env.DB.prepare(`UPDATE sf_orders SET email_sent = 1 WHERE order_id = ?1`)
+              .bind(data.id)
+              .run();
+          }
+        }
+
+        if (!saved || Number(saved.founder_notified || 0) === 0) {
+          const sentFounder = await sendSfEmail(env, {
+            to: "hello@statementflow.win",
+            subject: `💰 [StatementFlow Paid] $${amountUsd} (${plan.toUpperCase()}) from ${email || "customer"}`,
+            text: [
+              `New Paid Order on StatementFlow AI!`,
+              `- Order ID: ${data.id}${orderRef ? ` (${orderRef})` : ""}`,
+              `- Customer: ${email || "(pending email)"}`,
+              `- Plan: ${plan.toUpperCase()} ($${amountUsd})`,
+              `- Activation Link: ${activateUrl}`,
+            ].join("\n"),
+          });
+          if (sentFounder) {
+            await env.DB.prepare(`UPDATE sf_orders SET founder_notified = 1 WHERE order_id = ?1`)
+              .bind(data.id)
+              .run();
+          }
         }
       } catch {
         // ignore
@@ -768,8 +936,9 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
       status: data.status || "unknown",
       checkoutId: data.id,
       plan,
-      email,
+      email: restoreToken ? email : "",
       restoreToken,
+      alreadyClaimed,
     });
   } catch {
     return jsonResponse({ verified: false, error: "Verification failed" }, 500);
@@ -813,21 +982,22 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
     const licenseToken = (body.licenseToken || "").trim();
 
     let hasPaidLicense = false;
-    if (licenseToken.length >= 10 && env.DB) {
+    if (licenseToken.length >= 14 && env.DB) {
       await ensureSfTables(env);
       const paidRow = await env.DB.prepare(
-        `SELECT order_id FROM sf_orders WHERE (restore_token = ?1 OR order_id = ?1) AND status = 'completed' LIMIT 1`
+        `SELECT order_id FROM sf_orders WHERE restore_token = ?1 AND status = 'completed' LIMIT 1`
       )
         .bind(licenseToken)
         .first<{ order_id: string }>();
       hasPaidLicense = Boolean(paidRow);
     }
 
-    // 使用平台托管大模型密钥时，校验同源 Origin / Referer 防外部脚本直接白嫖
+    // 使用平台托管大模型密钥时，严格校验同源 Hostname 与客户端标识，阻断伪造域名（如 statementflow.win.evil.com）与无头裸脚本盗刷
     if (!userProvidedKey) {
-      const originHeader = (request.headers.get("origin") || request.headers.get("referer") || "").toLowerCase();
-      if (originHeader && !originHeader.includes("statementflow.win") && !originHeader.includes("localhost")) {
-        return jsonResponse({ error: "Cross-origin API usage is not permitted." }, 403);
+      const originHeader = request.headers.get("origin") || request.headers.get("referer") || "";
+      const clientBadge = request.headers.get("x-sf-client") || "";
+      if (!originHeader || !isAllowedSfOriginOrReferer(originHeader) || clientBadge !== "workbench") {
+        return jsonResponse({ error: "Direct or cross-origin API usage is not permitted." }, 403);
       }
     }
 
@@ -1133,31 +1303,39 @@ async function handleEvent(request: Request, env: Env): Promise<Response> {
 }
 
 async function handleStats(request: Request, env: Env): Promise<Response> {
+  const ip = getClientIp(request);
+  if (!checkEdgeRateLimit(ip, "admin_stats", 15, 60_000)) {
+    return jsonResponse({ error: "Too many requests" }, 429);
+  }
   const adminKey = env.ADMIN_API_KEY?.trim() || "";
   const provided = (request.headers.get("x-admin-key") || "").trim();
-  if (!adminKey || !provided || !timingSafeEqualHex(provided, adminKey)) {
+  if (!adminKey || !provided || !(await timingSafeEqualSecret(provided, adminKey))) {
     return jsonResponse({ error: "Unauthorized" }, 401);
   }
   if (!env.DB) return jsonResponse({ ok: false, error: "DB not bound" }, 503);
-  await ensureSfTables(env);
-  const [funnelRes, ordersRes, leadsRes] = await Promise.all([
-    env.DB.prepare(
-      `SELECT event, COUNT(*) AS cnt FROM sf_funnel_events GROUP BY event ORDER BY cnt DESC`
-    ).all<{ event: string; cnt: number }>(),
-    env.DB.prepare(
-      `SELECT plan, COUNT(*) AS orders, COALESCE(SUM(amount_usd), 0) AS revenue_usd
-       FROM sf_orders WHERE status = 'completed' GROUP BY plan`
-    ).all<{ plan: string; orders: number; revenue_usd: number }>(),
-    env.DB.prepare(
-      `SELECT id, work_email, firm_or_bank, country, created_at FROM sf_leads ORDER BY id DESC LIMIT 25`
-    ).all<{ id: number; work_email: string; firm_or_bank: string; country: string; created_at: string }>(),
-  ]);
-  return jsonResponse({
-    ok: true,
-    funnel: funnelRes.results || [],
-    orders: ordersRes.results || [],
-    leads: leadsRes.results || [],
-  });
+  try {
+    await ensureSfTables(env);
+    const [funnelRes, ordersRes, leadsRes] = await Promise.all([
+      env.DB.prepare(
+        `SELECT event, COUNT(*) AS cnt FROM sf_funnel_events GROUP BY event ORDER BY cnt DESC`
+      ).all<{ event: string; cnt: number }>(),
+      env.DB.prepare(
+        `SELECT plan, COUNT(*) AS orders, COALESCE(SUM(amount_usd), 0) AS revenue_usd
+         FROM sf_orders WHERE status = 'completed' GROUP BY plan`
+      ).all<{ plan: string; orders: number; revenue_usd: number }>(),
+      env.DB.prepare(
+        `SELECT id, work_email, firm_or_bank, country, created_at FROM sf_leads ORDER BY id DESC LIMIT 25`
+      ).all<{ id: number; work_email: string; firm_or_bank: string; country: string; created_at: string }>(),
+    ]);
+    return jsonResponse({
+      ok: true,
+      funnel: funnelRes.results || [],
+      orders: ordersRes.results || [],
+      leads: leadsRes.results || [],
+    });
+  } catch {
+    return jsonResponse({ ok: false, error: "Stats query failed" }, 500);
+  }
 }
 
 const worker = {
@@ -1258,21 +1436,30 @@ const worker = {
         return jsonResponse({ ok: false, error: "Too many submissions." }, 429);
       }
       try {
-        const body = (await request.json()) as { email?: string; bankName?: string; notes?: string };
+        const body = (await request.json()) as {
+          email?: string;
+          restoreToken?: string;
+          bankName?: string;
+          notes?: string;
+        };
         const email = (body.email || "").trim().toLowerCase().slice(0, 120);
+        const restoreToken = (body.restoreToken || "").trim().slice(0, 80);
         const bankName = (body.bankName || "").trim().slice(0, 120);
         const notes = (body.notes || "").trim().slice(0, 800);
-        if (!email || !email.includes("@")) {
-          return jsonResponse({ ok: false, error: "Please provide your Firm Pilot checkout email." }, 400);
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          return jsonResponse({ ok: false, error: "Please enter a valid contact email for 24h preset delivery." }, 400);
         }
         if (!bankName) return jsonResponse({ ok: false, error: "Please enter bank/institution name." }, 400);
         if (!env.DB) return jsonResponse({ ok: false, error: "Database unavailable." }, 503);
         await ensureSfTables(env);
         const paidPilot = await env.DB.prepare(
-          `SELECT order_id FROM sf_orders WHERE LOWER(customer_email) = ?1 AND plan = 'business' AND status = 'completed' LIMIT 1`
+          `SELECT order_id, customer_email FROM sf_orders
+           WHERE ((?1 != '' AND restore_token = ?1) OR LOWER(customer_email) = ?2)
+             AND plan = 'business' AND status = 'completed'
+           LIMIT 1`
         )
-          .bind(email)
-          .first<{ order_id: string }>();
+          .bind(restoreToken, email)
+          .first<{ order_id: string; customer_email: string }>();
         if (!paidPilot) {
           return jsonResponse(
             { ok: false, error: "Active $199 Firm Pilot license required for custom bank tuning." },
@@ -1287,7 +1474,7 @@ const worker = {
         await sendSfEmail(env, {
           to: "hello@statementflow.win",
           subject: `🏦 [Firm Pilot Custom Bank Request] ${bankName} (${email})`,
-          text: `Order: ${paidPilot.order_id}\nCustomer: ${email}\nBank / Institution: ${bankName}\nNotes / Column Preset Request:\n${notes}`,
+          text: `Order: ${paidPilot.order_id}\nContact Email: ${email}\nBank / Institution: ${bankName}\nNotes / Column Preset Request:\n${notes}`,
         });
         return jsonResponse({ ok: true });
       } catch {
@@ -1321,6 +1508,14 @@ const worker = {
 
     if (pathname === "/api/webhook" && request.method === "POST") {
       return handleWebhook(request, env);
+    }
+
+    if (pathname === "/api/health" && request.method === "HEAD") {
+      return new Response(null, { status: 200, headers: SECURITY_HEADERS });
+    }
+
+    if (pathname.startsWith("/api/")) {
+      return jsonResponse({ error: "API endpoint not found" }, 404);
     }
 
     const assetRes = await env.ASSETS.fetch(request);

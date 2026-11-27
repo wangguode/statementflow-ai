@@ -8,6 +8,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/terms",
   },
+  openGraph: {
+    title: "Terms of Use & Refund Policy | StatementFlow AI",
+    description:
+      "Terms of service, $29 Pro one-time license, $199 Firm Pilot, and 14-day refund policy for StatementFlow AI.",
+    url: "/terms",
+    type: "website",
+  },
   robots: { index: true, follow: true },
 };
 

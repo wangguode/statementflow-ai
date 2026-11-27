@@ -1,15 +1,21 @@
 import * as XLSX from "xlsx";
 import type { ExtractionResult } from "@/types/statement";
 
+function isPureSignedNumber(value: string): boolean {
+  return /^[+-]?\d+(\.\d+)?$/.test(value.trim());
+}
+
 function sanitizeFormulaCell(value: string): string {
+  if (isPureSignedNumber(value)) return value;
   return /^[=+\-@]/.test(value) ? `'${value}` : value;
 }
 
 function escapeCsvCell(value: string | number | undefined): string {
   if (value === undefined || value === null) return "";
+  if (typeof value === "number") return Number.isFinite(value) ? String(value) : "";
   const str = String(value);
-  // 防止 CSV 公式注入（=, +, -, @ 开头加单引号转义）
-  const safeStr = /^[=+\-@]/.test(str) ? `'${str}` : str;
+  // 防止非数值文本触发 CSV 公式注入（保留合法负数金额如 -1842.60 不加单引号，确保 QuickBooks / Xero 原生识别）
+  const safeStr = !isPureSignedNumber(str) && /^[=+\-@]/.test(str) ? `'${str}` : str;
   if (/[",\n\r]/.test(safeStr)) {
     return `"${safeStr.replace(/"/g, '""')}"`;
   }
@@ -79,7 +85,7 @@ export function buildQuickBooksCsvContent(data: ExtractionResult): string {
         : tx.description;
     return [qboDate, desc, signed.toFixed(2)].map(escapeCsvCell).join(",");
   });
-  return [headers.join(","), ...rows].join("\r\n");
+  return "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
 }
 
 /**
@@ -99,7 +105,7 @@ export function buildXeroCsvContent(data: ExtractionResult): string {
       .map(escapeCsvCell)
       .join(",");
   });
-  return [headers.join(","), ...rows].join("\r\n");
+  return "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
 }
 
 /**

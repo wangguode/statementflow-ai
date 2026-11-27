@@ -38,11 +38,6 @@ const PROVIDER_PRESETS = [
     baseUrl: "https://maas.qianwenaiapi.com/compatible-mode/v1",
     model: "qwen-plus",
   },
-  {
-    label: "Local Ollama",
-    baseUrl: "http://localhost:11434/v1",
-    model: "qwen2.5:7b",
-  },
 ];
 
 export function AISettingsModal({
@@ -52,6 +47,7 @@ export function AISettingsModal({
   onSave,
 }: AISettingsModalProps) {
   const [draft, setDraft] = useState<AIConfigSettings>(config);
+  const [validationErr, setValidationErr] = useState("");
 
   if (!open) return null;
 
@@ -211,6 +207,11 @@ export function AISettingsModal({
               Protected by 30s timeout guards, strict JSON schema validation, and deterministic cent-level reconciliation.
             </span>
           </div>
+          {validationErr && (
+            <p className="rounded-xl bg-[#c92a2a]/10 px-3 py-2 text-xs font-medium text-[#c92a2a]">
+              {validationErr}
+            </p>
+          )}
         </div>
 
         <div className="mt-6 flex items-center justify-end gap-2.5">
@@ -224,6 +225,17 @@ export function AISettingsModal({
           <button
             type="button"
             onClick={() => {
+              if (draft.provider === "openai_compatible") {
+                if (!draft.apiKey.trim()) {
+                  setValidationErr("Please enter your API Secret Key or switch back to Managed Cloud + Local.");
+                  return;
+                }
+                if (!/^https:\/\/.+/i.test(draft.baseUrl.trim())) {
+                  setValidationErr("Custom API Base URL must start with https://.");
+                  return;
+                }
+              }
+              setValidationErr("");
               onSave(draft);
               onClose();
             }}
@@ -243,7 +255,7 @@ interface CheckoutModalProps {
   gateway: "creem" | "stripe";
   unlockReason?: string;
   onClose: () => void;
-  onSuccessActivate: (plan: Exclude<PlanTier, "free">, email: string, restoreToken?: string) => void;
+  onSuccessActivate?: (plan: Exclude<PlanTier, "free">, email: string, restoreToken?: string) => void;
   onOpenRestore?: () => void;
 }
 
@@ -253,7 +265,6 @@ export function CheckoutModal({
   gateway,
   unlockReason,
   onClose,
-  onSuccessActivate,
   onOpenRestore,
 }: CheckoutModalProps) {
   const [email, setEmail] = useState("");
@@ -290,9 +301,10 @@ export function CheckoutModal({
       }
 
       const data = (await res.json()) as {
-        mode: "live_redirect" | "concierge_invoice" | "sandbox";
+        mode?: "live_redirect" | "concierge_invoice";
         checkoutUrl?: string;
         contactEmail?: string;
+        error?: string;
       };
 
       if (data.mode === "live_redirect" && data.checkoutUrl) {
@@ -315,13 +327,7 @@ export function CheckoutModal({
         return;
       }
 
-      if (data.mode === "sandbox") {
-        onSuccessActivate(plan, email);
-        onClose();
-        return;
-      }
-
-      throw new Error("Checkout session unavailable");
+      throw new Error(data.error || "Checkout session unavailable");
     } catch {
       clearTimeout(timer);
       setErrorMsg("Unable to initialize checkout right now. Please retry or email hello@statementflow.win.");

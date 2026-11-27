@@ -295,10 +295,14 @@ function parseAmountValue(raw: string): { value: number | null; wasDirty: boolea
 }
 
 function csvEscape(value: string): string {
-  if (/[",\r\n]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
+  const safe =
+    !/^[+-]?\d+(\.\d+)?$/.test(value.trim()) && /^[=+\-@]/.test(value)
+      ? `'${value}`
+      : value;
+  if (/[",\r\n]/.test(safe)) {
+    return `"${safe.replace(/"/g, '""')}"`;
   }
-  return value;
+  return safe;
 }
 
 /**
@@ -532,7 +536,7 @@ export function fixBankCsv(rawCsv: string, options: FixerOptions): FixerResult {
   return {
     rows,
     diagnostics,
-    outputCsv: outputLines.join("\r\n"),
+    outputCsv: "\uFEFF" + outputLines.join("\r\n"),
   };
 }
 

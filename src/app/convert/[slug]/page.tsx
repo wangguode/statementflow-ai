@@ -43,6 +43,14 @@ export async function generateMetadata({
       description,
       type: "website",
       url: `/convert/${bank.slug}`,
+      images: [
+        {
+          url: "/assets/blythe-house-ledger-room-1924.jpg",
+          width: 1200,
+          height: 630,
+          alt: `${bank.institutionName} Statement Converter — StatementFlow AI`,
+        },
+      ],
     },
   };
 }
@@ -64,11 +72,26 @@ export default async function BankConverterLandingPage({ params }: PageProps) {
       name: `StatementFlow ${bank.institutionName} to ${bank.targetFormat} Converter`,
       applicationCategory: "FinanceApplication",
       operatingSystem: "Web",
-      offers: {
-        "@type": "Offer",
-        price: "0.00",
-        priceCurrency: bank.defaultCurrency,
-      },
+      offers: [
+        {
+          "@type": "Offer",
+          name: "Free Browser-Local Preview",
+          price: "0.00",
+          priceCurrency: "USD",
+        },
+        {
+          "@type": "Offer",
+          name: "StatementFlow Pro Lifetime Unlock",
+          price: "29.00",
+          priceCurrency: "USD",
+        },
+        {
+          "@type": "Offer",
+          name: "Bookkeeping Firm Pilot (Unlimited Seats)",
+          price: "199.00",
+          priceCurrency: "USD",
+        },
+      ],
       description: bank.heroSubheadline,
     },
     {
@@ -379,6 +402,17 @@ export default async function BankConverterLandingPage({ params }: PageProps) {
               ))}
             </div>
           </details>
+
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-6 text-xs text-[#8b92a5]">
+            <span>StatementFlow AI · Zero-Retention Bank Statement Reconciliation</span>
+            <div className="flex flex-wrap items-center gap-5">
+              <Link href="/" className="hover:text-white">Live Studio</Link>
+              <Link href="/tools/quickbooks-csv-fixer" className="hover:text-white">CSV Fixer</Link>
+              <Link href="/tools/ofx-qbo-to-csv" className="hover:text-white">OFX Converter</Link>
+              <Link href="/privacy" className="hover:text-white">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-white">Terms of Use</Link>
+            </div>
+          </div>
 
           <div className="mt-10 flex flex-wrap items-center justify-between gap-4 text-sm text-[#8b92a5]">
             <span>

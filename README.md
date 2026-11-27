@@ -22,7 +22,7 @@
 >   - [QuickBooks & Xero CSV Import Fixer](https://statementflow.win/tools/quickbooks-csv-fixer) (dates, split Debit/Credit merge, currency/brackets cleanup, sign flip)
 >   - [OFX / QFX / QBO to CSV Converter](https://statementflow.win/tools/ofx-qbo-to-csv) (OFX 1.x SGML & 2.x XML, fixes Error -16802)
 > - 🌍 **105+ Bank & Accounting Formats**: Dedicated converters for US, UK, Canada, Australia/NZ, Europe & APAC banks.
-> - 💳 **Transparent Pricing**: Free preview + `$9` one-time Pro lifetime unlock (via Creem.io) · `$199` 14-day Bookkeeping Firm Pilot · `$999` Air-Gapped Self-Hosted Docker.
+> - 💳 **Transparent Pricing**: Free preview + `$29` one-time Pro lifetime unlock (via Creem.io) · `$199` 14-day Bookkeeping Firm Pilot · `$999` Air-Gapped Self-Hosted Docker.
 
 ---
 
@@ -60,7 +60,7 @@ Feeding raw financial documents directly into a generic LLM wrapper causes **thr
 - **Formula-Injection Safe Exports** (`src/lib/export-utils.ts`):
   - Neutralizes `=`, `+`, `-`, `@` prefixes before generating native multi-sheet OOXML `.xlsx`, QuickBooks 3-col CSV, Xero 5-col CSV, or UTF-8 BOM `.csv` exports.
 - **Commercial Checkout & Timing-Safe Webhooks** (`worker.ts`):
-  - Integrated **Creem.io** (Global Merchant of Record — `$9` one-time Pro / `$199` Firm Pilot) with `timingSafeEqualHex` HMAC-SHA256 webhook verification.
+  - Integrated **Creem.io** (Global Merchant of Record — `$29` one-time Pro / `$199` Firm Pilot) with `timingSafeEqualHex` HMAC-SHA256 webhook verification.
 
 ---
 

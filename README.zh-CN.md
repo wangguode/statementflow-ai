@@ -50,8 +50,8 @@
   - **绝不依赖 LLM 做加减法**。所有汇总金额均由 TypeScript 确定性计算，严格校验会计恒等式：`期初余额 (Opening Balance) + 总贷方 (Total Credits) - 总借方 (Total Debits) = 期末余额 (Closing Balance)`，精确到 `$0.01` 美分级差额告警。
 - **防公式注入安全导出**（`src/lib/export-utils.ts`）：
   - 在生成多工作表 SpreadsheetML `.xls` 或 UTF-8 BOM `.csv` 前，自动对 `=`、`+`、`-`、`@` 前缀进行安全转义，阻断电子表格公式注入攻击。
-- **海外合规商业化闭环**（`src/app/api/checkout/route.ts` & `src/app/api/webhook/route.ts`）：
-  - 内置 **Lemon Squeezy**（Merchant of Record 全球税务代缴）与 **Stripe Checkout** 双通道，并使用 `crypto.timingSafeEqual` 实现抗时序攻击的 HMAC-SHA256 Webhook 签名验真。
+- **海外合规商业化闭环**（`worker.ts`）：
+  - 内置 **Creem.io**（Merchant of Record 全球税务代缴 — `$29` 终身买断 Pro / `$199` 记账所无限席位试点），并使用 `timingSafeEqualHex` 实现抗时序攻击的 HMAC-SHA256 Webhook 签名验真。
 
 ---
 

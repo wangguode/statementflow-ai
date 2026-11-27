@@ -19,8 +19,8 @@
 - Accounting Software: QuickBooks Online, Xero, Wave, Sage, NetSuite, FreshBooks, Zoho Books, Actual Budget, Firefly III.
 
 ## Pricing & Contact
-- Free Preview + Unlimited Free CSV/OFX Utilities
-- Pro Lifetime Unlock: $9 one-time (no recurring subscription) via Creem.io
+- Free Preview + Browser-Local CSV/OFX Utilities (up to 20 rows per free export)
+- Pro Lifetime Unlock: $29 one-time (no recurring subscription) via Creem.io
 - Bookkeeping Firm Pilot (14-Day, Unlimited Seats): $199 one-time
 - Self-Hosted Air-Gapped Docker: $999
 - Contact: hello@statementflow.win

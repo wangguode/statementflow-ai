@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Terms of Use & Refund Policy | StatementFlow AI",
   description:
-    "Terms of service, $9 Pro one-time license, $199 Firm Pilot, and 14-day refund policy for StatementFlow AI.",
+    "Terms of service, $29 Pro one-time license, $199 Firm Pilot, and 14-day refund policy for StatementFlow AI.",
   alternates: {
     canonical: "/terms",
   },
@@ -23,7 +23,7 @@ export default function TermsPage() {
             Terms of Use &amp; Refund Policy
           </h1>
           <p className="text-xs font-mono text-[#6b6860]">
-            Effective Date: November 23, 2026 · Operator: Wang Guo (@wangguode) ·
+            Effective Date: November 27, 2026 · Operator: Wang Guo (@wangguode) ·
             https://statementflow.win
           </p>
         </div>
@@ -51,11 +51,12 @@ export default function TermsPage() {
           </p>
           <ul className="list-disc pl-5 space-y-1">
             <li>
-              <strong>Free Tier &amp; Free Browser Tools</strong>: Free preview runs plus
-              unlimited local use of the QuickBooks CSV Fixer and OFX/QBO to CSV tools.
+              <strong>Free Tier &amp; Browser-Local Utilities</strong>: Free preview runs plus
+              browser-local QuickBooks CSV Fixer and OFX/QBO to CSV tools (up to 20 rows per
+              free export).
             </li>
             <li>
-              <strong>Pro Lifetime Unlock ($9 one-time)</strong>: Unlimited batch PDF
+              <strong>Pro Lifetime Unlock ($29 one-time)</strong>: Unlimited batch PDF
               extraction, Vision OCR, native .xlsx, QuickBooks 3-col, and Xero 5-col
               exports with no recurring subscription.
             </li>
@@ -69,7 +70,7 @@ export default function TermsPage() {
             <a href="mailto:hello@statementflow.win" className="text-[#14532d] underline">
               hello@statementflow.win
             </a>{" "}
-            within 7 days of purchase with your order ID for a full refund or free
+            within 14 days of purchase with your order ID for a 100% full refund or free
             custom bank template tuning.
           </p>
         </section>

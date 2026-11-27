@@ -22,6 +22,38 @@ export default function CsvFixerClient() {
   const [deduplicateRows, setDeduplicateRows] = useState<boolean>(true);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
+  const [upgradeNotice, setUpgradeNotice] = useState<string>("");
+  const [openingCheckout, setOpeningCheckout] = useState<boolean>(false);
+  const [isProUnlocked] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const saved = JSON.parse(window.localStorage.getItem("statementflow_billing_v1") || "{}");
+      return saved?.plan === "pro" || saved?.plan === "business";
+    } catch {
+      return false;
+    }
+  });
+
+  const handleQuickProUpgrade = async () => {
+    setOpeningCheckout(true);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: "pro", gateway: "creem" }),
+      });
+      const data = (await res.json()) as { checkoutUrl?: string };
+      if (res.ok && data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+    } catch {
+      // fallback
+    } finally {
+      setOpeningCheckout(false);
+    }
+    window.location.href = "/#pricing";
+  };
 
   const options: FixerOptions = useMemo(
     () => ({
@@ -61,21 +93,41 @@ export default function CsvFixerClient() {
     if (file) loadCsvFile(file);
   };
 
+  const isOverFreeCap =
+    !isProUnlocked && rawCsv !== SAMPLE_MESSY_BANK_CSV && result.rows.length > 20;
+  const effectiveCsvOutput = useMemo(() => {
+    if (!isOverFreeCap) return result.outputCsv;
+    const lines = result.outputCsv.split(/\r?\n/);
+    return lines.slice(0, 21).join("\r\n");
+  }, [result.outputCsv, isOverFreeCap]);
+
   const handleDownload = () => {
-    const blob = new Blob([result.outputCsv], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([effectiveCsvOutput], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     const base = fileName.replace(/\.[^.]+$/, "");
     const suffix = target === "quickbooks_3col" ? "quickbooks-clean" : "xero-clean";
     a.href = url;
-    a.download = `${base}-${suffix}.csv`;
+    a.download = isOverFreeCap
+      ? `${base}-${suffix}-20row-preview.csv`
+      : `${base}-${suffix}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    if (isOverFreeCap) {
+      setUpgradeNotice(
+        `Exported 20-row verified preview (${result.rows.length} total rows repaired above). Unlock unlimited CSV, OFX & PDF exports forever for $29 once.`
+      );
+    }
   };
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(result.outputCsv);
+    await navigator.clipboard.writeText(effectiveCsvOutput);
     setCopied(true);
+    if (isOverFreeCap) {
+      setUpgradeNotice(
+        `Copied 20-row verified preview (${result.rows.length} total rows repaired). Unlock full unlimited export for $29 once.`
+      );
+    }
     setTimeout(() => setCopied(false), 1800);
   };
 
@@ -107,7 +159,7 @@ export default function CsvFixerClient() {
               href="/"
               className="px-3.5 py-1.5 rounded-full bg-[#161615] text-white font-medium hover:bg-[#2c2b28] transition"
             >
-              PDF to Excel ($9 Pro)
+              PDF to Excel ($29 Pro)
             </Link>
           </nav>
         </div>
@@ -117,7 +169,7 @@ export default function CsvFixerClient() {
         {/* Hero */}
         <section className="space-y-4 max-w-3xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#e6efe9] text-[#14532d] text-xs font-mono font-medium">
-            <span>100% Browser-Local · Zero Server Upload · Unlimited Free</span>
+            <span>100% Browser-Local · Zero Server Upload · Instant Repair</span>
           </div>
           <h1 className="text-3xl sm:text-5xl font-light tracking-tight leading-tight">
             QuickBooks &amp; Xero CSV Import Fixer
@@ -358,10 +410,26 @@ export default function CsvFixerClient() {
                     disabled={rows.length === 0}
                     className="px-4 py-1.5 rounded-lg bg-[#14532d] text-white text-xs font-semibold hover:bg-[#114224] disabled:opacity-50 cursor-pointer"
                   >
-                    Download Clean CSV
+                    {isOverFreeCap ? "Download 20-Row Preview CSV" : "Download Clean CSV"}
                   </button>
                 </div>
               </div>
+              {(isOverFreeCap || upgradeNotice) && (
+                <div className="px-5 py-3 bg-amber-50 border-b border-amber-200 flex flex-wrap items-center justify-between gap-2 text-xs text-amber-950">
+                  <span>
+                    {upgradeNotice ||
+                      `Free mode exports up to 20 rows (${rows.length} rows repaired below). Unlock unlimited CSV, OFX & PDF exports forever for $29 once.`}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={openingCheckout}
+                    onClick={() => void handleQuickProUpgrade()}
+                    className="px-3 py-1.5 rounded-lg bg-[#14532d] text-white font-semibold hover:bg-[#114224] cursor-pointer shrink-0"
+                  >
+                    {openingCheckout ? "Opening..." : "Unlock Unlimited · $29 →"}
+                  </button>
+                </div>
+              )}
 
               <div className="overflow-x-auto max-h-[420px]">
                 <table className="w-full text-left text-xs">
@@ -405,7 +473,7 @@ export default function CsvFixerClient() {
                 </div>
                 <p className="text-xs text-[#3b4a40]">
                   Convert multi-page bank PDFs &amp; scanned statements directly into $0.00-reconciled
-                  QuickBooks &amp; Xero CSVs with StatementFlow AI — $9 one-time lifetime unlock.
+                  QuickBooks &amp; Xero CSVs with StatementFlow AI — $29 one-time lifetime unlock.
                 </p>
               </div>
               <Link

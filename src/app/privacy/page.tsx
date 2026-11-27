@@ -23,7 +23,7 @@ export default function PrivacyPage() {
             Privacy Policy &amp; Zero-Retention Architecture
           </h1>
           <p className="text-xs font-mono text-[#6b6860]">
-            Effective Date: November 23, 2026 · Operator: Wang Guo (@wangguode) ·
+            Effective Date: November 27, 2026 · Operator: Wang Guo (@wangguode) ·
             https://statementflow.win
           </p>
         </div>
@@ -53,6 +53,9 @@ export default function PrivacyPage() {
           <p>
             Accounting firms requiring strict air-gapped compliance may deploy our
             self-hosted Docker package so that zero bytes ever leave your internal VPC.
+            If you voluntarily attach a redacted sample statement on our Pre-Pilot 4h Proof
+            form, that text snippet is delivered solely to our engineering inbox to return
+            your custom QBO/Xero proof.
           </p>
         </section>
 
@@ -61,7 +64,7 @@ export default function PrivacyPage() {
             3. Billing &amp; Merchant of Record (Creem.io)
           </h2>
           <p>
-            All payments ($9 Pro lifetime unlock and $199 Firm Pilot) are securely
+            All payments ($29 Pro lifetime unlock and $199 Firm Pilot) are securely
             processed by our Merchant of Record, <strong>Creem.io</strong>. Credit card
             details, billing addresses, and VAT/sales tax invoices are handled directly
             by Creem.io. StatementFlow receives only order confirmation status and

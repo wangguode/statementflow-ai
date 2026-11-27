@@ -206,23 +206,23 @@ const FAQ_ITEMS = [
   },
   {
     q: "Do I need an OpenAI or DeepSeek API key to test the workbench?",
-    a: "No. Keyless Demo Mode runs out of the box with three verified multi-currency presets and a local regex heuristic parser for custom text or PDF uploads. You can attach your own OpenAI, DeepSeek, Qwen, or local Ollama endpoint at any time.",
+    a: "No. Local Zero-Upload Mode runs out of the box with three verified multi-currency presets and a deterministic browser-local parser for PDF/CSV uploads, plus 2 free Cloud AI runs. You can also attach your own HTTPS OpenAI, DeepSeek, or Qwen API key (BYOK) anytime.",
   },
   {
     q: "What happens if the LLM endpoint times out or returns malformed JSON?",
-    a: "Every API call is wrapped in a 22-second AbortController timeout with exponential backoff on HTTP 429 or 5xx responses. If the upstream model fails or omits fields, the backend transparently falls back to the deterministic local parser so your workflow never breaks.",
+    a: "Long multi-page PDFs are automatically split into line-safe chunks and wrapped in a 42-second AbortController timeout. If an upstream model stalls or omits fields, Local Zero-Upload mode parses standard statements offline in milliseconds.",
   },
   {
     q: "Will exported files open cleanly in Excel, QuickBooks, and Xero?",
-    a: "Yes. CSV exports include a UTF-8 BOM header and formula-injection escaping so international currency symbols (£, €, ¥) render properly in Microsoft Excel. The Excel (.xlsx) option outputs a zero-warning native multi-worksheet OOXML workbook containing both Transactions and Reconciliation tabs.",
+    a: "Yes. CSV exports include a UTF-8 BOM header and smart formula-injection escaping (preserving signed negative debits like -1842.60) so QuickBooks Online, Xero, and Excel import with zero errors. The Excel (.xlsx) option outputs a native multi-worksheet OOXML workbook.",
   },
   {
     q: "Are uploaded bank statements or API keys stored on a server?",
-    a: "Never. Statement buffers are parsed in-memory during the request lifecycle and discarded immediately. Your optional custom API key stays in your browser localStorage and is never written to server logs.",
+    a: "Never. In Local 0-Upload mode, 0 bytes leave your browser. In Cloud AI OCR mode, ephemeral buffers are parsed in-memory and discarded immediately. Your optional BYOK API key stays exclusively in browser localStorage.",
   },
   {
-    q: "How does global tax compliance work for Pro and Firm subscriptions?",
-    a: "StatementFlow supports both Creem.io (acting as Merchant of Record to handle EU VAT, UK VAT, and US state sales tax automatically) and Stripe Checkout with webhook signature verification.",
+    q: "How does global tax compliance work for Pro ($29) and Firm Pilot ($199)?",
+    a: "StatementFlow uses Creem.io as our authorized Merchant of Record to handle EU VAT, UK VAT, and US state sales tax automatically with compliant tax receipts and a 14-day 100% money-back guarantee.",
   },
 ];
 
@@ -524,9 +524,22 @@ export function StatementWorkbench() {
         setUploadedFileName(fname);
         setCustomRawText(parsed.text);
         setBatchFiles([{ name: fname, text: parsed.text }]);
-        setStatusNotice(
-          `Loaded ${fname} locally from bank converter — click "Run Extraction" to verify $0.00 balance.`
+        const instantLocal = parseDocumentHeuristically(
+          parsed.text,
+          fname,
+          "heuristic_fallback"
         );
+        if (instantLocal.transactions.length > 0) {
+          setExtraction(instantLocal);
+          setStatusNotice(
+            `Parsed ${instantLocal.transactions.length} rows locally from ${fname} in ${instantLocal.meta.latencyMs}ms (0 bytes uploaded).`
+          );
+        } else {
+          setEngineMode("cloud_ai");
+          setStatusNotice(
+            `Loaded ${fname} from bank converter — click "Run Extraction" to run Cloud AI Deep Parse.`
+          );
+        }
       }
     } catch {
       // ignore
@@ -586,57 +599,84 @@ export function StatementWorkbench() {
       };
     }
 
-    if (params.get("checkout") !== "success" || !checkoutId) return;
+    if (params.get("checkout") !== "success") return;
+    if (!checkoutId) {
+      setRestoreModalOpen(true);
+      setStatusNotice(
+        "Payment completed! Enter your checkout email in the Restore window to activate your license immediately."
+      );
+      return;
+    }
 
     let cancelled = false;
     (async () => {
-      try {
-        const res = await fetch(
-          `/api/verify-checkout?checkout_id=${encodeURIComponent(checkoutId)}`
-        );
-        if (!res.ok || cancelled) return;
-        const data = (await res.json()) as {
-          verified?: boolean;
-          plan?: string;
-          email?: string;
-          restoreToken?: string;
-        };
-        if (data.verified && !cancelled) {
-          const unlockedPlan: PlanTier =
-            data.plan === "business" ? "business" : "pro";
-          setBilling((prev) => {
-            const next: BillingState = {
-              ...prev,
-              plan: unlockedPlan,
-              creditsLimit: 999999,
-              customerEmail: data.email || prev.customerEmail,
-              restoreToken: data.restoreToken || prev.restoreToken,
-              activatedAt: new Date().toISOString(),
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        if (cancelled) return;
+        try {
+          const res = await fetch(
+            `/api/verify-checkout?checkout_id=${encodeURIComponent(checkoutId)}`
+          );
+          if (res.ok && !cancelled) {
+            const data = (await res.json()) as {
+              verified?: boolean;
+              plan?: string;
+              email?: string;
+              restoreToken?: string;
             };
-            localStorage.setItem(STORAGE_KEY_BILLING, JSON.stringify(next));
-            return next;
-          });
-          setStatusNotice(
-            `Payment verified via Creem.io — ${unlockedPlan.toUpperCase()} license is now active.`
-          );
-          try {
-            const w = window as Window & { lpConvert?: (ev: string, val: number) => void };
-            w.lpConvert?.("purchase", unlockedPlan === "business" ? 199 : 29);
-          } catch {
-            // ignore
+            if (data.verified && !cancelled) {
+              const unlockedPlan: PlanTier =
+                data.plan === "business" ? "business" : "pro";
+              setBilling((prev) => {
+                const next: BillingState = {
+                  ...prev,
+                  plan: unlockedPlan,
+                  creditsLimit: 999999,
+                  customerEmail: data.email || prev.customerEmail,
+                  restoreToken: data.restoreToken || prev.restoreToken,
+                  activatedAt: new Date().toISOString(),
+                };
+                localStorage.setItem(STORAGE_KEY_BILLING, JSON.stringify(next));
+                return next;
+              });
+              setStatusNotice(
+                `Payment verified via Creem.io — ${unlockedPlan.toUpperCase()} license is now active.`
+              );
+              try {
+                const w = window as Window & { lpConvert?: (ev: string, val: number) => void };
+                w.lpConvert?.("purchase", unlockedPlan === "business" ? 199 : 29);
+              } catch {
+                // ignore
+              }
+              for (const k of [
+                "checkout",
+                "checkout_id",
+                "order_id",
+                "customer_id",
+                "product_id",
+                "signature",
+                "plan",
+              ]) {
+                params.delete(k);
+              }
+              const nextSearch = params.toString();
+              window.history.replaceState(
+                {},
+                "",
+                nextSearch ? `${window.location.pathname}?${nextSearch}` : window.location.pathname
+              );
+              return;
+            }
           }
-          params.delete("checkout");
-          params.delete("checkout_id");
-          params.delete("plan");
-          const nextSearch = params.toString();
-          window.history.replaceState(
-            {},
-            "",
-            nextSearch ? `${window.location.pathname}?${nextSearch}` : window.location.pathname
-          );
+        } catch {
+          // retry
         }
-      } catch {
-        // 静默忽略瞬时网络异常
+        await new Promise((r) => setTimeout(r, 1800));
+      }
+      if (!cancelled) {
+        setRestoreModalOpen(true);
+        setStatusNotice(
+          "Payment is finalizing — enter your checkout email to receive or activate your license link."
+        );
       }
     })();
 
@@ -1022,6 +1062,7 @@ export function StatementWorkbench() {
           }))
         : null;
 
+    const runBatchId = `batch_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     setIsExtracting(true);
     setStatusNotice("");
     setExtractProgress(
@@ -1046,6 +1087,7 @@ export function StatementWorkbench() {
             sampleId,
             rawText: chunkText,
             fileName: chunkFileName,
+            batchId: runBatchId,
             pdfBase64: uploadedPdfBase64 || undefined,
             pageImages: pageImgs && pageImgs.length > 0 ? pageImgs : undefined,
             licenseToken: billing.restoreToken || undefined,
@@ -1208,6 +1250,29 @@ export function StatementWorkbench() {
     }
   }
 
+  // 行内编辑期初或期末余额并实时重算复式恒等式
+  function updateReconciliationBalance(
+    field: "openingBalance" | "closingBalance",
+    value: number
+  ): void {
+    setExtraction((prev) => {
+      const nextOpening =
+        field === "openingBalance" ? value : prev.reconciliation.openingBalance;
+      const nextClosing =
+        field === "closingBalance" ? value : prev.reconciliation.closingBalance;
+      return {
+        ...prev,
+        meta: { ...prev.meta, modeUsed: "heuristic_fallback" },
+        reconciliation: computeReconciliation(
+          nextOpening,
+          nextClosing,
+          prev.transactions,
+          prev.documentType
+        ),
+      };
+    });
+  }
+
   // 行内编辑单笔交易并实时重算财务恒等式
   function updateTransaction(
     id: string,
@@ -1225,6 +1290,7 @@ export function StatementWorkbench() {
       );
       return {
         ...prev,
+        meta: { ...prev.meta, modeUsed: "heuristic_fallback" },
         transactions: nextTx,
         reconciliation: nextRec,
       };
@@ -1234,7 +1300,7 @@ export function StatementWorkbench() {
   function handleAddTransactionRow() {
     const newItem: TransactionItem = {
       id: `manual-${Date.now()}`,
-      date: "2026-10-30", // taste-skill-ignore
+      date: new Date().toISOString().slice(0, 10),
       merchant: "Manual Adjustment Entry",
       description: "Reconciliation journal line item",
       category: "Office & Operations",
@@ -1246,6 +1312,7 @@ export function StatementWorkbench() {
       const nextTx = [newItem, ...prev.transactions];
       return {
         ...prev,
+        meta: { ...prev.meta, modeUsed: "heuristic_fallback" },
         transactions: nextTx,
         reconciliation: computeReconciliation(
           prev.reconciliation.openingBalance,
@@ -1293,8 +1360,9 @@ export function StatementWorkbench() {
     const chosenRec = useCredit ? recCredit : recDebit;
 
     setExtraction((prev) => {
-      const nextState = {
+      const nextState: ExtractionResult = {
         ...prev,
+        meta: { ...prev.meta, modeUsed: "heuristic_fallback" },
         transactions: [chosenEntry, ...prev.transactions],
         reconciliation: chosenRec,
       };
@@ -1309,6 +1377,7 @@ export function StatementWorkbench() {
       const nextTx = prev.transactions.filter((tx) => tx.id !== id);
       return {
         ...prev,
+        meta: { ...prev.meta, modeUsed: "heuristic_fallback" },
         transactions: nextTx,
         reconciliation: computeReconciliation(
           prev.reconciliation.openingBalance,
@@ -1335,8 +1404,10 @@ export function StatementWorkbench() {
     });
   }, [extraction.transactions, categoryFilter, searchQuery]);
 
-  // 导出处理函数：3 份内置样本 100% 开放全格式免费下载验格式；自有账单在界面 100% 透明展示平账明细 + 免费导出 8 行预览 CSV，全量生产级 QBO/Xero/多表 Excel 导出承接 $9 买断
-  const isCustomUnpaid = billing.plan === "free" && inputMode !== "sample";
+  // 导出处理函数：仅当处于原始未篡改的 3 份内置样本时开放全格式免费下载；自有账单或手动篡改后，界面 100% 透明展示平账明细 + 免费导出 5 行预览 CSV，全量导出承接 $29 终身买断
+  const isPristineSample =
+    inputMode === "sample" && extraction.meta?.modeUsed === "demo_sample";
+  const isCustomUnpaid = billing.plan === "free" && !isPristineSample;
 
   function openCustomExportPaywall(formatLabel: string, formatKey: string) {
     trackFunnelEvent("export_paywall_hit", {
@@ -1355,22 +1426,26 @@ export function StatementWorkbench() {
         .replace(/[^a-zA-Z0-9-]+/g, "_")
         .replace(/^_+|_+$/g, "") || "statement";
 
-    if (isCustomUnpaid && extraction.transactions.length > 8) {
+    if (isCustomUnpaid) {
+      if (extraction.transactions.length <= 5) {
+        openCustomExportPaywall("Full UTF-8 CSV", "csv_short");
+        return;
+      }
       trackFunnelEvent("export_csv_preview", {
         txCount: extraction.transactions.length,
       });
       const previewExtraction: ExtractionResult = {
         ...extraction,
-        transactions: extraction.transactions.slice(0, 8),
+        transactions: extraction.transactions.slice(0, 5),
       };
       const csv = buildCsvContent(previewExtraction);
       triggerBrowserDownload(
         csv,
-        `StatementFlow_8RowPreview_${safeName}.csv`,
+        `StatementFlow_5RowPreview_${safeName}.csv`,
         "text/csv;charset=utf-8;"
       );
       setStatusNotice(
-        `Exported 8-row CSV sample preview (${extraction.transactions.length} total rows verified above). Unlock full ${extraction.transactions.length}-row CSV, QuickBooks, Xero & Multi-Sheet Excel for $29 once.`
+        `Exported 5-row CSV preview (${extraction.transactions.length} total rows verified above). Unlock full ${extraction.transactions.length}-row CSV, QuickBooks, Xero & Multi-Sheet Excel for $29 once.`
       );
       return;
     }
@@ -1537,33 +1612,36 @@ export function StatementWorkbench() {
               </a>
             </nav>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {billing.plan === "free" && (
                 <button
                   type="button"
                   onClick={() => setRestoreModalOpen(true)}
-                  className={`sf-btn hidden min-h-9 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold md:inline-flex cursor-pointer ${
+                  aria-label="Restore License"
+                  className={`sf-btn inline-flex min-h-9 items-center gap-1.5 rounded-xl px-2.5 sm:px-3 py-1.5 text-xs font-semibold cursor-pointer ${
                     navDark
                       ? "border border-white/12 bg-white/6 text-[#f5f5f7] hover:bg-white/12"
                       : "border border-black/8 bg-white/80 text-[#111215] hover:bg-white"
                   }`}
                 >
                   <RotateCcw className="size-3.5 text-[#0066cc]" />
-                  <span>Restore License</span>
+                  <span className="hidden md:inline">Restore License</span>
+                  <span className="md:hidden">Restore</span>
                 </button>
               )}
 
               <button
                 type="button"
                 onClick={() => setAiModalOpen(true)}
-                className={`sf-btn hidden min-h-9 items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold sm:inline-flex cursor-pointer ${
+                aria-label="AI Engine Settings"
+                className={`sf-btn inline-flex min-h-9 items-center gap-1.5 rounded-xl px-2.5 sm:px-3 py-1.5 text-xs font-semibold cursor-pointer ${
                   navDark
                     ? "border border-white/12 bg-white/6 text-[#f5f5f7] hover:bg-white/12"
                     : "border border-black/8 bg-white/80 text-[#111215] hover:bg-white"
                 }`}
               >
                 <Settings2 className="size-3.5 text-[#0066cc]" />
-                <span>
+                <span className="hidden sm:inline">
                   {aiConfig.provider === "openai_compatible"
                     ? "BYOK Live"
                     : "AI Engine"}
@@ -1573,14 +1651,22 @@ export function StatementWorkbench() {
               <button
                 type="button"
                 disabled={directCheckoutLoading === "pro"}
-                onClick={() => void startDirectCheckout("pro", "topbar")}
-                className="sf-btn inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[#0066cc] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#0058b3] disabled:opacity-60 cursor-pointer"
+                onClick={() => {
+                  if (billing.plan !== "free") {
+                    document
+                      .getElementById("workbench")
+                      ?.scrollIntoView({ behavior: "smooth" });
+                    return;
+                  }
+                  void startDirectCheckout("pro", "topbar");
+                }}
+                className="sf-btn inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[#0066cc] px-3 sm:px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-[#0058b3] disabled:opacity-60 cursor-pointer"
               >
                 <span>
                   {billing.plan === "free"
                     ? directCheckoutLoading === "pro"
-                      ? "Opening Checkout..."
-                      : "Unlock Pro · $29"
+                      ? "Opening..."
+                      : "Pro · $29"
                     : `${billing.plan.toUpperCase()} Active`}
                 </span>
                 <ArrowUpRight className="size-3.5" />
@@ -1759,7 +1845,7 @@ export function StatementWorkbench() {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setInputMode("sample")}
+                  onClick={() => handleSelectSample(selectedSampleId)}
                   className={`sf-btn min-h-11 rounded-lg px-4 py-2 text-sm font-medium ${
                     inputMode === "sample"
                       ? "bg-[#0066cc] text-white"
@@ -1936,17 +2022,26 @@ export function StatementWorkbench() {
                       const bankName = String(fd.get("bankName") || "").trim();
                       if (!bankName) return;
                       const formEl = e.currentTarget;
-                      await fetch("/api/pilot-intake", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          email: billing.customerEmail || "",
-                          bankName,
-                          notes: "Submitted from Firm Pilot Workbench",
-                        }),
-                      }).catch(() => {});
-                      formEl.reset();
-                      setStatusNotice(`Priority bank tuning queued for "${bankName}" — we will email ${billing.customerEmail || "your team"} within 24h.`);
+                      try {
+                        const r = await fetch("/api/pilot-intake", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            email: billing.customerEmail || "",
+                            bankName,
+                            notes: "Submitted from Firm Pilot Workbench",
+                          }),
+                        });
+                        const d = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+                        if (!r.ok || !d.ok) {
+                          setStatusNotice(d.error || "Unable to queue bank tuning — please email hello@statementflow.win.");
+                          return;
+                        }
+                        formEl.reset();
+                        setStatusNotice(`Priority bank tuning queued for "${bankName}" — we will email ${billing.customerEmail || "your team"} within 24h.`);
+                      } catch {
+                        setStatusNotice("Network error — please email hello@statementflow.win directly.");
+                      }
                     }}
                     className="flex items-center gap-2 shrink-0"
                   >
@@ -2158,15 +2253,26 @@ export function StatementWorkbench() {
                   </span>
                 </div>
 
-                {/* 4 项关键核算指标 */}
+                {/* 4 项关键核算指标（期初与期末余额支持直接行内校准） */}
                 <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                   <div className="ui-tile p-3.5">
                     <div className="text-sm text-[#9ca3b5]">
                       Opening Balance
                     </div>
-                    <div className="mt-1 text-base font-semibold tabular-nums text-white">
-                      {formatMoney(rec.openingBalance, extraction.currency)}
-                    </div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      aria-label="Opening Balance"
+                      value={rec.openingBalance}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        updateReconciliationBalance(
+                          "openingBalance",
+                          Number.isFinite(val) ? val : 0
+                        );
+                      }}
+                      className="ui-input mt-1 w-full px-2 py-1 text-base font-semibold tabular-nums text-white"
+                    />
                   </div>
                   <div className="ui-tile p-3.5">
                     <div className="text-sm text-[#9ca3b5]">
@@ -2188,9 +2294,20 @@ export function StatementWorkbench() {
                     <div className="text-sm text-[#9ca3b5]">
                       Closing Balance
                     </div>
-                    <div className="mt-1 text-base font-semibold tabular-nums text-white">
-                      {formatMoney(rec.closingBalance, extraction.currency)}
-                    </div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      aria-label="Closing Balance"
+                      value={rec.closingBalance}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        updateReconciliationBalance(
+                          "closingBalance",
+                          Number.isFinite(val) ? val : 0
+                        );
+                      }}
+                      className="ui-input mt-1 w-full px-2 py-1 text-base font-semibold tabular-nums text-white"
+                    />
                   </div>
                 </div>
 
@@ -2289,8 +2406,8 @@ export function StatementWorkbench() {
                     >
                       <Download className="size-4" />
                       <span>
-                        {isCustomUnpaid && extraction.transactions.length > 8
-                          ? "CSV (8-Row Preview)"
+                        {isCustomUnpaid && extraction.transactions.length > 5
+                          ? "CSV (5-Row Preview)"
                           : "CSV"}
                       </span>
                     </button>
@@ -2364,7 +2481,17 @@ export function StatementWorkbench() {
                       {filteredTransactions.map((tx) => (
                         <tr key={tx.id} className="align-middle">
                           <td className="py-2 pr-2 pl-2 tabular-nums text-[#d5d9e2]">
-                            {tx.date}
+                            <input
+                              type="text"
+                              value={tx.date}
+                              aria-label={`Date for ${tx.merchant}`}
+                              onChange={(e) =>
+                                updateTransaction(tx.id, {
+                                  date: e.target.value,
+                                })
+                              }
+                              className="ui-input w-[112px] px-2 py-1.5 font-mono text-xs tabular-nums"
+                            />
                           </td>
                           <td className="py-2 px-2">
                             <input
@@ -2559,10 +2686,10 @@ export function StatementWorkbench() {
                   </div>
                   <div>
                     <div className="sf-lead font-semibold tabular-nums text-white">
-                      3 tabs
+                      5 formats
                     </div>
                     <div className="mt-1 text-sm text-[#a0a6b5]">
-                      XLS, CSV, JSON
+                      XLSX, QBO, Xero, CSV, JSON
                     </div>
                   </div>
                 </div>
@@ -2724,7 +2851,7 @@ export function StatementWorkbench() {
                     <li>2 free single-PDF runs (100% UI rows visible)</li>
                     <li>100% browser-local PDF text parsing</li>
                     <li>Deterministic $0.00 balance verification</li>
-                    <li>8-row CSV preview + full sample QBO/Xero/XLSX</li>
+                    <li>5-row CSV preview + full sample QBO/Xero/XLSX</li>
                   </ul>
                 </div>
 
@@ -3139,8 +3266,8 @@ export function StatementWorkbench() {
                   <li>
                     <button
                       type="button"
-                      onClick={handleExportCsv}
-                      className="inline-flex min-h-8 items-center hover:text-white"
+                      onClick={handleExportQuickBooks}
+                      className="inline-flex min-h-8 items-center hover:text-white cursor-pointer"
                     >
                       QuickBooks UTF-8 CSV
                     </button>

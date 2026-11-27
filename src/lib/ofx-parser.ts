@@ -142,53 +142,68 @@ export function parseOfxContent(rawText: string): OfxParseResult {
 }
 
 function csvEscape(value: string): string {
-  if (/[",\r\n]/.test(value)) {
-    return `"${value.replace(/"/g, '""')}"`;
+  const safe =
+    !/^[+-]?\d+(\.\d+)?$/.test(value.trim()) && /^[=+\-@]/.test(value)
+      ? `'${value}`
+      : value;
+  if (/[",\r\n]/.test(safe)) {
+    return `"${safe.replace(/"/g, '""')}"`;
   }
-  return value;
+  return safe;
 }
 
 export function exportOfxToCsv(
   parsed: OfxParseResult,
-  mode: "standard" | "quickbooks" | "xero"
+  mode: "standard" | "quickbooks" | "xero",
+  maxRows?: number
 ): string {
+  const list = typeof maxRows === "number" ? parsed.transactions.slice(0, maxRows) : parsed.transactions;
   if (mode === "quickbooks") {
-    return [
-      "Date,Description,Amount",
-      ...parsed.transactions.map((t) => {
-        const desc = t.memo && t.memo !== t.name ? `${t.name} - ${t.memo}` : t.name;
-        return [csvEscape(t.dateUs), csvEscape(desc), t.amount.toFixed(2)].join(",");
-      }),
-    ].join("\r\n");
+    return (
+      "\uFEFF" +
+      [
+        "Date,Description,Amount",
+        ...list.map((t) => {
+          const desc = t.memo && t.memo !== t.name ? `${t.name} - ${t.memo}` : t.name;
+          return [csvEscape(t.dateUs), csvEscape(desc), t.amount.toFixed(2)].join(",");
+        }),
+      ].join("\r\n")
+    );
   }
   if (mode === "xero") {
-    return [
-      "*Date,*Amount,Payee,Description,Reference",
-      ...parsed.transactions.map((t) =>
+    return (
+      "\uFEFF" +
+      [
+        "*Date,*Amount,Payee,Description,Reference",
+        ...list.map((t) =>
+          [
+            csvEscape(t.dateUk),
+            t.amount.toFixed(2),
+            csvEscape(t.name),
+            csvEscape(t.memo || t.name),
+            csvEscape(t.checkNum || t.fitId),
+          ].join(",")
+        ),
+      ].join("\r\n")
+    );
+  }
+  return (
+    "\uFEFF" +
+    [
+      "Date,Type,Payee,Memo,Amount,CheckNum,FITID",
+      ...list.map((t) =>
         [
-          csvEscape(t.dateUk),
-          t.amount.toFixed(2),
+          csvEscape(t.dateIso),
+          csvEscape(t.type),
           csvEscape(t.name),
-          csvEscape(t.memo || t.name),
-          csvEscape(t.checkNum || t.fitId),
+          csvEscape(t.memo),
+          t.amount.toFixed(2),
+          csvEscape(t.checkNum),
+          csvEscape(t.fitId),
         ].join(",")
       ),
-    ].join("\r\n");
-  }
-  return [
-    "Date,Type,Payee,Memo,Amount,CheckNum,FITID",
-    ...parsed.transactions.map((t) =>
-      [
-        csvEscape(t.dateIso),
-        csvEscape(t.type),
-        csvEscape(t.name),
-        csvEscape(t.memo),
-        t.amount.toFixed(2),
-        csvEscape(t.checkNum),
-        csvEscape(t.fitId),
-      ].join(",")
-    ),
-  ].join("\r\n");
+    ].join("\r\n")
+  );
 }
 
 export const SAMPLE_QBO_FILE = `OFXHEADER:100

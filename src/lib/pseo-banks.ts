@@ -211,7 +211,7 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
       },
       {
         q: "Can fractional CFOs use this across multiple startup clients?",
-        a: "The Accounting Firm plan ($49/mo) includes 5 seats and unlimited monthly statement conversions.",
+        a: "Yes. The Bookkeeping Firm Pilot ($199 one-time) includes unlimited team seats and unlimited statement conversions across client books.",
       },
     ],
   },
@@ -396,8 +396,8 @@ export const PSEO_BANK_ENTRIES: PseoBankEntry[] = [
     ],
     specificFaqs: [
       {
-        q: "Does Lemon Squeezy handle EU and UK VAT for Revolut Business subscribers?",
-        a: "Yes. When upgrading to StatementFlow Pro ($19/mo), Lemon Squeezy acts as Merchant of Record and issues compliant EU/UK VAT invoices.",
+        q: "Does Creem.io handle EU and UK VAT for Revolut Business customers?",
+        a: "Yes. When unlocking StatementFlow Pro ($29 one-time), Creem.io acts as Merchant of Record and automatically issues compliant EU/UK VAT invoices.",
       },
       {
         q: "Can I export JSON for automated ERP ingestion?",

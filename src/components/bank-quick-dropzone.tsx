@@ -32,7 +32,7 @@ export function BankQuickDropzone({ bankSlug, institutionName, targetFormat }: P
         const { extractTextFromPdfBytes } = await import("@/lib/client-pdf");
         const out = await extractTextFromPdfBytes(bytes);
         extractedText = out.text;
-      } else {
+      } else if (/\.(csv|txt|tsv)$/i.test(lower)) {
         extractedText = await file.text();
       }
       if (typeof window !== "undefined") {
@@ -101,7 +101,7 @@ export function BankQuickDropzone({ bankSlug, institutionName, targetFormat }: P
       <input
         ref={inputRef}
         type="file"
-        accept=".pdf,.csv,.txt,.png,.jpg,.jpeg"
+        accept=".pdf,.csv,.txt"
         onChange={(e) => {
           void handleFiles(Array.from(e.target.files || []));
           e.target.value = "";

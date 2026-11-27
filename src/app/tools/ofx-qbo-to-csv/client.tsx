@@ -14,12 +14,45 @@ export default function OfxConverterClient() {
   const [exportMode, setExportMode] = useState<"quickbooks" | "xero" | "standard">("quickbooks");
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
+  const [upgradeNotice, setUpgradeNotice] = useState<string>("");
+  const [openingCheckout, setOpeningCheckout] = useState<boolean>(false);
+  const [isProUnlocked] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const saved = JSON.parse(window.localStorage.getItem("statementflow_billing_v1") || "{}");
+      return saved?.plan === "pro" || saved?.plan === "business";
+    } catch {
+      return false;
+    }
+  });
 
   const parsed = useMemo(() => parseOfxContent(rawText), [rawText]);
+  const isOverFreeCap = !isProUnlocked && rawText !== SAMPLE_QBO_FILE && parsed.transactions.length > 20;
   const csvOutput = useMemo(
-    () => exportOfxToCsv(parsed, exportMode),
-    [parsed, exportMode]
+    () => exportOfxToCsv(parsed, exportMode, isOverFreeCap ? 20 : undefined),
+    [parsed, exportMode, isOverFreeCap]
   );
+
+  const handleQuickProUpgrade = async () => {
+    setOpeningCheckout(true);
+    try {
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: "pro", gateway: "creem" }),
+      });
+      const data = (await res.json()) as { checkoutUrl?: string };
+      if (res.ok && data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+    } catch {
+      // fallback to pricing
+    } finally {
+      setOpeningCheckout(false);
+    }
+    window.location.href = "/#pricing";
+  };
 
   const loadOfxFile = (file: File) => {
     setFileName(file.name);
@@ -50,14 +83,26 @@ export default function OfxConverterClient() {
     const a = document.createElement("a");
     const base = fileName.replace(/\.[^.]+$/, "");
     a.href = url;
-    a.download = `${base}-${exportMode}.csv`;
+    a.download = isOverFreeCap
+      ? `${base}-${exportMode}-20row-preview.csv`
+      : `${base}-${exportMode}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    if (isOverFreeCap) {
+      setUpgradeNotice(
+        `Exported 20-row verified preview (${parsed.transactions.length} total rows parsed above). Unlock unlimited OFX/CSV & PDF exports forever for $29 once.`
+      );
+    }
   };
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(csvOutput);
     setCopied(true);
+    if (isOverFreeCap) {
+      setUpgradeNotice(
+        `Copied 20-row verified preview (${parsed.transactions.length} total rows parsed). Unlock full unlimited export for $29 once.`
+      );
+    }
     setTimeout(() => setCopied(false), 1800);
   };
 
@@ -81,7 +126,7 @@ export default function OfxConverterClient() {
               href="/"
               className="px-3.5 py-1.5 rounded-full bg-[#161615] text-white font-medium hover:bg-[#2c2b28] transition"
             >
-              PDF to Excel ($9 Pro)
+              PDF to Excel ($29 Pro)
             </Link>
           </nav>
         </div>
@@ -231,10 +276,26 @@ export default function OfxConverterClient() {
                     disabled={parsed.transactions.length === 0}
                     className="px-4 py-1.5 rounded-lg bg-[#14532d] text-white text-xs font-semibold hover:bg-[#114224] disabled:opacity-50 cursor-pointer"
                   >
-                    Download CSV
+                    {isOverFreeCap ? "Download 20-Row Preview CSV" : "Download CSV"}
                   </button>
                 </div>
               </div>
+              {(isOverFreeCap || upgradeNotice) && (
+                <div className="px-5 py-3 bg-amber-50 border-b border-amber-200 flex flex-wrap items-center justify-between gap-2 text-xs text-amber-950">
+                  <span>
+                    {upgradeNotice ||
+                      `Free mode exports up to 20 rows (${parsed.transactions.length} rows parsed below). Unlock unlimited OFX, CSV & PDF exports forever for $29 once.`}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={openingCheckout}
+                    onClick={() => void handleQuickProUpgrade()}
+                    className="px-3 py-1.5 rounded-lg bg-[#14532d] text-white font-semibold hover:bg-[#114224] cursor-pointer shrink-0"
+                  >
+                    {openingCheckout ? "Opening..." : "Unlock Unlimited · $29 →"}
+                  </button>
+                </div>
+              )}
 
               <div className="overflow-x-auto max-h-[420px]">
                 <table className="w-full text-left text-xs">
@@ -275,7 +336,7 @@ export default function OfxConverterClient() {
                 </div>
                 <p className="text-xs text-[#3b4a40]">
                   StatementFlow AI extracts multi-page PDFs locally with Vision OCR &amp; $0.00
-                  running-balance verification — $9 one-time lifetime unlock.
+                  running-balance verification — $29 one-time lifetime unlock.
                 </p>
               </div>
               <Link

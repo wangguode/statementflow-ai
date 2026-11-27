@@ -1,7 +1,7 @@
 /**
  * StatementFlow AI Cloudflare Workers 边缘入口（安全限流 + D1 漏斗与订单持久化版）：
  * 1. POST /api/extract         — 双层速率限制 + 同源保护 + 千问文本/视觉平账提取
- * 2. POST /api/checkout        — 直连 Creem.io 实时收银（$9 Pro / $199 Firm Pilot）
+ * 2. POST /api/checkout        — 直连 Creem.io 实时收银（$29 Pro / $199 Firm Pilot）
  * 3. GET  /api/verify-checkout — 核验 Creem 结账单并幂等写入 D1 sf_orders
  * 4. POST /api/webhook         — 校验 Creem HMAC-SHA256 签名并写入 D1 sf_orders
  * 5. POST /api/event & GET /api/stats — 隐私友好匿名转化漏斗持久化与聚合看板
@@ -103,14 +103,22 @@ async function ensureSfTables(env: Env): Promise<void> {
     await env.DB.prepare(
       `CREATE TABLE IF NOT EXISTS sf_orders (
         order_id TEXT PRIMARY KEY,
+        order_ref TEXT NOT NULL DEFAULT '',
         customer_email TEXT NOT NULL DEFAULT '',
         plan TEXT NOT NULL DEFAULT 'pro',
-        amount_usd INTEGER NOT NULL DEFAULT 9,
+        amount_usd INTEGER NOT NULL DEFAULT 29,
         status TEXT NOT NULL DEFAULT 'completed',
         restore_token TEXT NOT NULL DEFAULT '',
         created_at TEXT NOT NULL DEFAULT (datetime('now'))
       )`
     ).run();
+    try {
+      await env.DB.prepare(
+        `ALTER TABLE sf_orders ADD COLUMN order_ref TEXT NOT NULL DEFAULT ''`
+      ).run();
+    } catch {
+      // 列已存在时安全忽略
+    }
     try {
       await env.DB.prepare(
         `ALTER TABLE sf_orders ADD COLUMN restore_token TEXT NOT NULL DEFAULT ''`
@@ -161,9 +169,17 @@ async function ensureSfTables(env: Env): Promise<void> {
       `CREATE TABLE IF NOT EXISTS sf_free_ip_usage (
         ip_hash TEXT PRIMARY KEY,
         runs INTEGER NOT NULL DEFAULT 0,
+        last_batch_id TEXT NOT NULL DEFAULT '',
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       )`
     ).run();
+    try {
+      await env.DB.prepare(
+        `ALTER TABLE sf_free_ip_usage ADD COLUMN last_batch_id TEXT NOT NULL DEFAULT ''`
+      ).run();
+    } catch {
+      // 列已存在时安全忽略
+    }
     schemaReady = true;
   } catch {
     // 降级不阻塞主流程
@@ -252,7 +268,12 @@ async function handleCheckout(request: Request, env: Env): Promise<Response> {
     const plan = body.plan === "business" ? "business" : "pro";
     const customerEmail = body.email?.trim() || "";
     const meta = PLAN_METADATA[plan];
-    const origin = request.headers.get("origin") || new URL(request.url).origin;
+    const reqOrigin = new URL(request.url).origin;
+    const origin =
+      /^https:\/\/([a-z0-9-]+\.)?statementflow\.win$/i.test(reqOrigin) ||
+      /^http:\/\/localhost:\d+$/i.test(reqOrigin)
+        ? reqOrigin
+        : "https://statementflow.win";
 
     const creemApiKey = env.CREEM_API_KEY?.trim();
     let productId =
@@ -287,7 +308,7 @@ async function handleCheckout(request: Request, env: Env): Promise<Response> {
       });
     }
 
-    if (creemApiKey && productId && body.gateway !== "stripe") {
+    if (creemApiKey && productId) {
       const creemPayload: Record<string, unknown> = {
         product_id: productId,
         success_url: `${origin}/?checkout=success&plan=${plan}`,
@@ -319,15 +340,13 @@ async function handleCheckout(request: Request, env: Env): Promise<Response> {
       }
     }
 
-    return jsonResponse({
-      mode: "sandbox",
-      gateway: body.gateway === "stripe" ? "Stripe Sandbox" : "Creem.io MoR Sandbox",
-      plan,
-      planName: meta.name,
-      amountUsd: meta.oneTimeUsd,
-      description: meta.description,
-      sessionId: `sbx_${plan}_${Date.now()}`,
-    });
+    return jsonResponse(
+      {
+        error:
+          "Checkout gateway temporarily unavailable. Please retry in a few seconds or email hello@statementflow.win.",
+      },
+      502
+    );
   } catch {
     return jsonResponse({ error: "Unable to initialize checkout session." }, 500);
   }
@@ -354,7 +373,7 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
       id?: string;
       customer?: { email?: string };
       metadata?: { plan?: string };
-      order?: { amount?: number };
+      order?: { id?: string; amount?: number };
     };
   };
 
@@ -363,22 +382,37 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
     try {
       const obj = event.object || {};
       const orderId = obj.id || event.id || `sf_ord_${Date.now()}`;
+      const orderRef = obj.order?.id || "";
       const email = (obj.customer?.email || "").trim().toLowerCase();
       const plan = obj.metadata?.plan === "business" ? "business" : "pro";
       const amountUsd = Math.round((obj.order?.amount || (plan === "business" ? 19900 : 2900)) / 100);
       const evt = (event.eventType || "").toLowerCase();
-      const status = /refund|cancel|dispute/.test(evt) ? "refunded" : "completed";
-      const restoreToken = `sf_lic_${crypto.randomUUID().replace(/-/g, "")}`;
-      await env.DB.prepare(
-        `INSERT INTO sf_orders (order_id, customer_email, plan, amount_usd, status, restore_token)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6)
-         ON CONFLICT(order_id) DO UPDATE SET status = ?5`
-      )
-        .bind(orderId, email, plan, amountUsd, status, restoreToken)
-        .run();
+      const isRefundOrCancel = /refund|cancel|dispute|chargeback|revok/.test(evt);
+      const isPositivePaid =
+        !evt || /completed|paid|succeeded|active/.test(evt);
 
-      // 首次付款确认时，幂等检查 email_sent 防止 Creem 多事件重推导致重复发信，并读取库内真实 restore_token
-      if (status === "completed" && email) {
+      if (isRefundOrCancel) {
+        await env.DB.prepare(
+          `UPDATE sf_orders SET status = 'refunded' WHERE order_id = ?1 OR (order_ref != '' AND order_ref = ?2)`
+        )
+          .bind(orderId, orderRef || orderId)
+          .run();
+      } else if (isPositivePaid) {
+        const status = "completed";
+        const restoreToken = `sf_lic_${crypto.randomUUID().replace(/-/g, "")}`;
+        await env.DB.prepare(
+          `INSERT INTO sf_orders (order_id, order_ref, customer_email, plan, amount_usd, status, restore_token)
+           VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+           ON CONFLICT(order_id) DO UPDATE SET
+             status = ?6,
+             order_ref = COALESCE(NULLIF(?2, ''), sf_orders.order_ref),
+             customer_email = COALESCE(NULLIF(?3, ''), sf_orders.customer_email)`
+        )
+          .bind(orderId, orderRef, email, plan, amountUsd, status, restoreToken)
+          .run();
+
+        // 首次付款确认时，幂等检查 email_sent 防止 Creem 多事件重推导致重复发信，并读取库内真实 restore_token
+        if (email) {
         const saved = await env.DB.prepare(
           `SELECT restore_token, email_sent FROM sf_orders WHERE order_id = ?1 LIMIT 1`
         )
@@ -400,7 +434,7 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
               "Thank you for choosing StatementFlow AI!",
               "",
               `Plan Unlocked: ${plan === "business" ? "14-Day Boutique Firm Pilot (Unlimited Team Seats)" : "StatementFlow AI Pro (Lifetime Unlimited)"}`,
-              `Order Reference: ${orderId}`,
+              `Order Reference: ${orderRef || orderId}`,
               "",
               "Bookmark or share this 1-click activation link to unlock StatementFlow on any browser, new computer, or team workstation:",
               activateUrl,
@@ -419,12 +453,13 @@ async function handleWebhook(request: Request, env: Env): Promise<Response> {
             subject: `💰 [StatementFlow Paid] $${amountUsd} (${plan.toUpperCase()}) from ${email}`,
             text: [
               `New Paid Order on StatementFlow AI!`,
-              `- Order ID: ${orderId}`,
+              `- Order ID: ${orderId}${orderRef ? ` (${orderRef})` : ""}`,
               `- Customer: ${email}`,
               `- Plan: ${plan.toUpperCase()} ($${amountUsd})`,
               `- Activation Link Sent: ${activateUrl}`,
             ].join("\n"),
           });
+        }
         }
       }
     } catch {
@@ -534,18 +569,26 @@ async function handleRestoreLicense(request: Request, env: Env): Promise<Respons
       });
     }
 
-    // 路径 2：凭购买邮箱 + Creem 订单号（至少 6 位）即时双因子核验解锁
+    // 路径 2：凭购买邮箱 + Creem 订单号/结账单号（至少 6 位）即时双因子核验解锁
     if (email && email.includes("@") && orderRef.length >= 6) {
       const rows = await env.DB.prepare(
-        `SELECT order_id, customer_email, plan, restore_token FROM sf_orders
+        `SELECT order_id, order_ref, customer_email, plan, restore_token FROM sf_orders
          WHERE customer_email = ?1 AND status = 'completed'`
       )
         .bind(email)
-        .all<{ order_id: string; customer_email: string; plan: string; restore_token: string }>();
+        .all<{
+          order_id: string;
+          order_ref?: string;
+          customer_email: string;
+          plan: string;
+          restore_token: string;
+        }>();
+      const needle = orderRef.toLowerCase();
       const matched = (rows.results || []).find(
         (r) =>
-          r.order_id.toLowerCase().includes(orderRef.toLowerCase()) ||
-          (r.restore_token && r.restore_token.toLowerCase() === orderRef.toLowerCase())
+          r.order_id.toLowerCase().includes(needle) ||
+          (r.order_ref && r.order_ref.toLowerCase().includes(needle)) ||
+          (r.restore_token && r.restore_token.toLowerCase() === needle)
       );
       if (!matched) {
         return jsonResponse(
@@ -631,46 +674,91 @@ async function handleVerifyCheckout(request: Request, env: Env): Promise<Respons
   }
 
   try {
-    const res = await fetch(
-      `https://api.creem.io/v1/checkouts?checkout_id=${encodeURIComponent(checkoutId)}`,
-      { headers: { "x-api-key": creemApiKey } }
-    );
-    if (!res.ok) {
-      return jsonResponse({ verified: false, status: "unverified" }, 402);
-    }
-    const data = (await res.json()) as {
+    type CreemVerifyPayload = {
       id?: string;
       status?: string;
       customer?: { email?: string };
+      order?: { id?: string; amount?: number };
       metadata?: { plan?: string };
     };
+    const fetchOnce = async (): Promise<CreemVerifyPayload | null> => {
+      const r = await fetch(
+        `https://api.creem.io/v1/checkouts?checkout_id=${encodeURIComponent(checkoutId)}`,
+        { headers: { "x-api-key": creemApiKey } }
+      );
+      if (!r.ok) return null;
+      return (await r.json()) as CreemVerifyPayload;
+    };
+    let data = await fetchOnce();
+    if (!data) {
+      return jsonResponse({ verified: false, status: "unverified" }, 402);
+    }
+    if (data.status !== "completed") {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const retried = await fetchOnce();
+      if (retried) data = retried;
+    }
     const verified = data.status === "completed";
     const plan = data.metadata?.plan === "business" ? "business" : "pro";
     const email = (data.customer?.email || "").trim().toLowerCase();
+    const orderRef = data.order?.id || "";
+    const amountUsd = Math.round(
+      (data.order?.amount || (plan === "business" ? 19900 : 2900)) / 100
+    );
     let restoreToken = "";
     if (verified && env.DB && data.id) {
       await ensureSfTables(env);
       try {
         const freshToken = `sf_lic_${crypto.randomUUID().replace(/-/g, "")}`;
         await env.DB.prepare(
-          `INSERT INTO sf_orders (order_id, customer_email, plan, amount_usd, status, restore_token)
-           VALUES (?1, ?2, ?3, ?4, 'completed', ?5)
-           ON CONFLICT(order_id) DO NOTHING`
+          `INSERT INTO sf_orders (order_id, order_ref, customer_email, plan, amount_usd, status, restore_token)
+           VALUES (?1, ?2, ?3, ?4, ?5, 'completed', ?6)
+           ON CONFLICT(order_id) DO UPDATE SET
+             status = 'completed',
+             order_ref = COALESCE(NULLIF(?2, ''), sf_orders.order_ref),
+             customer_email = COALESCE(NULLIF(?3, ''), sf_orders.customer_email)`
         )
           .bind(
             data.id,
+            orderRef,
             email,
             plan,
-            plan === "business" ? 199 : 29,
+            amountUsd,
             freshToken
           )
           .run();
         const saved = await env.DB.prepare(
-          `SELECT restore_token FROM sf_orders WHERE order_id = ?1 LIMIT 1`
+          `SELECT restore_token, email_sent FROM sf_orders WHERE order_id = ?1 LIMIT 1`
         )
           .bind(data.id)
-          .first<{ restore_token: string }>();
+          .first<{ restore_token: string; email_sent?: number }>();
         restoreToken = saved?.restore_token || freshToken;
+
+        // 结账成功回跳即时补发跨设备激活邮件（与 Webhook 共享 email_sent 幂等锁，杜绝漏发或双发）
+        if (email && (!saved || Number(saved.email_sent || 0) === 0)) {
+          await env.DB.prepare(`UPDATE sf_orders SET email_sent = 1 WHERE order_id = ?1`)
+            .bind(data.id)
+            .run();
+          const activateUrl = `https://statementflow.win/?restore_token=${encodeURIComponent(restoreToken)}`;
+          await sendSfEmail(env, {
+            to: email,
+            subject:
+              plan === "business"
+                ? "Your StatementFlow Firm Pilot ($199) License & Team Activation Link"
+                : "Your StatementFlow AI Pro ($29) Lifetime License & Multi-Device Link",
+            text: [
+              "Thank you for choosing StatementFlow AI!",
+              "",
+              `Plan Unlocked: ${plan === "business" ? "14-Day Boutique Firm Pilot (Unlimited Team Seats)" : "StatementFlow AI Pro (Lifetime Unlimited)"}`,
+              `Order Reference: ${orderRef || data.id}`,
+              "",
+              "Bookmark or share this 1-click activation link to unlock StatementFlow on any browser, new computer, or team workstation:",
+              activateUrl,
+              "",
+              "— StatementFlow Financial Engineering",
+            ].join("\n"),
+          });
+        }
       } catch {
         // ignore
       }
@@ -709,6 +797,7 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
       fileName?: string;
       pageImages?: string[];
       licenseToken?: string;
+      batchId?: string;
       aiConfig?: {
         provider?: "demo" | "openai_compatible";
         apiKey?: string;
@@ -775,8 +864,9 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
       );
     }
 
-    // 商业防白嫖硬门槛 2：服务端按匿名哈希 IP 限制免费托管 AI 解析次数（最多 2 次单文件验真，阻断无痕窗口无限白嫖）
+    // 商业防白嫖硬门槛 2：服务端按匿名哈希 IP 限制免费托管 AI 解析次数（最多 2 份文档验真；同一份长 PDF 多分块共享 batchId 不重复扣费）
     let callerIpHash = "";
+    const cleanBatchId = String(body.batchId || "").trim().slice(0, 64);
     if (!hasPaidLicense && !userProvidedKey && env.DB && ip !== "0.0.0.0") {
       await ensureSfTables(env);
       const digest = await crypto.subtle.digest(
@@ -788,19 +878,31 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
       const usage = await env.DB.prepare(
-        `SELECT runs FROM sf_free_ip_usage WHERE ip_hash = ?1 LIMIT 1`
+        `SELECT runs, last_batch_id FROM sf_free_ip_usage WHERE ip_hash = ?1 LIMIT 1`
       )
         .bind(callerIpHash)
-        .first<{ runs: number }>();
-      if (Number(usage?.runs || 0) >= 2) {
-        return jsonResponse(
-          {
-            error:
-              "Free Cloud AI preview limit reached (2/2 runs). Local Zero-Upload mode remains free, or unlock StatementFlow Pro ($29 once, no subscription) for unlimited Cloud AI & exports.",
-            code: "PRO_REQUIRED",
-          },
-          402
-        );
+        .first<{ runs: number; last_batch_id?: string }>();
+      const isSameDocumentBatch =
+        Boolean(cleanBatchId) && usage?.last_batch_id === cleanBatchId;
+      if (!isSameDocumentBatch) {
+        if (Number(usage?.runs || 0) >= 2) {
+          return jsonResponse(
+            {
+              error:
+                "Free Cloud AI preview limit reached (2/2 runs). Local Zero-Upload mode remains free, or unlock StatementFlow Pro ($29 once, no subscription) for unlimited Cloud AI & exports.",
+              code: "PRO_REQUIRED",
+            },
+            402
+          );
+        }
+        // 在请求上游大模型前原子预扣次数，防止并发多请求绕过 2 次配额
+        await env.DB.prepare(
+          `INSERT INTO sf_free_ip_usage (ip_hash, runs, last_batch_id, updated_at)
+           VALUES (?1, 1, ?2, datetime('now'))
+           ON CONFLICT(ip_hash) DO UPDATE SET runs = runs + 1, last_batch_id = ?2, updated_at = datetime('now')`
+        )
+          .bind(callerIpHash, cleanBatchId || `single_${Date.now()}`)
+          .run();
       }
     }
 
@@ -825,15 +927,15 @@ async function handleExtract(request: Request, env: Env): Promise<Response> {
       env.AI_BASE_URL?.trim() ||
       "https://maas.qianwenaiapi.com/compatible-mode/v1"
     ).replace(/\/+$/, "");
-    const effectiveModel = isVisionMode
-      ? "qwen-vl-plus"
-      : (
-          (body.aiConfig?.provider === "openai_compatible"
-            ? body.aiConfig.model?.trim()
-            : "") ||
-          env.AI_MODEL?.trim() ||
-          "qwen-plus"
-        ).trim();
+    const effectiveModel =
+      isVisionMode && !userProvidedKey
+        ? "qwen-vl-plus"
+        : (
+            (body.aiConfig?.provider === "openai_compatible"
+              ? body.aiConfig.model?.trim()
+              : "") ||
+            (isVisionMode ? "gpt-4o-mini" : env.AI_MODEL?.trim() || "qwen-plus")
+          ).trim();
 
     if (!effectiveKey) {
       return jsonResponse({ error: "Cloud AI Engine is not configured on this worker." }, 503);
@@ -963,15 +1065,6 @@ Rules:
             JSON.stringify({ txCount: transactions.length, vision: isVisionMode, pro: hasPaidLicense })
           )
           .run();
-        if (callerIpHash) {
-          await env.DB.prepare(
-            `INSERT INTO sf_free_ip_usage (ip_hash, runs, updated_at)
-             VALUES (?1, 1, datetime('now'))
-             ON CONFLICT(ip_hash) DO UPDATE SET runs = runs + 1, updated_at = datetime('now')`
-          )
-            .bind(callerIpHash)
-            .run();
-        }
       } catch {
         // ignore
       }

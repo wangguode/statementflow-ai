@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "StatementFlow AI — Bank Statements to $0.00-Verified Excel & QuickBooks CSV",
     description:
-      "Browser-local batch PDF bank statement parser + Vision OCR + deterministic double-entry reconciliation ($9 one-time lifetime unlock).",
+      "Browser-local batch PDF bank statement parser + Vision OCR + deterministic double-entry reconciliation ($29 one-time lifetime unlock).",
     url: "https://statementflow.win",
     siteName: "StatementFlow AI",
     images: [
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "StatementFlow AI — Bank Statements to $0.00-Verified Excel (.xlsx)",
     description:
-      "Browser-local batch PDF parsing, Vision OCR & QuickBooks/Xero CSV export. $9 one-time lifetime unlock.",
+      "Browser-local batch PDF parsing, Vision OCR & QuickBooks/Xero CSV export. $29 one-time lifetime unlock.",
     images: ["/assets/blythe-house-ledger-room-1924.jpg"],
   },
   robots: {
@@ -58,7 +58,7 @@ const ROOT_JSON_LD = [
       {
         "@type": "Offer",
         name: "StatementFlow Pro Lifetime Unlock",
-        price: "9.00",
+        price: "29.00",
         priceCurrency: "USD",
       },
       {

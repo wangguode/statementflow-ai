@@ -1748,7 +1748,6 @@ export function StatementWorkbench() {
                       setInputMode("upload");
                       setUploadedFileName("Barclays_Messy_Client_Statement_Oct2026.pdf");
                       setCustomRawText(preset.rawPreviewText);
-                      setErrorMsg("");
                       setExtraction({
                         ...preset.result,
                         meta: {

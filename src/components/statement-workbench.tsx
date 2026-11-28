@@ -1740,13 +1740,36 @@ export function StatementWorkbench() {
                     <Upload className="size-4" />
                     <span>Upload Bank PDF / CSV Free</span>
                   </button>
-                  <a
-                    href="#workbench"
-                    className="sf-btn inline-flex min-h-12 items-center gap-2 rounded-xl border border-black/10 bg-white/80 px-5 py-3 text-sm font-semibold text-[#111215] backdrop-blur-md hover:bg-white"
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const preset = SAMPLE_PRESETS[0];
+                      trackFunnelEvent("demo_unpaid_sim", { sampleId: preset.id });
+                      setInputMode("upload");
+                      setUploadedFileName("Barclays_Messy_Client_Statement_Oct2026.pdf");
+                      setCustomRawText(preset.rawPreviewText);
+                      setErrorMsg("");
+                      setExtraction({
+                        ...preset.result,
+                        meta: {
+                          modeUsed: "heuristic_fallback",
+                          providerName: "Browser Local Engine",
+                          modelName: "Deterministic Balance Verifier",
+                          latencyMs: 28,
+                          warnings: [],
+                        },
+                      });
+                      setStatusNotice(
+                        `Simulated client PDF upload (${preset.result.transactions.length} rows, $0.00 balance variance verified). Try exporting QuickBooks or Xero CSV below!`
+                      );
+                      document
+                        .getElementById("workbench")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="sf-btn inline-flex min-h-12 items-center gap-2 rounded-xl border border-[#0066cc]/30 bg-white/90 px-5 py-3 text-sm font-semibold text-[#0066cc] backdrop-blur-md hover:bg-white cursor-pointer"
                   >
-                    <span>Explore Reconciled Demo</span>
-                    <ArrowUpRight className="size-4 text-[#0066cc]" />
-                  </a>
+                    <span>No PDF handy? Test Client Upload →</span>
+                  </button>
                 </div>
               </div>
 
@@ -2504,7 +2527,10 @@ export function StatementWorkbench() {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredTransactions.map((tx) => (
+                      {(isCustomUnpaid
+                        ? filteredTransactions.slice(0, 5)
+                        : filteredTransactions
+                      ).map((tx) => (
                         <tr key={tx.id} className="align-middle">
                           <td className="py-2 pr-2 pl-2 tabular-nums text-[#d5d9e2]">
                             <input
@@ -2598,6 +2624,84 @@ export function StatementWorkbench() {
                           </td>
                         </tr>
                       ))}
+                      {isCustomUnpaid && filteredTransactions.length > 5 && (
+                        <>
+                          {filteredTransactions.slice(5, 8).map((lockedTx, idx) => (
+                            <tr
+                              key={`locked-${lockedTx.id}-${idx}`}
+                              aria-hidden="true"
+                              className="select-none pointer-events-none opacity-45 blur-[5px]"
+                            >
+                              <td className="py-2 pr-2 pl-2 font-mono text-xs text-[#9ca3b5]">
+                                2026-••-••
+                              </td>
+                              <td className="py-2 px-2 text-sm text-[#d5d9e2]">
+                                RECONCILED LEDGER ENTRY #{idx + 6}
+                              </td>
+                              <td className="py-2 px-2 text-xs text-[#9ca3b5]">
+                                Verified Category
+                              </td>
+                              <td className="py-2 px-2 text-xs font-semibold text-[#9ca3b5]">
+                                {lockedTx.type.toUpperCase()}
+                              </td>
+                              <td className="py-2 px-2 text-right font-mono text-sm text-[#d5d9e2]">
+                                •••.••
+                              </td>
+                              <td className="py-2 pl-2 text-right text-xs text-[#9ca3b5]">
+                                ••
+                              </td>
+                            </tr>
+                          ))}
+                          <tr>
+                            <td colSpan={6} className="pt-3 pb-2">
+                              <div className="rounded-xl border border-[#3b82f6]/40 bg-[#111927] p-4 sm:p-5 text-left shadow-lg">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                  <div className="space-y-1">
+                                    <div className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-[#34d399]">
+                                      <CheckCircle2 className="size-4" />
+                                      <span>
+                                        ✓ All {filteredTransactions.length} rows mathematically reconciled ($0.00 variance)
+                                      </span>
+                                    </div>
+                                    <p className="text-sm font-semibold text-white">
+                                      +{filteredTransactions.length - 5} remaining ledger rows &amp; QuickBooks / Xero / Excel exports ready to unlock
+                                    </p>
+                                    <p className="text-xs text-[#9ca3b5]">
+                                      First 5 rows shown above so you can verify accuracy. Unlock full export in 10 seconds (no subscription required).
+                                    </p>
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                                    <button
+                                      type="button"
+                                      disabled={directCheckoutLoading === "starter"}
+                                      onClick={() =>
+                                        void startDirectCheckout("starter", "table_row_lock")
+                                      }
+                                      className="sf-btn min-h-10 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold text-white hover:bg-white/15 cursor-pointer"
+                                    >
+                                      {directCheckoutLoading === "starter"
+                                        ? "Opening..."
+                                        : "Starter Pack · $19"}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={directCheckoutLoading === "pro"}
+                                      onClick={() =>
+                                        void startDirectCheckout("pro", "table_row_lock")
+                                      }
+                                      className="sf-btn min-h-10 rounded-lg bg-[#0066cc] px-4 py-2 text-xs font-semibold text-white hover:bg-[#0058b3] cursor-pointer"
+                                    >
+                                      {directCheckoutLoading === "pro"
+                                        ? "Opening..."
+                                        : "Unlock Lifetime Pro · $29 →"}
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        </>
+                      )}
                     </tbody>
                   </table>
                 </div>

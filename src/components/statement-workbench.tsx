@@ -18,7 +18,6 @@ import {
   Search,
   Settings2,
   ShieldCheck,
-  Sparkles,
   Trash2,
   Upload,
 } from "lucide-react";
@@ -507,39 +506,41 @@ export function StatementWorkbench() {
         isScanned?: boolean;
       };
       const fname = parsed.fileName || "statement.pdf";
-      if (parsed.text && parsed.text.trim().length > 0) {
-        setInputMode("upload");
-        setUploadedFileName(fname);
-        setCustomRawText(parsed.text);
-        setBatchFiles(
-          parsed.batchParts && parsed.batchParts.length > 0
-            ? parsed.batchParts
-            : [{ name: fname, text: parsed.text }]
-        );
-        const instantLocal = parseDocumentHeuristically(
-          parsed.text,
-          fname,
-          "heuristic_fallback"
-        );
-        if (instantLocal.transactions.length > 0) {
-          setExtraction(instantLocal);
-          setStatusNotice(
-            `Parsed ${instantLocal.transactions.length} rows locally from ${fname} in ${instantLocal.meta.latencyMs}ms (0 bytes uploaded).`
+      queueMicrotask(() => {
+        if (parsed.text && parsed.text.trim().length > 0) {
+          setInputMode("upload");
+          setUploadedFileName(fname);
+          setCustomRawText(parsed.text);
+          setBatchFiles(
+            parsed.batchParts && parsed.batchParts.length > 0
+              ? parsed.batchParts
+              : [{ name: fname, text: parsed.text }]
           );
-        } else {
+          const instantLocal = parseDocumentHeuristically(
+            parsed.text,
+            fname,
+            "heuristic_fallback"
+          );
+          if (instantLocal.transactions.length > 0) {
+            setExtraction(instantLocal);
+            setStatusNotice(
+              `Parsed ${instantLocal.transactions.length} rows locally from ${fname} in ${instantLocal.meta.latencyMs}ms (0 bytes uploaded).`
+            );
+          } else {
+            setEngineMode("cloud_ai");
+            setStatusNotice(
+              `Loaded ${fname} from bank converter — click "Run Extraction" to run Cloud AI Deep Parse.`
+            );
+          }
+        } else if (parsed.isScanned || parsed.fileName) {
+          setInputMode("upload");
+          setUploadedFileName(fname);
           setEngineMode("cloud_ai");
           setStatusNotice(
-            `Loaded ${fname} from bank converter — click "Run Extraction" to run Cloud AI Deep Parse.`
+            `Detected scanned/image statement (${fname}) with no embedded text layer — drop ${fname} directly into the uploader below to run Vision AI OCR.`
           );
         }
-      } else if (parsed.isScanned || parsed.fileName) {
-        setInputMode("upload");
-        setUploadedFileName(fname);
-        setEngineMode("cloud_ai");
-        setStatusNotice(
-          `Detected scanned/image statement (${fname}) with no embedded text layer — drop ${fname} directly into the uploader below to run Vision AI OCR.`
-        );
-      }
+      });
     } catch {
       // ignore
     }
@@ -600,10 +601,12 @@ export function StatementWorkbench() {
 
     if (params.get("checkout") !== "success") return;
     if (!checkoutId) {
-      setRestoreModalOpen(true);
-      setStatusNotice(
-        "Payment completed! Enter your checkout email in the Restore window to activate your license immediately."
-      );
+      queueMicrotask(() => {
+        setRestoreModalOpen(true);
+        setStatusNotice(
+          "Payment completed! Enter your checkout email in the Restore window to activate your license immediately."
+        );
+      });
       return;
     }
 

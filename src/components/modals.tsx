@@ -51,8 +51,10 @@ export function AISettingsModal({
 
   useEffect(() => {
     if (open) {
-      setDraft(config);
-      setValidationErr("");
+      queueMicrotask(() => {
+        setDraft(config);
+        setValidationErr("");
+      });
     }
   }, [open, config]);
 

@@ -2,13 +2,16 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   exportOfxToCsv,
   parseOfxContent,
   SAMPLE_QBO_FILE,
 } from "@/lib/ofx-parser";
+import { trackSfEvent } from "@/lib/telemetry";
 
 export default function OfxConverterClient() {
+  const router = useRouter();
   const [rawText, setRawText] = useState<string>(SAMPLE_QBO_FILE);
   const [fileName, setFileName] = useState<string>("sample-chase-webconnect.qbo");
   const [exportMode, setExportMode] = useState<"quickbooks" | "xero" | "standard">("quickbooks");
@@ -16,14 +19,22 @@ export default function OfxConverterClient() {
   const [copied, setCopied] = useState<boolean>(false);
   const [upgradeNotice, setUpgradeNotice] = useState<string>("");
   const [openingCheckout, setOpeningCheckout] = useState<boolean>(false);
-  const [isProUnlocked, setIsProUnlocked] = useState<boolean>(false);
-
-  useEffect(() => {
+  const [isProUnlocked, setIsProUnlocked] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
     try {
       const saved = JSON.parse(window.localStorage.getItem("statementflow_billing_v1") || "{}");
-      if (saved?.plan === "pro" || saved?.plan === "business") {
-        setIsProUnlocked(true);
-      }
+      return saved?.plan === "pro" || saved?.plan === "business";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    trackSfEvent("page_view", {
+      surface: "tool_ofx_qbo",
+      ref: (document.referrer || "direct").slice(0, 80),
+    });
+    try {
       const tok = new URLSearchParams(window.location.search).get("restore_token")?.trim();
       if (tok) {
         fetch("/api/license/restore", {
@@ -57,6 +68,7 @@ export default function OfxConverterClient() {
   );
 
   const handleQuickProUpgrade = async () => {
+    trackSfEvent("checkout_direct_click", { plan: "pro", source: "tool_ofx_qbo" });
     setOpeningCheckout(true);
     try {
       const res = await fetch("/api/checkout", {
@@ -74,10 +86,11 @@ export default function OfxConverterClient() {
     } finally {
       setOpeningCheckout(false);
     }
-    window.location.href = "/#pricing";
+    router.push("/#pricing");
   };
 
   const loadOfxFile = (file: File) => {
+    trackSfEvent("upload_files", { surface: "tool_ofx_qbo" });
     setFileName(file.name);
     const reader = new FileReader();
     reader.onload = () => {

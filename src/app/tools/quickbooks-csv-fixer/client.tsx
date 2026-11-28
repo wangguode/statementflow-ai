@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   fixBankCsv,
   SAMPLE_MESSY_BANK_CSV,
@@ -9,8 +10,10 @@ import {
   type FixerOptions,
   type TargetSoftware,
 } from "@/lib/csv-fixer";
+import { trackSfEvent } from "@/lib/telemetry";
 
 export default function CsvFixerClient() {
+  const router = useRouter();
   const [rawCsv, setRawCsv] = useState<string>(SAMPLE_MESSY_BANK_CSV);
   const [fileName, setFileName] = useState<string>("sample-messy-bank-export.csv");
   const [target, setTarget] = useState<TargetSoftware>("quickbooks_3col");
@@ -24,14 +27,22 @@ export default function CsvFixerClient() {
   const [copied, setCopied] = useState<boolean>(false);
   const [upgradeNotice, setUpgradeNotice] = useState<string>("");
   const [openingCheckout, setOpeningCheckout] = useState<boolean>(false);
-  const [isProUnlocked, setIsProUnlocked] = useState<boolean>(false);
-
-  useEffect(() => {
+  const [isProUnlocked, setIsProUnlocked] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
     try {
       const saved = JSON.parse(window.localStorage.getItem("statementflow_billing_v1") || "{}");
-      if (saved?.plan === "pro" || saved?.plan === "business") {
-        setIsProUnlocked(true);
-      }
+      return saved?.plan === "pro" || saved?.plan === "business";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    trackSfEvent("page_view", {
+      surface: "tool_csv_fixer",
+      ref: (document.referrer || "direct").slice(0, 80),
+    });
+    try {
       const tok = new URLSearchParams(window.location.search).get("restore_token")?.trim();
       if (tok) {
         fetch("/api/license/restore", {
@@ -58,6 +69,7 @@ export default function CsvFixerClient() {
   }, []);
 
   const handleQuickProUpgrade = async () => {
+    trackSfEvent("checkout_direct_click", { plan: "pro", source: "tool_csv_fixer" });
     setOpeningCheckout(true);
     try {
       const res = await fetch("/api/checkout", {
@@ -75,7 +87,7 @@ export default function CsvFixerClient() {
     } finally {
       setOpeningCheckout(false);
     }
-    window.location.href = "/#pricing";
+    router.push("/#pricing");
   };
 
   const options: FixerOptions = useMemo(

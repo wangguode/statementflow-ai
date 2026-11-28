@@ -23,6 +23,7 @@ import {
   Upload,
 } from "lucide-react";
 import { SAMPLE_PRESETS, findSampleById } from "@/lib/samples";
+import { trackSfEvent } from "@/lib/telemetry";
 import { PSEO_BANK_ENTRIES, findPseoBankBySlug } from "@/lib/pseo-banks";
 import { computeReconciliation } from "@/lib/schema";
 import { parseDocumentHeuristically } from "@/lib/heuristic-parser";
@@ -73,31 +74,13 @@ const DEFAULT_BILLING: BillingState = {
 };
 
 /**
- * 零 Cookie、零个人数据的轻量转化漏斗埋点，用于监控 Upload -> Extract -> Export -> Checkout 流失率
+ * 零 Cookie、零个人数据的轻量转化漏斗埋点，自动携带跨页持久化的 UTM 归因参数
  */
 function trackFunnelEvent(
   event: string,
   meta?: Record<string, string | number | boolean>
 ) {
-  if (typeof window === "undefined") return;
-  try {
-    const payload = JSON.stringify({ event, meta });
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon(
-        "/api/event",
-        new Blob([payload], { type: "application/json" })
-      );
-    } else {
-      fetch("/api/event", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: payload,
-        keepalive: true,
-      }).catch(() => {});
-    }
-  } catch {
-    // 埋点失败不影响主流程
-  }
+  trackSfEvent(event, meta);
 }
 
 const ALL_CATEGORIES: TransactionCategory[] = [

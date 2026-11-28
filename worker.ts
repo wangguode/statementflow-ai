@@ -1276,6 +1276,54 @@ Rules:
   }
 }
 
+/**
+ * 将携带 utm_campaign 的外联点击与高意向交互实时回写至共享 D1 outreach_logs
+ */
+async function syncSfOutreachAttribution(
+  env: Env,
+  eventName: string,
+  meta?: Record<string, string | number | boolean>
+): Promise<void> {
+  if (!env.DB || !meta) return;
+  try {
+    const rawCampaign = String(meta.utm_campaign || "").trim().toLowerCase().slice(0, 80);
+    if (!rawCampaign) return;
+    const token = rawCampaign
+      .replace(/^(nov|dec|jan|feb|mar|apr|may|jun|jul|aug|sep|oct)\d{1,2}_(d\d+_)?/, "")
+      .replace(/[^a-z0-9]/g, "");
+    const matched = await env.DB.prepare(
+      `SELECT slug FROM outreach_logs
+       WHERE LOWER(slug) = ?1
+          OR (?2 != '' AND LENGTH(?2) >= 2 AND (LOWER(slug) LIKE '%' || ?2 || '%' OR LOWER(recipient_email) LIKE '%' || ?2 || '%'))
+       ORDER BY id DESC LIMIT 1`
+    )
+      .bind(rawCampaign, token)
+      .first<{ slug: string }>();
+    if (!matched?.slug) return;
+
+    const isView = eventName === "page_view" ? 1 : 0;
+    const isBuyerIntent =
+      eventName !== "page_view" &&
+      /^(sample_try|pdf_upload|upload_files|bank_dropzone_upload|extract_local_zero_upload|export_|paywall_hit|checkout_)/.test(
+        eventName
+      )
+        ? 1
+        : 0;
+    await env.DB.prepare(
+      `UPDATE outreach_logs
+       SET page_views = page_views + ?1,
+           buyer_clicks = buyer_clicks + ?2,
+           last_event_at = datetime('now'),
+           last_event_type = ?3
+       WHERE slug = ?4`
+    )
+      .bind(isView, isBuyerIntent, `sf:${eventName}`.slice(0, 48), matched.slug)
+      .run();
+  } catch {
+    // 归因回写失败不影响主漏斗入库
+  }
+}
+
 async function handleEvent(request: Request, env: Env): Promise<Response> {
   const ip = getClientIp(request);
   if (!checkEdgeRateLimit(ip, "event", 60, 60_000)) {
@@ -1295,6 +1343,7 @@ async function handleEvent(request: Request, env: Env): Promise<Response> {
       )
         .bind(eventName, country, JSON.stringify(body.meta || {}).slice(0, 300))
         .run();
+      await syncSfOutreachAttribution(env, eventName, body.meta);
     }
     return jsonResponse({ ok: true });
   } catch {

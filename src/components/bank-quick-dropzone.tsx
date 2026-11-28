@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, Upload } from "lucide-react";
+import { trackSfEvent } from "@/lib/telemetry";
 
 interface Props {
   bankSlug: string;
@@ -20,8 +21,20 @@ export function BankQuickDropzone({ bankSlug, institutionName, targetFormat }: P
   const [dragging, setDragging] = useState(false);
   const [parsing, setParsing] = useState(false);
 
+  useEffect(() => {
+    trackSfEvent("page_view", {
+      bank: bankSlug,
+      surface: "pseo_bank",
+      ref: (document.referrer || "direct").slice(0, 80),
+    });
+  }, [bankSlug]);
+
   async function handleFiles(files: File[]) {
     if (files.length === 0) return;
+    trackSfEvent("bank_dropzone_upload", {
+      bank: bankSlug,
+      count: files.length,
+    });
     setParsing(true);
     try {
       const extractedParts: Array<{ name: string; text: string }> = [];

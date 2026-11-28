@@ -2673,15 +2673,15 @@ export function StatementWorkbench() {
                                   <div className="flex flex-wrap items-center gap-2.5 shrink-0">
                                     <button
                                       type="button"
-                                      disabled={directCheckoutLoading === "starter"}
+                                      disabled={directCheckoutLoading === "business"}
                                       onClick={() =>
-                                        void startDirectCheckout("starter", "table_row_lock")
+                                        void startDirectCheckout("business", "table_row_lock")
                                       }
                                       className="sf-btn min-h-10 rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold text-white hover:bg-white/15 cursor-pointer"
                                     >
-                                      {directCheckoutLoading === "starter"
+                                      {directCheckoutLoading === "business"
                                         ? "Opening..."
-                                        : "Starter Pack · $19"}
+                                        : "Firm Unlimited · $199"}
                                     </button>
                                     <button
                                       type="button"

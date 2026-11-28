@@ -297,6 +297,15 @@ async function handleCheckout(request: Request, env: Env): Promise<Response> {
 
     if (env.DB) {
       try {
+        await ensureSfTables(env);
+        if (customerEmail && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+          const country = (request.headers.get("cf-ipcountry") || "XX").slice(0, 8);
+          await env.DB.prepare(
+            `INSERT INTO sf_leads (work_email, firm_or_bank, notes, country) VALUES (?1, ?2, ?3, ?4)`
+          )
+            .bind(customerEmail.toLowerCase(), "Checkout Modal", `[Checkout Initiated: ${plan}]`, country)
+            .run();
+        }
         const overrideRow = await env.DB.prepare(
           `SELECT product_id FROM creem_sku_overrides WHERE app_key = 'sf' AND plan_key = ?1 LIMIT 1`
         )
@@ -1292,13 +1301,13 @@ async function syncSfOutreachAttribution(
       .replace(/^(nov|dec|jan|feb|mar|apr|may|jun|jul|aug|sep|oct)\d{1,2}_(d\d+_)?/, "")
       .replace(/[^a-z0-9]/g, "");
     const matched = await env.DB.prepare(
-      `SELECT slug FROM outreach_logs
+      `SELECT slug, recipient_email, page_views, buyer_clicks FROM outreach_logs
        WHERE LOWER(slug) = ?1
           OR (?2 != '' AND LENGTH(?2) >= 2 AND (LOWER(slug) LIKE '%' || ?2 || '%' OR LOWER(recipient_email) LIKE '%' || ?2 || '%'))
        ORDER BY id DESC LIMIT 1`
     )
       .bind(rawCampaign, token)
-      .first<{ slug: string }>();
+      .first<{ slug: string; recipient_email: string; page_views: number; buyer_clicks: number }>();
     if (!matched?.slug) return;
 
     const isView = eventName === "page_view" ? 1 : 0;
@@ -1319,6 +1328,17 @@ async function syncSfOutreachAttribution(
     )
       .bind(isView, isBuyerIntent, `sf:${eventName}`.slice(0, 48), matched.slug)
       .run();
+    if (
+      matched.recipient_email &&
+      ((matched.buyer_clicks === 0 && isBuyerIntent === 1) ||
+        (matched.page_views === 1 && isView === 1))
+    ) {
+      await sendSfEmail(env, {
+        to: "hello@statementflow.win",
+        subject: `🔥 [StatementFlow Hot Lead Online] ${matched.recipient_email} triggered ${eventName}!`,
+        text: `Bookkeeping outreach target is actively testing StatementFlow right now:\n- Firm Email: ${matched.recipient_email} (${matched.slug})\n- Action: ${eventName}\n\nReply or follow up within 15 minutes while they are reviewing statements!`,
+      });
+    }
   } catch {
     // 归因回写失败不影响主漏斗入库
   }

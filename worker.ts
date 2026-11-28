@@ -1559,8 +1559,10 @@ const worker = {
       return handleWebhook(request, env);
     }
 
-    if (pathname === "/api/health" && request.method === "HEAD") {
-      return new Response(null, { status: 200, headers: SECURITY_HEADERS });
+    if (pathname === "/api/health" && (request.method === "HEAD" || request.method === "GET")) {
+      return request.method === "HEAD"
+        ? new Response(null, { status: 200, headers: SECURITY_HEADERS })
+        : jsonResponse({ ok: true, service: "statementflow", version: "v14" });
     }
 
     if (pathname.startsWith("/api/")) {
@@ -1568,6 +1570,57 @@ const worker = {
     }
 
     const assetRes = await env.ASSETS.fetch(request);
+    // 智能短链兜底：将外联邮件或用户手输的 /convert/barclays-to-xero 等简写无损 302 跳转至对应银行落地页并完整保留 UTM 参数
+    if (assetRes.status === 404 && pathname.startsWith("/convert/")) {
+      const reqUrl = new URL(request.url);
+      const rawSlug = pathname.replace(/^\/convert\/+/, "").replace(/\/+$/, "").toLowerCase();
+      const BANK_SHORTHAND_MAP: Array<[RegExp, string]> = [
+        [/barclays/, "barclays-uk-statement-to-csv"],
+        [/commbank|commonwealth|\bcba\b/, "commbank-statement-to-xero"],
+        [/\bnab\b/, "nab-bank-statement-to-xero"],
+        [/natwest/, "natwest-bank-statement-to-xero"],
+        [/westpac/, "westpac-statement-to-excel"],
+        [/\banz\b/, "anz-australia-statement-to-csv"],
+        [/lloyds/, "lloyds-bank-statement-to-csv"],
+        [/hsbc/, "hsbc-commercial-statement-to-excel"],
+        [/monzo/, "monzo-business-statement-to-csv"],
+        [/starling/, "starling-bank-statement-to-excel"],
+        [/tide/, "tide-business-statement-to-xero"],
+        [/santander/, "santander-uk-statement-to-csv"],
+        [/\brbs\b/, "rbs-bank-statement-to-csv"],
+        [/halifax/, "halifax-bank-statement-to-excel"],
+        [/revolut/, "revolut-business-to-excel"],
+        [/wise/, "wise-statement-to-xero"],
+        [/chase.*quickbooks|chase.*qbo/, "chase-credit-card-to-quickbooks"],
+        [/chase/, "chase-bank-statement-to-excel"],
+        [/bank-of-america|\bbofa\b/, "bank-of-america-to-quickbooks"],
+        [/wells-fargo/, "wells-fargo-statement-to-csv"],
+        [/mercury/, "mercury-bank-statement-to-csv"],
+        [/relay/, "relay-financial-statement-to-quickbooks"],
+        [/bluevine/, "bluevine-statement-to-quickbooks"],
+        [/ramp/, "ramp-statement-to-quickbooks"],
+        [/brex/, "brex-corporate-card-to-excel"],
+        [/amex/, "amex-business-statement-to-excel"],
+        [/citi/, "citibank-statement-to-excel"],
+        [/macquarie/, "macquarie-bank-statement-to-csv"],
+        [/myob/, "pdf-to-myob-csv"],
+        [/sage/, "pdf-to-sage-accounting-csv"],
+        [/freeagent/, "pdf-to-freeagent-csv"],
+        [/xero/, "xero-bank-statement-csv-converter"],
+        [/quickbooks|\bqbo\b/, "quickbooks-bank-feed-csv-converter"],
+      ];
+      const matched = BANK_SHORTHAND_MAP.find(([re]) => re.test(rawSlug));
+      const destPath = matched ? `/convert/${matched[1]}` : "/";
+      const redirectUrl = `${reqUrl.origin}${destPath}${reqUrl.search}`;
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: redirectUrl,
+          ...SECURITY_HEADERS,
+        },
+      });
+    }
+
     const hdrs = new Headers(assetRes.headers);
     for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
       hdrs.set(k, v);
